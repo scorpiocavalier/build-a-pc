@@ -1,143 +1,195 @@
-# Build-a-PC — Project Plan
+# Astral Tech Gaming — Project Plan
 
-An online store for PC components, with a guided **PC builder** that checks
-part compatibility. This plan is for a **real business** taking real orders,
-so payments, tax, fulfillment, security and legal compliance are first-class
-concerns, not afterthoughts.
+**astralgaming.ca** — an online store for PC components and custom-built
+gaming PCs, with a guided **PC builder** that checks part compatibility and
+lets customers have Astral Tech Gaming assemble the build for them.
 
-> Status: draft v1 — open questions in [§10](#10-open-questions) need answers
-> before Phase 2 (checkout) starts.
+This is a **real business** taking real orders, so payments, tax, fulfilment,
+security and legal compliance are first-class concerns.
+
+> Status: draft v2 — updated with the owner's answers (see §1). Remaining
+> open questions are in [§11](#11-open-questions).
 
 ---
 
-## 1. Goals & scope
+## 1. Business context
 
-### v1 (launch) scope
+| Topic | Decision |
+|---|---|
+| Brand / domain | **Astral Tech Gaming** — `astralgaming.ca` |
+| Market | **Canada**, prices in **CAD**. Worldwide is a possible later step. |
+| Inventory | Owned stock (no dropshipping, no distributor feeds in v1) |
+| Core service | Sell individual parts **and** build PCs in-house |
+| Fulfilment | **In-person local delivery** only for now; shipping later |
+| Payment methods | **Card** (online), **Interac e-Transfer**, **cash** (on delivery) |
+| Returns | **30-day** return policy |
+| Warranty | Handled by the manufacturer; we show the warranty terms on each product |
+| Catalog data | Owner provides products, specs and images later. Until then we use placeholder seed data. |
+| Admin users | **2**, both full admins |
+| Running costs budget | **≤ $100 CAD / month** |
+
+### What this changes from a "standard" online store
+- **Assembly is a v1 feature, not v2.** A finished PC builder offers
+  "Have us build it" (with an assembly fee) as well as "parts only".
+- **Orders can be placed without online payment.** Cash and e-Transfer
+  orders are paid offline and marked as paid by an admin, so payments are
+  modelled separately from orders (§6).
+- **No carrier shipping in v1.** Checkout checks the delivery address is in
+  our service area and lets the customer request a delivery window. Admins
+  confirm the time.
+- **Canadian sales tax** (GST/HST/PST/QST) instead of a generic tax service.
+- **Canadian privacy & anti-spam law** (PIPEDA, CASL) instead of GDPR.
+
+---
+
+## 2. Scope
+
+### v1 (launch)
 | Area | What ships |
 |---|---|
-| **Storefront** | Category browsing, faceted filtering by specs (socket, chipset, memory type, wattage, form factor…), search, product detail pages, cart, checkout |
-| **PC builder** | Step-by-step part picker, live compatibility checks, power estimate, shareable build link, "add whole build to cart" |
-| **Accounts** | Sign up / sign in, order history & tracking, saved builds, wishlist, saved addresses |
-| **Admin** | Product & spec management, bulk CSV import, inventory, order management (fulfil, cancel, refund), basic sales reports |
+| **Storefront** | Category browsing, spec filters (socket, chipset, memory type, wattage, form factor…), search, product pages, cart, checkout |
+| **PC builder** | Step-by-step part picker, live compatibility checks, power estimate, shareable build links, add the whole build to the cart **as parts or as an assembled PC** |
+| **Prebuilt PCs** | Admin-curated builds sold as a single product (a saved build plus an assembly fee) |
+| **Checkout** | Card via Stripe, or e-Transfer / cash. Delivery-area check, preferred delivery window, Canadian tax. |
+| **Accounts** | Sign in, order history & status, saved builds, wishlist, saved addresses, start a return |
+| **Admin** | Products & specs, CSV import, inventory, orders (assembly → delivery), recording offline payments, returns & refunds, delivery schedule, basic reports |
 
-### Explicitly out of scope for v1
-Marketplace / third-party sellers, product reviews & Q&A, price-drop alerts,
-loyalty points, multi-currency, prebuilt-PC assembly service, native mobile
-apps. Each is a candidate for v2 (see §9).
+### Out of scope for v1 (candidates for later)
+Carrier shipping & international sales, multi-currency, French-language
+site (needed before marketing in Quebec), reviews & ratings, price and
+stock alerts, discount codes, financing / buy-now-pay-later, distributor
+feed integrations.
 
 ### Success criteria
-- A customer can find a part, build a compatible PC, and pay in under 5 minutes.
-- No order is ever charged without stock being reserved, and no stock is ever
-  oversold.
-- Lighthouse ≥ 90 (performance, accessibility, SEO) on home, category and
-  product pages.
-- Zero card data touches our servers (Stripe-hosted fields → PCI SAQ A).
+- A customer can design a compatible PC and order it assembled in < 5 minutes.
+- Stock is never oversold, including across online and offline payment.
+- Admins can run the whole order lifecycle without leaving the dashboard.
+- Lighthouse ≥ 90 (performance, accessibility, SEO) on key pages.
+- No card data touches our servers (Stripe-hosted fields → PCI SAQ A).
+- Monthly infrastructure cost stays under $100 CAD.
 
 ---
 
-## 2. Tech stack
+## 3. Tech stack & monthly cost
 
-| Concern | Choice | Why |
+| Concern | Choice | Est. cost / month (CAD) |
 |---|---|---|
-| Framework | **Next.js (App Router) + TypeScript** | SSR/ISR for SEO-critical catalog pages, server actions for mutations, one codebase |
-| Styling / UI | **Tailwind CSS + shadcn/ui** (Radix primitives) | Accessible primitives, no heavy component lib lock-in |
-| Database | **PostgreSQL** | Relational integrity for orders/inventory; JSONB for per-category specs |
-| ORM | **Prisma** | Typed queries, migrations |
-| Auth | **Auth.js** (email magic link + Google; credentials optional) | Mature, works with Prisma adapter, role field for admin |
-| Payments | **Stripe** (Payment Element / Checkout) + **Stripe Tax** | PCI scope reduction, wallets (Apple/Google Pay), automatic tax |
-| Search & facets | **Postgres full-text + JSONB filters** for v1; move to **Meilisearch/Typesense** if catalog > ~20k SKUs or latency suffers | Avoid running extra infra on day one |
-| Images | **S3-compatible storage (Cloudflare R2 / S3)** + `next/image` | Cheap, CDN-backed |
-| Email | **Resend** (or Postmark) + React Email templates | Order confirmations, shipping, password-less auth |
-| Validation | **Zod** | Shared schemas between forms, server actions and the spec system |
-| Testing | **Vitest** (unit), **Playwright** (e2e) | |
-| Hosting | **Vercel** (app) + **Neon / Supabase** (managed Postgres) | Low ops; can move to containers later |
-| Observability | **Sentry** (errors), Vercel Analytics / PostHog (product analytics) | |
-| CI | **GitHub Actions**: lint, typecheck, unit, e2e, Prisma migration check | |
+| Framework | **Next.js (App Router) + TypeScript** | — |
+| UI | **Tailwind CSS + shadcn/ui** (Radix) | — |
+| Hosting | **Vercel Pro** (the free Hobby plan doesn't allow commercial use) | ~$28 (1 developer seat) |
+| Database | **PostgreSQL on Neon** (Launch plan) or Supabase Pro, with backups | ~$0–35 |
+| ORM | **Prisma** | — |
+| Auth | **Auth.js**: email magic link + Google; admins require Google sign-in from an allow-list | — |
+| Card payments | **Stripe** Payment Element (cards, Apple Pay, Google Pay) | per-transaction fees only |
+| Sales tax | **Our own province rate table** (admin-editable). Stripe Tax adds ~0.5% per transaction, which only becomes worth it with nationwide or international shipping. | — |
+| Search & filters | Postgres full-text + JSONB filters (no separate search service) | — |
+| Images | **Cloudflare R2** + `next/image` | ~$0 (free tier: 10 GB) |
+| Email | **Resend** + React Email | ~$0 (free tier) → ~$28 if volume grows |
+| Rate limiting | **Upstash Redis** | ~$0 (free tier) |
+| Errors / analytics | **Sentry** (free) + Vercel Web Analytics | ~$0 |
+| Domain | `astralgaming.ca` (already owned?) | ~$2 |
+| **Total** | | **≈ $30–95**, typically under $60 |
+
+Validation with **Zod**, tests with **Vitest** + **Playwright**, CI on
+**GitHub Actions** (free minutes are enough).
 
 ---
 
-## 3. Architecture
+## 4. Architecture
 
 ```
-┌─────────────────────────── Next.js app ───────────────────────────┐
-│  (storefront)   /, /c/[category], /p/[slug], /search, /cart       │
-│  (builder)      /build, /build/[shareId]                          │
-│  (account)      /account, /account/orders, /account/builds        │
-│  (admin)        /admin/**   ← role-gated in middleware + server   │
-│                                                                   │
-│  Server actions / route handlers                                  │
-│    ├─ catalog service      ├─ cart service    ├─ order service    │
-│    ├─ compatibility engine (pure TS, shared with client)          │
-│    └─ /api/webhooks/stripe  (source of truth for payment state)   │
-└──────────────┬──────────────────────┬─────────────────┬───────────┘
-               │                      │                 │
-          PostgreSQL               Stripe          R2/S3, Resend
+┌──────────────────────────── Next.js app ────────────────────────────┐
+│  (shop)      /, /c/[category], /p/[slug], /prebuilt, /search, /cart │
+│  (builder)   /build, /build/[shareId]                               │
+│  (account)   /account, /account/orders, /account/builds             │
+│  (info)      /returns, /delivery, /warranty, /privacy, /terms       │
+│  admin       /admin/**   ← admin allow-list, checked in middleware  │
+│                            AND in every server action               │
+│                                                                     │
+│  src/server/*  services: catalog · cart · orders · payments ·       │
+│                inventory · delivery · tax · returns · email         │
+│  src/lib/compat  compatibility engine (pure TS, client + server)    │
+│  /api/webhooks/stripe   source of truth for card payments           │
+└──────────────┬────────────────────────┬──────────────────┬──────────┘
+          PostgreSQL                  Stripe          R2 · Resend
 ```
 
 Principles:
-- **Domain logic lives in `src/server/*` services**, not in React components
-  or route files, so it is testable and reusable by admin + storefront.
-- **The compatibility engine is a pure function** (`parts in → issues out`),
-  runs on the client for instant feedback and again on the server before a
-  build is added to cart.
-- **Money is integer minor units** (cents) everywhere; never floats.
-- **Stripe webhooks, not redirects, decide whether an order is paid.**
+- **Business logic lives in `src/server/*` services**, not in components,
+  so the storefront and admin share it and it can be tested on its own.
+- **Money is stored as whole cents** with a `currency` column (always
+  `CAD` for now), so adding other currencies later doesn't need a migration.
+- **All text the customer sees goes through a translation layer** from day
+  one (English only for now), so adding French later is translation work
+  rather than a refactor.
+- **Stripe webhooks, not redirects, decide that a card order is paid.**
 
-### Proposed repo layout
+### Repo layout
 ```
 src/
-  app/                 # routes (route groups: (shop), (account), admin, api)
-  components/          # UI (ui/ = shadcn primitives)
-  server/
-    catalog/  cart/  orders/  inventory/  payments/  auth/  email/
+  app/            # routes: (shop), (builder), (account), (info), admin, api
+  components/     # ui/ = shadcn primitives
+  server/         # domain services
   lib/
-    compat/            # compatibility engine + rules + tests
-    specs/             # per-category Zod spec schemas
-    money.ts
-prisma/
-  schema.prisma  migrations/  seed.ts
+    compat/       # compatibility rules + tests
+    specs/        # per-category Zod spec schemas
+    money.ts  tax.ts  i18n/
+prisma/           # schema.prisma, migrations/, seed.ts
 tests/e2e/
 docs/
 ```
 
 ---
 
-## 4. Data model (initial)
+## 5. Data model
 
 ```
-User(id, email, name, role[CUSTOMER|STAFF|ADMIN], createdAt)
-Address(id, userId, name, line1, line2, city, region, postalCode, country, phone, isDefault)
+User(id, email, name, role[CUSTOMER|ADMIN], marketingConsentAt?, createdAt)
+Address(id, userId, name, line1, line2, city, province, postalCode, country, phone, isDefault)
 
-Category(id, slug, name, parentId, specSchemaKey)     # e.g. "cpu", "motherboard"
+Category(id, slug, name, parentId, specSchemaKey)
 Brand(id, slug, name)
-Product(id, slug, sku, mpn, upc, name, brandId, categoryId,
-        description, specs JSONB, priceCents, compareAtCents,
-        status[DRAFT|ACTIVE|ARCHIVED], weightGrams, createdAt, updatedAt)
+Product(id, slug, sku, mpn, upc, name, brandId, categoryId, type[PART|PREBUILT|SERVICE],
+        description, specs JSONB, priceCents, compareAtCents, currency,
+        warrantyMonths, warrantyNotes, returnable, status[DRAFT|ACTIVE|ARCHIVED],
+        prebuiltBuildId?, createdAt, updatedAt)
 ProductImage(id, productId, url, alt, position)
 Inventory(productId PK, onHand, reserved, reorderPoint)
-InventoryMovement(id, productId, delta, reason, orderId?, actorId?, createdAt)   # audit trail
+InventoryMovement(id, productId, delta, reason, orderId?, returnId?, actorId?, createdAt)
 
 Cart(id, userId?, anonymousToken?, updatedAt)
-CartItem(cartId, productId, quantity)
-
-Order(id, number, userId?, email, status, subtotalCents, shippingCents,
-      taxCents, totalCents, currency, shippingAddress JSONB, billingAddress JSONB,
-      stripePaymentIntentId, placedAt, ...)
-OrderItem(id, orderId, productId, nameSnapshot, skuSnapshot, unitPriceCents, quantity)
-Shipment(id, orderId, carrier, trackingNumber, shippedAt, deliveredAt)
-Refund(id, orderId, amountCents, reason, stripeRefundId, createdAt)
+CartLine(id, cartId, productId?, buildId?, quantity, assemble Boolean)
 
 Build(id, userId?, shareId, name, createdAt, updatedAt)
-BuildItem(buildId, slot[CPU|COOLER|MOTHERBOARD|RAM|GPU|STORAGE|PSU|CASE|FAN|...], productId, quantity)
+BuildItem(buildId, slot, productId, quantity)
+
+Order(id, number, userId?, email, phone, status, fulfilment[DELIVERY|PICKUP],
+      deliveryAddress JSONB, requestedWindow JSONB, scheduledAt?,
+      subtotalCents, assemblyCents, deliveryCents, taxCents, totalCents,
+      paidCents, currency, taxBreakdown JSONB, placedAt, ...)
+OrderLine(id, orderId, productId, buildGroupId?, nameSnapshot, skuSnapshot,
+          unitPriceCents, quantity)
+BuildGroup(id, orderId, buildSnapshot JSONB, assemble, assemblyFeeCents)
+
+Payment(id, orderId, method[CARD|ETRANSFER|CASH], amountCents,
+        status[PENDING|SUCCEEDED|FAILED|REFUNDED], stripePaymentIntentId?,
+        reference?, recordedById?, receivedAt?)
+Refund(id, orderId, paymentId, amountCents, method, reason, stripeRefundId?, createdAt)
+
+ReturnRequest(id, orderId, status[REQUESTED|APPROVED|RECEIVED|REFUNDED|REJECTED],
+              reason, lines JSONB, requestedAt, resolvedAt)
+
+ServiceArea(id, name, postalPrefixes[], deliveryFeeCents, active)
+TaxRate(province PK, gstRate, pstRate, hstRate, qstRate, effectiveFrom)
 
 WishlistItem(userId, productId, createdAt)
 AuditLog(id, actorId, action, entity, entityId, diff JSONB, createdAt)
 ```
 
-### Specs: JSONB + per-category Zod schemas
-PC parts have very different attributes per category. Rather than one table
-per category, each `Product.specs` is JSONB validated by a Zod schema keyed by
-`Category.specSchemaKey`. Example:
+### Per-category specs
+Each `Product.specs` is JSONB checked against a Zod schema chosen by
+`Category.specSchemaKey`. That one schema drives the admin edit form, CSV
+import checks, storefront filters and compatibility rules.
 
 ```ts
 // lib/specs/cpu.ts
@@ -152,188 +204,232 @@ export const cpuSpecs = z.object({
 });
 ```
 
-The same schema drives: admin form generation, CSV import validation,
-storefront filter facets, and compatibility rules. GIN index on `specs` plus
-expression indexes for the hottest filter keys (e.g. `specs->>'socket'`).
+We'll publish a **CSV template per category** so the owner can fill in
+products, specs and images in a spreadsheet and bulk-import them.
 
-### Order state machine
+### Order lifecycle
 ```
-PENDING_PAYMENT → PAID → PROCESSING → SHIPPED → DELIVERED
-       │            │         │
-       ▼            ▼         ▼
-   EXPIRED     CANCELLED  (PARTIALLY_)REFUNDED
+PLACED ──► CONFIRMED ──► ASSEMBLING ──► READY ──► OUT_FOR_DELIVERY ──► DELIVERED
+  │           │              (assembled builds only)
+  ▼           ▼
+CANCELLED  CANCELLED                     DELIVERED ──► (PARTIALLY_)RETURNED
 ```
-Transitions only through `server/orders` functions; each writes an AuditLog entry.
+Payment status (`UNPAID → PARTIALLY_PAID → PAID → REFUNDED`) is tracked
+separately, worked out from the order's `Payment` rows. This is what lets
+cash-on-delivery and e-Transfer orders move through fulfilment before or
+after they're paid, depending on the payment rules in §6.
 
 ---
 
-## 5. PC builder & compatibility engine
+## 6. Checkout, payments, tax & delivery
+
+### Checkout flow
+1. The cart is stored on the server (a cookie identifies guests; their cart
+   merges into their account when they sign in).
+2. The customer enters a delivery address. The postal code must fall in an
+   active **ServiceArea**, otherwise the order can't go through (the page
+   offers a "contact us" fallback).
+3. The customer chooses preferred delivery days and times. An admin confirms
+   the exact time afterwards.
+4. Tax is calculated from the delivery province's **TaxRate** row and the
+   breakdown (e.g. GST + PST) is stored on the order for receipts.
+5. The customer chooses a payment method:
+   - **Card**: Stripe Payment Element. The order is created as `PLACED`
+     with a pending Payment. The Stripe webhook marks it `SUCCEEDED`, then
+     the order becomes `CONFIRMED` and a confirmation email is sent.
+   - **e-Transfer**: the confirmation page and email show where to send the
+     money and an order-number reference. An admin records the Payment when
+     it arrives.
+   - **Cash**: paid on delivery, recorded by the admin when it's collected.
+6. **Stock is reserved** when the order is created, using a guarded update
+   inside a transaction that fails if `onHand − reserved < qty`. Unpaid
+   reservations expire after a set time (a daily Vercel Cron job sends
+   reminders, then cancels).
+
+### Recommended payment rules (owner to confirm, §11)
+| Order type | Card | e-Transfer | Cash |
+|---|---|---|---|
+| Parts only | Paid upfront | Paid before delivery; reservation held 48 h | Allowed, up to a set order total |
+| Assembled PC | Paid upfront | Full payment or deposit before assembly starts | Deposit (card/e-Transfer) required before assembly, rest on delivery |
+
+Reason: cash-on-delivery for a custom build means parts are taken out of
+stock and assembled before any money is committed. A deposit protects
+against no-shows.
+
+### Tax
+- Province rates live in the **TaxRate** table and can be edited in admin
+  without a code change (for example when a province changes its rate).
+- Assembly and delivery fees are taxed like the goods.
+- Receipts and invoices show our GST/HST registration number.
+- The owner should confirm registration status and treatment with an
+  accountant before launch.
+
+### Returns (30 days)
+- Customers start a return from their order page within 30 days of delivery.
+- An admin approves it, receives the items, and refunds or rejects.
+- Stripe refunds card payments automatically. e-Transfer and cash refunds
+  are recorded by hand.
+- Returned items go back into stock (or are written off) through
+  `InventoryMovement`.
+- The policy page spells out conditions (e.g. opened parts, assembled
+  builds, DOA vs change of mind). Wording is to be confirmed (§11).
+
+---
+
+## 7. PC builder & compatibility engine
 
 ### Builder UX
-1. Slots listed in a sensible order: CPU → Motherboard → Memory → Storage →
-   GPU → Case → PSU → Cooler → Fans.
-2. Choosing a slot opens a part list **pre-filtered to compatible parts**
-   (with a toggle to "show incompatible" greyed out with the reason).
-3. Running summary: total price, estimated wattage, issues panel.
-4. Build saved to localStorage for guests, to the DB for signed-in users;
-   every build gets a shareable `/build/[shareId]` URL.
-5. "Add build to cart" re-validates server-side and checks stock.
+1. Slots in this order: CPU → Motherboard → Memory → Storage → GPU → Case →
+   PSU → Cooler → Fans → (optional) OS / accessories.
+2. Each slot's part list is **pre-filtered to compatible, in-stock parts**,
+   with a toggle to show incompatible parts greyed out alongside the reason.
+3. A running summary shows the price, estimated wattage and any issues.
+4. Guests' builds are saved in the browser; signed-in users' builds are saved
+   to their account. Every build gets a shareable link.
+5. A **"Have us build it"** toggle adds the assembly fee. The build is
+   checked again on the server, and stock is checked, before it goes into
+   the cart.
+6. Admins can publish any build as a **Prebuilt PC** product.
 
-### Rule engine design
+### Rule engine
 ```ts
 type Severity = "error" | "warning" | "info";
 type Issue = { ruleId: string; severity: Severity; message: string; slots: Slot[] };
 type Rule = (build: ResolvedBuild) => Issue[];
 ```
-Rules are small, independent, unit-tested functions. Errors block "add build
-to cart" (with an explicit override for experienced users); warnings don't.
+Errors block adding an **assembled** build to the cart (we won't assemble
+something that can't work). For parts-only orders, errors show a warning the
+customer must acknowledge.
 
-### v1 rule set
+### v1 rules
 | Rule | Severity |
 |---|---|
 | CPU socket = motherboard socket | error |
-| Memory type (DDR4/DDR5) supported by motherboard (and CPU) | error |
-| Memory module count ≤ motherboard slots; total capacity ≤ board max | error |
-| Motherboard form factor fits case (ATX / mATX / ITX / E-ATX) | error |
+| Memory type (DDR4/DDR5) supported by motherboard and CPU | error |
+| Memory modules ≤ motherboard slots; total capacity ≤ board max | error |
+| Motherboard form factor fits case | error |
 | GPU length ≤ case max GPU length | error |
-| CPU cooler height ≤ case max cooler height | error |
+| Cooler height ≤ case max cooler height | error |
 | Cooler supports CPU socket | error |
-| AIO radiator size supported by case mount positions | error |
+| AIO radiator size supported by case | error |
 | PSU form factor fits case (ATX / SFX) | error |
-| M.2 drives ≤ motherboard M.2 slots; SATA drives ≤ SATA ports | error |
-| PSU wattage ≥ estimated load × 1.3 headroom (≥ 1.0 is warning, < 1.0 error) | warning / error |
+| M.2 drives ≤ M.2 slots; SATA drives ≤ SATA ports | error |
+| PSU wattage vs estimated load (< 1.0× error, < 1.3× warning) | error / warning |
 | GPU power connectors (e.g. 12V-2x6) available on PSU | warning |
-| No GPU and CPU lacks integrated graphics | error |
-| CPU has no bundled cooler and no cooler selected | warning |
-| Motherboard may need BIOS update for this CPU generation | warning |
-| Memory speed above board/CPU rated speed (will run at lower speed) | info |
+| No GPU and CPU has no integrated graphics | error |
+| No cooler selected and CPU has no bundled cooler | warning |
+| Motherboard may need a BIOS update for this CPU | warning |
+| Memory faster than the board or CPU supports | info |
 
-Power estimate = CPU TDP + GPU board power + fixed allowances per drive,
-fan, and motherboard/RAM. Kept deliberately conservative.
-
-**Data quality is the real risk here** — rules are only as good as the specs.
-The spec schemas make the required fields mandatory per category, and the
-admin import flags any product missing compatibility-critical fields.
+Specs data quality is the main risk, so the specs that compatibility rules
+rely on are **required** in the schemas, and CSV import rejects rows that
+are missing them.
 
 ---
 
-## 6. Checkout, payments, tax & inventory
+## 8. Admin dashboard (2 admins)
 
-1. Cart is server-side (cookie token for guests, merged into user cart on sign-in).
-2. Checkout collects email + shipping address → shipping rate + **Stripe Tax**
-   quote → creates an `Order(PENDING_PAYMENT)` and a Stripe PaymentIntent with
-   an idempotency key.
-3. **Inventory reserved** when the order is created (`reserved += qty` in a
-   transaction with a row lock / conditional update that fails if
-   `onHand - reserved < qty`). Unpaid reservations expire after ~30 minutes
-   via a scheduled job (Vercel Cron).
-4. Stripe webhook `payment_intent.succeeded` → order `PAID`, reservation
-   becomes a deduction, confirmation email sent. Webhook handler is
-   idempotent (store processed event IDs).
-5. Refunds/cancellations from admin call Stripe and restock via
-   `InventoryMovement`.
-
-Guest checkout is supported; an account can be created after purchase.
-
----
-
-## 7. Admin dashboard
-
-- **Role-gated** (`STAFF`, `ADMIN`) in middleware *and* in every server action.
-- **Products**: list/search, create/edit with spec form generated from the
-  category's Zod schema, image upload, draft/publish, CSV bulk import with a
-  dry-run validation report.
-- **Inventory**: stock levels, manual adjustments (with reason), low-stock view.
-- **Orders**: filter by status, order detail, mark shipped (carrier + tracking
-  → customer email), cancel, full/partial refund.
-- **Customers**: lookup, order history.
-- **Reports** (v1-lite): revenue by day, top products, low stock.
-- **Audit log** of every admin mutation.
+- **Access**: an allow-list of 2 Google accounts with 2-step verification
+  enforced on those accounts. One `ADMIN` role; no staff tiers needed.
+- **Today view**: new orders, payments to confirm, builds to assemble,
+  deliveries scheduled today, low stock.
+- **Products**: create/edit with forms generated from each category's spec
+  schema, image upload, draft/publish, CSV import with a dry run first,
+  prebuilt PCs.
+- **Inventory**: stock levels, manual adjustments (with a reason), low-stock list.
+- **Orders**: status board (Placed → Assembling → Ready → Out for delivery
+  → Delivered), record e-Transfer and cash payments, schedule delivery,
+  print a build sheet / packing slip, cancel, refund.
+- **Returns**: approve, receive, refund, restock.
+- **Settings**: service areas & delivery fees, tax rates, assembly fee,
+  store info (GST/HST number, e-Transfer email).
+- **Reports**: revenue by day/month and by payment method, top products,
+  stock value.
+- **Audit log** of every admin change.
 
 ---
 
-## 8. Non-functional requirements
+## 9. Non-functional requirements
 
 **Security**
-- Auth.js sessions, HTTP-only secure cookies; admin requires 2FA-capable
-  provider or enforced Google Workspace account.
-- Authorization checked server-side on every action (never trust the UI).
-- Zod validation on all inputs; Prisma parameterised queries.
-- Rate limiting on auth, checkout and search (Upstash Redis or similar).
-- Stripe webhook signature verification; secrets only in env vars.
-- Security headers / CSP; dependency scanning (Dependabot) in CI.
+- Secure, HTTP-only session cookies; admin access checked on the server for
+  every action.
+- Zod validation on all inputs; Prisma queries are parameterised.
+- Rate limiting on sign-in, checkout and search.
+- Stripe webhook signature verification; the handler is safe to run twice
+  on the same event.
+- Security headers / CSP; Dependabot alerts.
 
 **SEO & performance**
-- Category/product pages statically generated with revalidation on admin edits.
-- `Product` / `Offer` / `BreadcrumbList` structured data, sitemap, canonical
-  URLs for filtered pages.
-- Image optimisation, Core Web Vitals budget in CI (Lighthouse CI).
+- Category and product pages are pre-rendered and refreshed when an admin
+  edits them.
+- Product structured data, sitemap, canonical URLs, local-business
+  structured data for astralgaming.ca.
 
-**Accessibility**: WCAG 2.2 AA — keyboard-navigable builder, proper labels on
-filters, colour isn't the only signal for compatibility errors.
+**Accessibility**: WCAG 2.2 AA. The builder works with a keyboard, and
+compatibility problems aren't shown by colour alone.
 
-**Legal / business** (needs owner input, see §10)
-- Terms of sale, privacy policy, returns & warranty policy, shipping policy.
-- Cookie consent if selling into EU/UK; GDPR/CCPA data export & deletion.
-- Tax registration in the jurisdictions you sell into (Stripe Tax handles
-  calculation, not registration).
+**Legal (Canada)**
+- **PIPEDA**: privacy policy, access/deletion requests handled by admins.
+- **CASL**: marketing emails only with explicit opt-in (stored with a
+  timestamp); transactional emails are fine without it.
+- **Quebec**: if delivering to or marketing in Quebec, plan for a French
+  version of the site (Bill 96) and Law 25 privacy obligations.
+- Terms of sale, 30-day return policy, delivery policy, warranty page
+  ("warranty is provided by the manufacturer", plus links to their
+  support pages).
 
 **Operations**
-- Daily automated DB backups (managed provider) + tested restore.
-- Separate `preview` and `production` environments, Stripe test vs live keys.
-- Error alerting via Sentry; uptime monitor on checkout.
+- Separate preview and production environments, with Stripe test keys vs
+  live keys.
+- Managed daily database backups, plus one restore test before launch.
+- Sentry alerts; uptime monitor on the home page and checkout.
 
 ---
 
-## 9. Roadmap (phased)
+## 10. Roadmap
 
-Each phase ends with something deployable to a preview environment.
+Each phase ends with something you can try on a preview site.
 
 | Phase | Deliverable | Key tasks |
 |---|---|---|
-| **0. Foundations** | Empty app deployed with CI | Next.js + TS + Tailwind + shadcn; ESLint/Prettier; Prisma + Postgres; Auth.js skeleton; Vitest + Playwright; GitHub Actions; Sentry; env management |
-| **1. Catalog + basic admin** | Browsable store with real-looking data | Category/brand/product schema; spec Zod schemas for CPU, motherboard, RAM, GPU, storage, PSU, case, cooler; seed data; admin product CRUD + image upload + CSV import; category pages with facets; product page; search |
-| **2. Cart & checkout** | Can place a test-mode order end to end | Server cart; shipping rates; Stripe Payment Element + Stripe Tax; order creation + inventory reservation; webhooks; confirmation emails; reservation expiry cron |
-| **3. Accounts** | Customers manage their stuff | Sign up/in; order history & tracking; saved addresses; wishlist; guest→account cart merge |
-| **4. PC builder** | Full builder with compatibility | Rule engine + exhaustive unit tests; builder UI; compatible-part filtering; wattage estimate; saved/shared builds; add-build-to-cart |
-| **5. Admin completion** | Staff can run the store | Order management (ship, cancel, refund); inventory adjustments; audit log; reports; low-stock alerts |
-| **6. Launch hardening** | Production go-live | Security review; load test checkout; accessibility audit; SEO (structured data, sitemap); legal pages; live Stripe keys; backups & restore drill; monitoring/alerts; soft launch |
+| **0. Foundations** | Empty app deployed, CI green | Next.js + TS + Tailwind + shadcn; lint/format; Prisma + Neon; Auth.js with admin allow-list; Vitest + Playwright; GitHub Actions; Sentry; Astral Tech Gaming placeholder branding |
+| **1. Catalog + product admin** | Browsable store with placeholder data | Categories, brands, products, spec schemas for 8 core categories; seed data; admin product editing + R2 image upload; CSV templates & import; category filters; product pages; search |
+| **2. Cart, checkout & payments** | Test orders end to end with all 3 payment methods | Cart; service-area check; delivery window request; province tax table; Stripe card payments + webhooks; e-Transfer/cash flows; stock reservation & expiry; confirmation emails |
+| **3. PC builder & assembly** | Design a PC and order it assembled | Rule engine + thorough tests; builder UI; compatible-part filtering; wattage estimate; saved/shared builds; assembly option; prebuilt PCs |
+| **4. Accounts** | Customers self-serve | Sign in; order history & status; saved builds & addresses; wishlist; return requests |
+| **5. Admin operations** | Admins can run the business | Today view; order board; offline payment recording; delivery scheduling; returns & refunds; build sheets; settings; reports; audit log |
+| **6. Launch** | astralgaming.ca live | Owner's real catalog imported; legal pages; security & accessibility review; production Stripe; DNS & email domain auth (SPF/DKIM); backup restore test; monitoring; soft launch with friends & family |
 
-**v2 candidates:** reviews & ratings, price/stock alerts, product
-comparison, Meilisearch/Typesense, distributor feed integrations (auto
-stock/price sync), benchmark-based "build for budget X" suggestions,
-promotions/discount codes, multi-currency, prebuilt-PC assembly service.
-
----
-
-## 10. Open questions
-
-These shape tax, shipping, data and legal work — please answer before Phase 2.
-
-1. **Market**: which country/countries do you sell into, and in what currency?
-2. **Fulfilment**: do you hold your own stock, dropship from distributors,
-   or a mix? (Determines whether we need distributor API/feed integration.)
-3. **Catalog source & size**: how many SKUs at launch, and where do product
-   specs and images come from — manual entry, distributor feeds, or a
-   content provider (e.g. Icecat)?
-4. **Shipping**: flat rate, free over a threshold, or live carrier rates?
-   Which carriers?
-5. **Returns/warranty**: return window, restocking fees, DOA process?
-6. **Payment methods** beyond cards/Apple Pay/Google Pay (e.g. PayPal,
-   buy-now-pay-later)?
-7. **Brand**: store name, domain, logo/colours — or should we design a
-   placeholder identity?
-8. **Admin users**: how many staff, and do they need different permission
-   levels beyond STAFF/ADMIN?
-9. **Budget for services** (hosting, DB, email, search) — affects
-   managed-vs-self-hosted choices.
+**Later:** carrier shipping across Canada (Canada Post / courier rates),
+French site, international sales & multi-currency, Stripe Tax, reviews,
+stock alerts, discount codes, financing.
 
 ---
 
-## 11. Immediate next steps
+## 11. Open questions
 
-1. Review this plan; answer §10 where you can.
-2. Start **Phase 0**: scaffold the Next.js project, CI, database and auth
-   skeleton on this branch.
-3. In parallel, decide the launch category list and gather a spreadsheet of
-   ~50 real products to seed Phase 1 and validate the spec schemas.
+1. **Home base & delivery area**: which city, and which postal codes /
+   radius do you deliver to? Flat delivery fee, tiered by distance, or free?
+2. **Pickup**: should customers also be able to pick up orders in person?
+3. **Assembly**: flat assembly fee or tiered? Typical turnaround time to
+   show customers? Is an OS installed (and sold) as part of the build?
+4. **Payment rules**: are the recommended deposit / cash limits in §6 OK?
+   Any maximum order total for cash?
+5. **Returns detail**: does the 30-day policy cover opened parts and
+   assembled PCs? Any restocking fee? How are dead-on-arrival parts
+   handled vs change of mind?
+6. **Tax**: are you GST/HST-registered, and in which province is the
+   business based?
+7. **Brand assets**: do you have a logo and brand colours, and is
+   `astralgaming.ca` already registered (and where is its DNS)?
+8. **Quebec**: do you expect Quebec customers in the near term?
+
+---
+
+## 12. Next steps
+
+1. Owner answers §11 where possible (none of these block Phase 0 or 1).
+2. Start **Phase 0** on this branch.
+3. When you're ready to supply products, we'll send you the per-category CSV
+   templates from Phase 1.
