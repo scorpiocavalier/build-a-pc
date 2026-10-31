@@ -3,6 +3,7 @@
 import { updateTag } from "next/cache";
 
 import { parseCsv, validateRows } from "@/lib/catalog/csv";
+import { audit } from "@/server/audit";
 import { saveProduct } from "@/server/catalog/save-product";
 import { CATALOG_TAG } from "@/server/catalog/queries";
 import { db } from "@/server/db";
@@ -67,6 +68,12 @@ export async function importCsvAction(
     },
     { timeout: 120_000 },
   );
+  await audit({
+    actorId: user.id,
+    action: "import.apply",
+    entity: "import",
+    summary: `Imported ${file.name}: ${rows.filter((r) => r.action === "create").length} new, ${rows.filter((r) => r.action === "update").length} updated`,
+  });
   updateTag(CATALOG_TAG);
   return { mode: "applied", fileName: file.name, rows };
 }

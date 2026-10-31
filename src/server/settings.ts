@@ -25,6 +25,11 @@ export const settingsSchema = z.object({
   assemblyDays: z.number().int().min(1).max(30),
   gstNumber: z.string(),
   qstNumber: z.string(),
+  // Returns: fee on items that aren't faulty, and how long after handover.
+  restockingPercent: z.number().int().min(0).max(100),
+  returnWindowDays: z.number().int().min(0).max(365),
+  // Products at or below this many units at a location show as low stock.
+  lowStockThreshold: z.number().int().min(0).max(1000),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;
@@ -42,6 +47,9 @@ export const DEFAULT_SETTINGS: Settings = {
   assemblyDays: 2,
   gstNumber: "",
   qstNumber: "",
+  restockingPercent: 30,
+  returnWindowDays: 30,
+  lowStockThreshold: 2,
 };
 
 export async function getSettings(): Promise<Settings> {

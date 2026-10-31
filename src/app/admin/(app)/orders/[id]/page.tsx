@@ -5,12 +5,20 @@ import { formatOrderNumber } from "@/lib/checkout/order-number";
 import { nextStatuses } from "@/lib/checkout/order-status";
 import { formatDate } from "@/lib/checkout/windows";
 import { formatMoney } from "@/lib/money";
+import { dateToStoreParts } from "@/lib/store-time";
 import { cn } from "@/lib/utils";
 import { getAdminOrder } from "@/server/admin/orders";
 import { formatAddress, orderUrl } from "@/server/orders/view";
+import { stripeEnabled } from "@/server/settings";
 
 import { STATUS_STYLE } from "../status-style";
-import { CancelOrderForm, RecordPaymentForm, StatusButton } from "../order-actions";
+import {
+  BalanceLinkButton,
+  CancelOrderForm,
+  RecordPaymentForm,
+  ScheduleForm,
+  StatusButton,
+} from "../order-actions";
 
 export const metadata = { title: "Order" };
 // Internal pages always wait for fresh data; instant navigation isn't a goal.
@@ -21,6 +29,7 @@ const SLOT_LABEL = {
   afternoon: "afternoon (1–5)",
   evening: "evening (5–8)",
 };
+const SLOT_START = { morning: "10:00", afternoon: "13:00", evening: "17:00" };
 const dateTime = (d: Date) =>
   new Intl.DateTimeFormat("en-CA", {
     dateStyle: "medium",
@@ -41,6 +50,9 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   >[];
   const open = order.status !== "COMPLETED" && order.status !== "CANCELLED";
   const cardPaid = order.payments.some((p) => p.method === "CARD" && p.status === "SUCCEEDED");
+  const offlinePaidCents = order.payments
+    .filter((p) => p.method !== "CARD" && p.status === "SUCCEEDED")
+    .reduce((sum, p) => sum + p.amountCents, 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -132,6 +144,21 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
             Requested {formatDate(order.requestedWindow.date, "en")},{" "}
             {SLOT_LABEL[order.requestedWindow.slot]}
           </p>
+          {order.scheduledFor && (
+            <p className="font-medium text-accent">Booked for {dateTime(order.scheduledFor)}</p>
+          )}
+          {open && (
+            <ScheduleForm
+              orderId={order.id}
+              booked={!!order.scheduledFor}
+              {...(order.scheduledFor
+                ? dateToStoreParts(order.scheduledFor)
+                : {
+                    date: order.requestedWindow.date,
+                    time: SLOT_START[order.requestedWindow.slot],
+                  })}
+            />
+          )}
           {order.notes && (
             <p className="rounded border bg-background p-2 whitespace-pre-line">{order.notes}</p>
           )}
@@ -175,6 +202,9 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
               <Row label="Deposit required" value={money(order.depositCents)} />
             )}
             <Row label="Paid" value={money(order.paidCents)} />
+            {order.refundedCents > 0 && (
+              <Row label="Refunded (returns)" value={`−${money(order.refundedCents)}`} />
+            )}
             {owing > 0 && order.status !== "CANCELLED" && (
               <Row label="Owing" value={money(owing)} strong />
             )}
@@ -196,6 +226,23 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           </ul>
         ) : (
           <p className="text-sm text-muted">No payments yet.</p>
+        )}
+        {order.refunds.length > 0 && (
+          <>
+            <h3 className="text-sm font-semibold">Refunds</h3>
+            <ul className="flex flex-col gap-1 text-sm">
+              {order.refunds.map((r) => (
+                <li key={r.id}>
+                  {r.method.toLowerCase()} · −{money(r.amountCents)} · {r.reason}
+                  {r.restockingFeeCents ? ` · fee ${money(r.restockingFeeCents)}` : ""} ·{" "}
+                  {dateTime(r.createdAt)}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        {open && owing > 0 && stripeEnabled() && (
+          <BalanceLinkButton orderId={order.id} amount={money(owing)} />
         )}
         {open && owing > 0 && order.paymentMethod !== "CARD" && (
           <RecordPaymentForm
@@ -253,7 +300,11 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
       {open && (
         <section className="rounded-lg border border-red-400/30 bg-surface/60 p-5">
           <h2 className="mb-3 font-semibold">Cancel order</h2>
-          <CancelOrderForm orderId={order.id} willRefund={cardPaid} />
+          <CancelOrderForm
+            orderId={order.id}
+            willRefund={cardPaid}
+            offlinePaid={offlinePaidCents > 0 ? money(offlinePaidCents) : null}
+          />
         </section>
       )}
     </div>

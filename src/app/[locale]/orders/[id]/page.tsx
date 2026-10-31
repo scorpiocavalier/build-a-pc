@@ -53,7 +53,7 @@ async function OrderContent({ params, searchParams }: Props) {
   // Assembled builds: the part of the deposit still to pay before assembly.
   const depositOwing = Math.max(0, order.depositCents - order.paidCents);
   const justPlaced = order.status === "PLACED";
-  const canReturn = returnBlocker(order, new Date()) === null;
+  const canReturn = returnBlocker(order, new Date(), settings.returnWindowDays) === null;
   const returnsT = await getTranslations("Returns");
   const longDate = new Intl.DateTimeFormat(`${locale}-CA`, {
     dateStyle: "long",
@@ -155,6 +155,17 @@ async function OrderContent({ params, searchParams }: Props) {
             })}
           </p>
         )}
+        {order.scheduledFor && order.status !== "CANCELLED" && (
+          <p className="font-medium text-accent">
+            {t("scheduled", {
+              when: new Intl.DateTimeFormat(`${locale}-CA`, {
+                dateStyle: "full",
+                timeStyle: "short",
+                timeZone: "America/Toronto",
+              }).format(order.scheduledFor),
+            })}
+          </p>
+        )}
         <p className="text-sm text-muted">
           {t("requested", {
             date: formatDate(order.requestedWindow.date, locale),
@@ -232,6 +243,14 @@ async function OrderContent({ params, searchParams }: Props) {
               </ul>
               {request.adminNote && <p>{returnsT("storeNote", { note: request.adminNote })}</p>}
               {request.status === "APPROVED" && <p>{returnsT("approvedNext")}</p>}
+              {request.status === "COMPLETED" && request.refundCents !== null && (
+                <p>
+                  {returnsT("refundedNote", { amount: money(request.refundCents) })}
+                  {request.restockingFeeCents
+                    ? ` ${returnsT("feeNote", { amount: money(request.restockingFeeCents) })}`
+                    : ""}
+                </p>
+              )}
             </div>
           ))}
           {canReturn && (
@@ -243,7 +262,9 @@ async function OrderContent({ params, searchParams }: Props) {
               </Button>
               <span className="text-sm text-muted">
                 {returnsT("deadline", {
-                  date: longDate.format(returnWindowEnds(order.completedAt!)),
+                  date: longDate.format(
+                    returnWindowEnds(order.completedAt!, settings.returnWindowDays),
+                  ),
                 })}
               </span>
             </div>

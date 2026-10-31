@@ -485,6 +485,14 @@ financing, stock transfer workflow.
 ### Progress
 
 - **Phase 0: done.**
+- **Phase 5: done.** Differences from §8:
+  - Stock transfers are recorded in one step (when the units leave), not as a
+    send/receive pair. Write-offs and count corrections need a reason.
+  - Return refunds include the items' share of tax; delivery and assembly fees
+    are kept. The restocking fee is pre-filled from the reason and editable.
+  - Stock value is at selling price (the catalog has no cost prices yet).
+  - Card payment links for balances are built but untested against live Stripe;
+    they need `STRIPE_SECRET_KEY` and the webhook.
 - **Phase 4: done.** Differences from the plan:
   - Customers sign in with an emailed link or Google; no passwords. Earlier guest
     orders with the same (now verified) email join the account.

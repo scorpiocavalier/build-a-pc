@@ -15,7 +15,7 @@ import fr from "../../../messages/fr.json";
 import { renderEmail, type Block } from "./render";
 import { sendEmail } from "./send";
 
-export type ReturnEmailKind = "requested" | "approved" | "declined";
+export type ReturnEmailKind = "requested" | "approved" | "declined" | "refunded";
 
 const siteUrl = () =>
   (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
@@ -46,12 +46,23 @@ export async function sendReturnEmail(request: ReturnView, kind: ReturnEmailKind
     ? [{ kind: "p", text: t("Returns.storeNote", { note: request.adminNote }) }]
     : [];
 
-  const subject = t(`Email.return.${kind}Subject`, { rma, number });
+  const refund = formatMoney(request.refundCents ?? 0, locale);
+  const subject = t(`Email.return.${kind}Subject`, { rma, number, amount: refund });
   const blocks: Block[] = [
     { kind: "p", text: t("Email.greeting", { name: request.order.name }) },
-    { kind: "p", text: t(`Email.return.${kind}Body`, { rma, number }) },
+    { kind: "p", text: t(`Email.return.${kind}Body`, { rma, number, amount: refund }) },
     items,
-    ...(kind === "declined" ? [] : fee),
+    ...(kind === "refunded" && request.feeCents > 0
+      ? [
+          {
+            kind: "p",
+            text: t("Email.return.feeCharged", {
+              amount: formatMoney(request.feeCents, locale),
+            }),
+          } as Block,
+        ]
+      : []),
+    ...(kind === "declined" || kind === "refunded" ? [] : fee),
     ...note,
     { kind: "link", text: t("Email.viewOrder"), href: orderUrl(request.order) },
     { kind: "p", text: t("Email.signoff") },

@@ -128,12 +128,18 @@ export async function latestEmailTo(to: string, timeoutMs = 10_000) {
   throw new Error(`No email to ${to}`);
 }
 
-// A guest order for one new product, picked up in Toronto and paid by
-// e-Transfer. Returns the order row.
-export async function placePickupOrder(page: Page, sql: pg.Client, email: string) {
+// A guest order for 2 × a new $100 product, picked up and paid by
+// e-Transfer. Returns the order row. Montreal by default, where no test
+// switches tax collection on, so totals are predictable.
+export async function placePickupOrder(
+  page: Page,
+  sql: pg.Client,
+  email: string,
+  location: "TOR" | "MTL" = "MTL",
+) {
   const product = await createProduct(sql, { priceCents: 10000 });
   await addToCart(page, product.slug, "en", 2);
-  await page.goto("/en/checkout?f=pickup&l=TOR");
+  await page.goto(`/en/checkout?f=pickup&l=${location}`);
   await fillContactAndWindow(page, email);
   await page.getByRole("radio", { name: /e-Transfer/ }).check();
   await page.getByRole("button", { name: "Place order" }).click();

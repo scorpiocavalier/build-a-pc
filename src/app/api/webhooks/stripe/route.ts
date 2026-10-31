@@ -76,10 +76,22 @@ async function handle(event: Stripe.Event) {
           },
           update: { status: "SUCCEEDED", stripePaymentIntentId: paymentIntent },
         });
-        await refundPaymentIntent(paymentIntent, session.amount_total ?? 0, orderId);
-        await db.payment.update({
+        const refund = await refundPaymentIntent(paymentIntent, session.amount_total ?? 0, orderId);
+        const payment = await db.payment.update({
           where: { stripeSessionId: session.id },
           data: { status: "REFUNDED" },
+        });
+        await db.refund.upsert({
+          where: { stripeRefundId: refund.id },
+          create: {
+            orderId,
+            paymentId: payment.id,
+            method: "CARD",
+            amountCents: payment.amountCents,
+            reason: "Paid after cancellation",
+            stripeRefundId: refund.id,
+          },
+          update: {},
         });
         await db.orderEvent.create({
           data: {
@@ -93,8 +105,17 @@ async function handle(event: Stripe.Event) {
     }
     case "checkout.session.expired":
     case "checkout.session.async_payment_failed": {
-      const orderId = event.data.object.metadata?.orderId;
+      const session = event.data.object;
+      const orderId = session.metadata?.orderId;
       if (!orderId) return;
+      // An unused balance link just lapses; the order itself stays.
+      if (session.metadata?.kind === "balance") {
+        await db.payment.updateMany({
+          where: { stripeSessionId: session.id, status: "PENDING" },
+          data: { status: "CANCELLED" },
+        });
+        return;
+      }
       const order = await db.order.findUnique({ where: { id: orderId } });
       if (order?.status === "PLACED" && order.paymentStatus === "UNPAID") {
         await cancelOrder(orderId, { reason: "Card payment not completed" });

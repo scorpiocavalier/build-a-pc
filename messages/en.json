@@ -233,6 +233,7 @@
       "UNPAID": "Not paid yet",
       "PARTIALLY_PAID": "Partly paid",
       "PAID": "Paid",
+      "PARTIALLY_REFUNDED": "Partly refunded",
       "REFUNDED": "Refunded"
     },
     "method": {
@@ -264,7 +265,8 @@
       "APPROVED": "Approved",
       "DECLINED": "Declined",
       "COMPLETED": "Completed"
-    }
+    },
+    "scheduled": "Booked for {when}."
   },
   "Email": {
     "subjectReceived": "Order {number} received",
@@ -294,8 +296,18 @@
       "approvedSubject": "Return {rma} approved",
       "approvedBody": "Your return request for order {number} is approved. Bring the items below, in their original packaging if possible, to the store you ordered from. We'll confirm the refund after inspecting them.",
       "declinedSubject": "Update on return {rma}",
-      "declinedBody": "We're unable to accept your return request for order {number}."
-    }
+      "declinedBody": "We're unable to accept your return request for order {number}.",
+      "refundedSubject": "Return {rma}: refund of {amount}",
+      "refundedBody": "We received the items from return {rma} (order {number}) and refunded {amount}. Card refunds take 5–10 business days to appear.",
+      "feeCharged": "A restocking fee of {amount} was deducted."
+    },
+    "subjectScheduled": "Order {number}: time confirmed",
+    "scheduledPickup": "Your pickup at our {location} location is booked for {when}.",
+    "scheduledDelivery": "Your delivery to {address} is booked for {when}.",
+    "subjectBalance": "Pay the balance for order {number}",
+    "balanceBody": "You can pay the remaining {amount} by card with the secure link below. It works for 24 hours.",
+    "balanceButton": "Pay {amount} by card",
+    "balanceOther": "You can also pay by e-Transfer or in person, as before."
   },
   "Builder": {
     "title": "PC builder",
@@ -506,7 +518,7 @@
     "sending": "Sending…",
     "errors": {
       "notEligible": "Returns open once your order has been picked up or delivered.",
-      "expired": "The 30-day return period for this order has ended. Defects are covered by the manufacturer's warranty.",
+      "expired": "The return period for this order has ended. Defects are covered by the manufacturer's warranty.",
       "noItems": "Choose at least one item to return.",
       "quantity": "Check the quantities: some items were already requested.",
       "assembledDefective": "Parts of an assembled PC can only be returned when they're defective.",
@@ -517,6 +529,8 @@
     "storeNote": "Our message: {note}",
     "approvedNext": "Approved. Bring the items in their original packaging; we'll confirm the refund after inspecting them.",
     "start": "Request a return",
-    "feeEstimate": "A restocking fee of up to {amount} may apply. We'll confirm the final amount after inspecting the items."
+    "feeEstimate": "A restocking fee of up to {amount} may apply. We'll confirm the final amount after inspecting the items.",
+    "refundedNote": "Refunded {amount}.",
+    "feeNote": "Restocking fee: {amount}."
   }
 }

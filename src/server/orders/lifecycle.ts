@@ -15,7 +15,11 @@ import type { CartBuildView, CartLineView } from "@/server/cart";
 import { CATALOG_TAG } from "@/server/catalog/queries";
 import { db } from "@/server/db";
 import { sendOrderEmail } from "@/server/email/order-emails";
-import { createCheckoutSession, refundPaymentIntent } from "@/server/payments/stripe";
+import {
+  createBalanceSession,
+  createCheckoutSession,
+  refundPaymentIntent,
+} from "@/server/payments/stripe";
 import { getSettings, stripeEnabled } from "@/server/settings";
 
 import { loadOrder, type OrderView } from "./view";
@@ -408,11 +412,74 @@ export async function changeStatus(
   if (to === "READY") await sendOrderEmail((await loadOrder(orderId))!, "ready");
 }
 
+// ─── Scheduling ─────────────────────────────────────────────────────────────
+
+// Staff confirm the pickup or delivery time; the customer is emailed.
+export async function scheduleOrder(
+  orderId: string,
+  scheduledFor: Date,
+  actorId?: string | null,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const order = await db.order.findUniqueOrThrow({ where: { id: orderId } });
+  if (order.status === "CANCELLED" || order.status === "COMPLETED") {
+    return { ok: false, error: "This order is closed." };
+  }
+  await db.$transaction(async (tx) => {
+    await tx.order.update({ where: { id: orderId }, data: { scheduledFor } });
+    await event(tx, orderId, "scheduled", scheduledFor.toISOString(), actorId);
+  });
+  await sendOrderEmail((await loadOrder(orderId))!, "scheduled");
+  return { ok: true };
+}
+
+// ─── Balance payment links ─────────────────────────────────────────────────
+
+// Emails the customer a Stripe card link for what's still owing (e.g. the
+// balance after a deposit). The webhook records the payment when it's paid.
+export async function sendBalanceLink(
+  orderId: string,
+  actorId?: string | null,
+): Promise<{ ok: true; amountCents: number } | { ok: false; error: string }> {
+  if (!stripeEnabled()) return { ok: false, error: "Card payments aren't set up." };
+  const order = await loadOrder(orderId);
+  if (!order) return { ok: false, error: "Order not found." };
+  if (order.status === "CANCELLED" || order.status === "COMPLETED") {
+    return { ok: false, error: "This order is closed." };
+  }
+  const owing = order.totalCents - order.paidCents;
+  if (owing <= 0) return { ok: false, error: "Nothing is owing." };
+
+  const session = await createBalanceSession(order, owing);
+  await db.$transaction(async (tx) => {
+    await tx.payment.upsert({
+      where: { stripeSessionId: session.id },
+      create: {
+        orderId,
+        method: "CARD",
+        amountCents: owing,
+        status: "PENDING",
+        stripeSessionId: session.id,
+        recordedById: actorId ?? null,
+      },
+      update: {},
+    });
+    await event(tx, orderId, "payment-link", (owing / 100).toFixed(2), actorId);
+  });
+  await sendOrderEmail(order, "balance", { amountCents: owing, payUrl: session.url! });
+  return { ok: true, amountCents: owing };
+}
+
 // ─── Cancelling ─────────────────────────────────────────────────────────────
 
 export async function cancelOrder(
   orderId: string,
-  options: { reason: string; actorId?: string | null; notify?: boolean },
+  options: {
+    reason: string;
+    actorId?: string | null;
+    notify?: boolean;
+    // Staff already gave back the cash or e-Transfer payments.
+    offlineRefunded?: boolean;
+  },
 ) {
   const order = await db.order.findUniqueOrThrow({
     where: { id: orderId },
@@ -422,14 +489,44 @@ export async function cancelOrder(
 
   // Refund card payments first, so we never cancel without returning money.
   let refundedCents = 0;
+  const refunds: {
+    paymentId: string;
+    method: PaymentMethod;
+    amountCents: number;
+    stripeRefundId: string | null;
+  }[] = [];
   for (const payment of order.payments) {
     if (
       payment.method === "CARD" &&
       payment.status === "SUCCEEDED" &&
       payment.stripePaymentIntentId
     ) {
-      await refundPaymentIntent(payment.stripePaymentIntentId, payment.amountCents, orderId);
+      const refund = await refundPaymentIntent(
+        payment.stripePaymentIntentId,
+        payment.amountCents,
+        orderId,
+      );
       refundedCents += payment.amountCents;
+      refunds.push({
+        paymentId: payment.id,
+        method: "CARD",
+        amountCents: payment.amountCents,
+        stripeRefundId: refund.id,
+      });
+    }
+  }
+  let offlineCents = 0;
+  if (options.offlineRefunded) {
+    for (const payment of order.payments) {
+      if (payment.method !== "CARD" && payment.status === "SUCCEEDED") {
+        offlineCents += payment.amountCents;
+        refunds.push({
+          paymentId: payment.id,
+          method: payment.method,
+          amountCents: payment.amountCents,
+          stripeRefundId: null,
+        });
+      }
     }
   }
 
@@ -439,37 +536,39 @@ export async function cancelOrder(
       where: { orderId, status: "PENDING" },
       data: { status: "CANCELLED" },
     });
-    if (refundedCents) {
-      await tx.payment.updateMany({
-        where: { orderId, method: "CARD", status: "SUCCEEDED" },
-        data: { status: "REFUNDED" },
+    for (const refund of refunds) {
+      await tx.payment.update({ where: { id: refund.paymentId }, data: { status: "REFUNDED" } });
+      await tx.refund.create({
+        data: { ...refund, orderId, reason: "Order cancelled", actorId: options.actorId ?? null },
       });
     }
-    // Cash and e-Transfer refunds happen outside the system; the admin
-    // records them (Phase 5), so those payments stay as they are here.
+    // Without offlineRefunded, cash and e-Transfer payments stay recorded as
+    // received (e.g. a kept deposit) until staff refund them.
+    const totalRefunded = refundedCents + offlineCents;
     await tx.order.update({
       where: { id: orderId },
       data: {
         status: "CANCELLED",
         cancelReason: options.reason,
         holdUntil: null,
-        ...(refundedCents
+        ...(totalRefunded
           ? {
-              paidCents: { decrement: refundedCents },
-              paymentStatus: order.paidCents === refundedCents ? "REFUNDED" : order.paymentStatus,
+              paidCents: { decrement: totalRefunded },
+              paymentStatus: order.paidCents === totalRefunded ? "REFUNDED" : order.paymentStatus,
             }
           : {}),
       },
     });
     await event(tx, orderId, "cancelled", options.reason, options.actorId);
-    if (refundedCents)
+    for (const refund of refunds) {
       await event(
         tx,
         orderId,
         "refunded",
-        `CARD ${(refundedCents / 100).toFixed(2)}`,
+        `${refund.method} ${(refund.amountCents / 100).toFixed(2)}`,
         options.actorId,
       );
+    }
   });
 
   refreshStock();
