@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { parseCheckoutForm, type CheckoutErrorKey } from "@/lib/checkout/checkout-input";
-import { clearCart, getCartLines } from "@/server/cart";
+import { clearCart, getCheckoutCart } from "@/server/cart";
 import { placeOrder } from "@/server/orders/lifecycle";
 
 export type CheckoutState = {
@@ -27,7 +27,7 @@ export async function placeOrderAction(
   const parsed = parseCheckoutForm(raw, new Date());
   if (!parsed.ok) return { errors: parsed.errors, values: raw };
 
-  const result = await placeOrder(parsed.input, await getCartLines(), locale);
+  const result = await placeOrder(parsed.input, await getCheckoutCart(), locale);
   if (!result.ok) {
     return {
       formError: result.error === "noDelivery" ? "fulfilment" : result.error,

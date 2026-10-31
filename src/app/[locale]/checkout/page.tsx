@@ -12,9 +12,10 @@ import { formatRate } from "@/lib/checkout/pricing";
 import { availableDates, formatDate } from "@/lib/checkout/windows";
 import { localize } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
-import { getCartLines, type CartLineView } from "@/server/cart";
+import { getCheckoutCart, type CartLineView } from "@/server/cart";
 import {
   quoteCheckout,
+  type CheckoutCart,
   type CheckoutQuote,
   type FulfilmentChoice,
 } from "@/server/orders/lifecycle";
@@ -46,13 +47,13 @@ export default async function CheckoutPage({ searchParams }: Props) {
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
 
 async function CheckoutContent({ searchParams }: Pick<Props, "searchParams">) {
-  const [params, lines, locale, t] = await Promise.all([
+  const [params, cart, locale, t] = await Promise.all([
     searchParams,
-    getCartLines(),
+    getCheckoutCart(),
     getLocale(),
     getTranslations("Checkout"),
   ]);
-  if (lines.length === 0) redirect(`/${locale}/cart`);
+  if (cart.lines.length === 0 && cart.builds.length === 0) redirect(`/${locale}/cart`);
 
   // Step 1 is a plain GET form, so it works without JavaScript and the
   // chosen option stays in the URL.
@@ -67,10 +68,12 @@ async function CheckoutContent({ searchParams }: Pick<Props, "searchParams">) {
     else postalError = t("invalidPostal");
   }
 
-  const quoted = choice ? await quoteCheckout(lines, choice) : null;
-  if (quoted && "error" in quoted && choice?.kind === "DELIVERY") {
+  const quoted = choice ? await quoteCheckout(cart, choice) : null;
+  if (quoted && "error" in quoted && quoted.error === "noDelivery" && choice?.kind === "DELIVERY") {
     postalError = t("noDelivery", { postalCode: choice.postalCode });
   }
+  // The Windows licence for assembled builds is no longer for sale.
+  const windowsMissing = quoted && "error" in quoted && quoted.error === "windows";
   const ready = quoted && !("error" in quoted) ? quoted : null;
 
   return (
@@ -82,11 +85,16 @@ async function CheckoutContent({ searchParams }: Pick<Props, "searchParams">) {
           postalError={postalError}
           locationLabel={ready ? localize(ready.location.name, locale) : null}
         />
+        {windowsMissing && (
+          <p role="alert" className="rounded-lg border border-amber-400/40 bg-amber-400/10 p-4">
+            {t("errors.stock")}
+          </p>
+        )}
         {ready && choice && (
-          <DetailsStep choice={choice} quoted={ready} lines={lines} locale={locale} />
+          <DetailsStep choice={choice} quoted={ready} cart={cart} locale={locale} />
         )}
       </div>
-      <OrderSummary lines={lines} quoted={ready} locale={locale} />
+      <OrderSummary cart={cart} quoted={ready} locale={locale} />
     </div>
   );
 }
@@ -159,15 +167,23 @@ async function FulfilmentStep({
   );
 }
 
+// Every product line in the cart, including the parts of assembled builds.
+function allLines(cart: CheckoutCart): CartLineView[] {
+  return [
+    ...cart.lines,
+    ...cart.builds.flatMap((b) => [...b.parts, ...(b.windows ? [b.windows] : [])]),
+  ];
+}
+
 async function DetailsStep({
   choice,
   quoted,
-  lines,
+  cart,
   locale,
 }: {
   choice: FulfilmentChoice;
   quoted: CheckoutQuote;
-  lines: CartLineView[];
+  cart: CheckoutCart;
   locale: string;
 }) {
   const [t, settings] = await Promise.all([getTranslations("Checkout"), getSettings()]);
@@ -181,7 +197,7 @@ async function DetailsStep({
       >
         <p className="font-medium">{t("notEnoughStock", { location })}</p>
         <ul className="list-inside list-disc text-sm">
-          {lines
+          {[...new Map(allLines(cart).map((l) => [l.productId, l])).values()]
             .filter((l) => quoted.shortages.includes(l.productId))
             .map((l) => (
               <li key={l.productId}>{localize(l.name, locale)}</li>
@@ -215,22 +231,44 @@ async function DetailsStep({
       methods={quoted.methods}
       etransferHours={settings.etransferHoldHours}
       cashLimitNote={cashLimitNote}
+      depositNote={
+        quoted.depositCents > 0
+          ? {
+              general: t("deposit", {
+                amount: formatMoney(quoted.depositCents, locale),
+                percent: settings.depositPercent,
+              }),
+              CASH: t("depositCash", { amount: formatMoney(quoted.depositCents, locale) }),
+              ETRANSFER: t("depositEtransfer", {
+                amount: formatMoney(quoted.depositCents, locale),
+              }),
+            }
+          : null
+      }
     />
   );
 }
 
 async function OrderSummary({
-  lines,
+  cart,
   quoted,
   locale,
 }: {
-  lines: CartLineView[];
+  cart: CheckoutCart;
   quoted: CheckoutQuote | null;
   locale: string;
 }) {
-  const t = await getTranslations("Checkout");
+  const [t, cartT] = await Promise.all([getTranslations("Checkout"), getTranslations("Cart")]);
   const money = (cents: number) => formatMoney(cents, locale);
-  const subtotal = lines.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0);
+  const subtotal = allLines(cart).reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0);
+  const lineItem = (line: CartLineView, key: string) => (
+    <li key={key} className="flex justify-between gap-3">
+      <span>
+        {line.quantity} × {localize(line.name, locale)}
+      </span>
+      <span className="tabular-nums">{money(line.unitPriceCents * line.quantity)}</span>
+    </li>
+  );
 
   return (
     <aside
@@ -238,18 +276,25 @@ async function OrderSummary({
       className="flex h-fit flex-col gap-3 rounded-lg border bg-surface p-5 md:sticky md:top-20"
     >
       <h2 className="font-semibold">{t("summary")}</h2>
-      <ul className="flex flex-col gap-2 text-sm">
-        {lines.map((line) => (
-          <li key={line.productId} className="flex justify-between gap-3">
-            <span>
-              {line.quantity} × {localize(line.name, locale)}
-            </span>
-            <span className="tabular-nums">{money(line.unitPriceCents * line.quantity)}</span>
-          </li>
-        ))}
-      </ul>
+      {cart.builds.map((build) => (
+        <div key={build.id} className="flex flex-col gap-2 rounded-md border p-3">
+          <p className="text-sm font-medium">{cartT("assembledBuild")}</p>
+          <ul className="flex flex-col gap-1.5 text-xs text-muted">
+            {build.parts.map((part) => lineItem(part, `${build.id}-${part.productId}`))}
+            {build.windows && lineItem(build.windows, `${build.id}-windows`)}
+          </ul>
+        </div>
+      ))}
+      {cart.lines.length > 0 && (
+        <ul className="flex flex-col gap-2 text-sm">
+          {cart.lines.map((line) => lineItem(line, line.productId))}
+        </ul>
+      )}
       <dl className="flex flex-col gap-1 border-t pt-3 text-sm">
         <Row label={t("subtotal")} value={money(subtotal)} />
+        {quoted && quoted.quote.assemblyCents > 0 && (
+          <Row label={t("assembly")} value={money(quoted.quote.assemblyCents)} />
+        )}
         {quoted && quoted.quote.deliveryCents > 0 && (
           <Row label={t("deliveryFee")} value={money(quoted.quote.deliveryCents)} />
         )}

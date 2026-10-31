@@ -44,6 +44,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
           <option value="open">Open orders</option>
           <option value="PLACED">Placed (awaiting payment)</option>
           <option value="CONFIRMED">Confirmed (to prepare)</option>
+          <option value="ASSEMBLING">Being assembled</option>
           <option value="READY">Ready</option>
           <option value="OUT_FOR_DELIVERY">Out for delivery</option>
           <option value="COMPLETED">Completed</option>

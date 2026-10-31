@@ -19,7 +19,7 @@ const validCpu = {
 };
 
 describe("spec definitions", () => {
-  it("covers the eight launch categories with unique slugs", () => {
+  it("covers the launch categories with unique slugs", () => {
     expect(CATEGORIES.map((c) => c.slug)).toEqual([
       "cpu",
       "motherboard",
@@ -29,6 +29,7 @@ describe("spec definitions", () => {
       "case",
       "psu",
       "cooler",
+      "software",
     ]);
   });
 

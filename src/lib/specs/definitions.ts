@@ -478,6 +478,27 @@ export const CATEGORIES: CategoryDefinition[] = [
       },
     ],
   },
+  {
+    // Windows licences: sold on their own and included with every assembled build.
+    slug: "software",
+    name: { en: "Software", fr: "Logiciels" },
+    fields: [
+      {
+        key: "edition",
+        type: "enum",
+        options: [
+          { value: "windows-11-home", label: { en: "Windows 11 Home", fr: "Windows 11 Famille" } },
+          {
+            value: "windows-11-pro",
+            label: { en: "Windows 11 Pro", fr: "Windows 11 Professionnel" },
+          },
+        ],
+        label: { en: "Edition", fr: "Édition" },
+        required: true,
+        filter: true,
+      },
+    ],
+  },
 ];
 
 export function getCategoryDefinition(slug: string): CategoryDefinition | undefined {

@@ -68,6 +68,19 @@ npm run dev                   # http://localhost:3000
   fees, tax rates with a per-province "collect" switch, e-Transfer email,
   cash limit and hold times.
 
+## PC builder
+
+- `/build`: one part per slot (two for memory kits and drives), stock shown
+  for the chosen location, and compatibility checked as you go. Rules live in
+  `src/lib/builder/compat.ts` with unit tests; every rule needs an English and
+  French message under `Builder.issues`.
+- "Have us build it" puts an assembled PC in the cart (blocked while there are
+  errors or missing parts). Checkout adds the assembly fee and Windows licence
+  and asks for a deposit; admins move the order through ASSEMBLING and can
+  print a build sheet.
+- `/prebuilt` lists featured builds; manage them in `/admin/builds` by pasting
+  a build's share link.
+
 ## Catalog design
 
 - Each category's spec fields are defined once in `src/lib/specs/definitions.ts`

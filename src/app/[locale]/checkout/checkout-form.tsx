@@ -20,6 +20,8 @@ export type CheckoutFormProps = {
   methods: PaymentMethod[];
   etransferHours: number;
   cashLimitNote: string | null;
+  // Assembled builds: deposit wording, overall and per payment method.
+  depositNote: { general: string; CASH: string; ETRANSFER: string } | null;
 };
 
 export function CheckoutForm(props: CheckoutFormProps) {
@@ -122,6 +124,11 @@ export function CheckoutForm(props: CheckoutFormProps) {
 
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-3 text-lg font-semibold">{t("payment")}</legend>
+        {props.depositNote && (
+          <p className="rounded-lg border border-accent/40 bg-accent/10 p-3 text-sm">
+            {props.depositNote.general}
+          </p>
+        )}
         {props.methods.map((method) => (
           <label
             key={method}
@@ -139,7 +146,9 @@ export function CheckoutForm(props: CheckoutFormProps) {
             <span>
               <span className="block font-medium">{t(`methods.${method}.title`)}</span>
               <span className="text-sm text-muted">
-                {t(`methods.${method}.description`, { hours: props.etransferHours })}
+                {props.depositNote && method !== "CARD"
+                  ? props.depositNote[method]
+                  : t(`methods.${method}.description`, { hours: props.etransferHours })}
               </span>
             </span>
           </label>

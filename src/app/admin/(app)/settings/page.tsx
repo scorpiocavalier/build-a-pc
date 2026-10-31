@@ -62,12 +62,35 @@ export default async function SettingsPage() {
             <Field
               label="Deposit for assembled PCs (%)"
               htmlFor="depositPercent"
-              hint="Used from Phase 3."
+              hint="Needed before assembly starts."
             >
               <Input
                 id="depositPercent"
                 name="depositPercent"
                 defaultValue={settings.depositPercent}
+                inputMode="numeric"
+              />
+            </Field>
+            <Field label="Assembly fee per PC ($)" htmlFor="assemblyFee">
+              <Input
+                id="assemblyFee"
+                name="assemblyFee"
+                defaultValue={dollars(settings.assemblyFeeCents)}
+                inputMode="decimal"
+              />
+            </Field>
+            <Field
+              label="Windows licence included (SKU)"
+              htmlFor="windowsSku"
+              hint="Added to every assembled PC and taken from stock."
+            >
+              <Input id="windowsSku" name="windowsSku" defaultValue={settings.windowsSku} />
+            </Field>
+            <Field label="Assembly time shown to customers (business days)" htmlFor="assemblyDays">
+              <Input
+                id="assemblyDays"
+                name="assemblyDays"
+                defaultValue={settings.assemblyDays}
                 inputMode="numeric"
               />
             </Field>

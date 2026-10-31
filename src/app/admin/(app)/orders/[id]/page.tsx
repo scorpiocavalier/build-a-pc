@@ -64,9 +64,19 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
             Placed {dateTime(order.placedAt)} · {order.locale.toUpperCase()}
           </p>
         </div>
-        <a href={orderUrl(order)} target="_blank" className="text-sm text-accent hover:underline">
-          Customer&apos;s order page ↗
-        </a>
+        <div className="flex flex-col items-end gap-1 text-sm">
+          {order.assemblyCents > 0 && (
+            <Link
+              href={`/admin/orders/${order.id}/build-sheet`}
+              className="text-accent hover:underline"
+            >
+              Build sheet
+            </Link>
+          )}
+          <a href={orderUrl(order)} target="_blank" className="text-accent hover:underline">
+            Customer&apos;s order page ↗
+          </a>
+        </div>
       </div>
 
       {order.status === "CANCELLED" && (
@@ -76,7 +86,10 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
       )}
 
       {open &&
-        (next.length > 0 || order.status === "READY" || order.status === "OUT_FOR_DELIVERY") && (
+        (next.length > 0 ||
+          order.status === "PLACED" ||
+          order.status === "READY" ||
+          order.status === "OUT_FOR_DELIVERY") && (
           <section className="flex flex-col gap-3 rounded-lg border bg-surface/60 p-5">
             <h2 className="font-semibold">Next step</h2>
             <div className="flex flex-wrap gap-3">
@@ -84,6 +97,11 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                 <StatusButton key={to} orderId={order.id} to={to} />
               ))}
             </div>
+            {order.status === "PLACED" && order.paidCents < order.depositCents && (
+              <p className="text-sm text-amber-300">
+                Waiting for the {money(order.depositCents)} deposit before assembly can start.
+              </p>
+            )}
             {(order.status === "READY" || order.status === "OUT_FOR_DELIVERY") &&
               order.paymentStatus !== "PAID" && (
                 <p className="text-sm text-amber-300">
@@ -122,18 +140,26 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
         <section className="flex flex-col gap-2 rounded-lg border bg-surface/60 p-5 text-sm">
           <h2 className="mb-1 font-semibold">Items</h2>
           <ul className="flex flex-col gap-1">
-            {order.lines.map((line) => (
-              <li key={line.id} className="flex justify-between gap-3">
-                <span>
-                  {line.quantity} × {line.name.en}{" "}
-                  <span className="font-mono text-xs text-muted">{line.sku}</span>
+            {order.lines.map((line, i) => (
+              <li key={line.id} className="flex flex-col">
+                {line.buildGroup && order.lines[i - 1]?.buildGroup !== line.buildGroup && (
+                  <span className="mt-1 text-xs font-semibold tracking-wide text-accent uppercase">
+                    Assembled PC
+                  </span>
+                )}
+                <span className={cn("flex justify-between gap-3", line.buildGroup && "pl-3")}>
+                  <span>
+                    {line.quantity} × {line.name.en}{" "}
+                    <span className="font-mono text-xs text-muted">{line.sku}</span>
+                  </span>
+                  <span className="tabular-nums">{money(line.unitPriceCents * line.quantity)}</span>
                 </span>
-                <span className="tabular-nums">{money(line.unitPriceCents * line.quantity)}</span>
               </li>
             ))}
           </ul>
           <dl className="mt-2 flex flex-col gap-1 border-t pt-2">
             <Row label="Subtotal" value={money(order.subtotalCents)} />
+            {order.assemblyCents > 0 && <Row label="Assembly" value={money(order.assemblyCents)} />}
             {order.fulfilment === "DELIVERY" && (
               <Row label="Delivery" value={money(order.deliveryCents)} />
             )}
@@ -145,6 +171,9 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
               />
             ))}
             <Row label="Total" value={money(order.totalCents)} strong />
+            {order.depositCents > 0 && (
+              <Row label="Deposit required" value={money(order.depositCents)} />
+            )}
             <Row label="Paid" value={money(order.paidCents)} />
             {owing > 0 && order.status !== "CANCELLED" && (
               <Row label="Owing" value={money(owing)} strong />

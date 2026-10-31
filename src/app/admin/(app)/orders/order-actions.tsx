@@ -15,6 +15,7 @@ import {
 
 const LABELS: Partial<Record<OrderStatus, string>> = {
   CONFIRMED: "Confirm order",
+  ASSEMBLING: "Start assembly",
   READY: "Mark ready",
   OUT_FOR_DELIVERY: "Out for delivery",
   COMPLETED: "Mark completed (handed over)",

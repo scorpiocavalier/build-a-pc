@@ -34,3 +34,34 @@ describe("order status transitions", () => {
     expect(canTransition({ ...pickup, status: "PLACED" }, "READY").ok).toBe(false);
   });
 });
+
+describe("assembled orders", () => {
+  const assembled = {
+    fulfilment: "PICKUP",
+    paymentStatus: "PARTIALLY_PAID",
+    assemblyCents: 14999,
+    depositCents: 60000,
+  } as const;
+
+  it("can't be confirmed until the deposit is in", () => {
+    expect(canTransition({ ...assembled, status: "PLACED", paidCents: 0 }, "CONFIRMED")).toEqual({
+      ok: false,
+      reason: "Record the deposit before confirming this order",
+    });
+    expect(
+      canTransition({ ...assembled, status: "PLACED", paidCents: 60000 }, "CONFIRMED").ok,
+    ).toBe(true);
+  });
+
+  it("go through assembly before being ready; parts-only orders skip it", () => {
+    expect(nextStatuses({ ...assembled, status: "CONFIRMED", paidCents: 60000 })).toEqual([
+      "ASSEMBLING",
+      "CANCELLED",
+    ]);
+    expect(nextStatuses({ ...assembled, status: "ASSEMBLING", paidCents: 60000 })).toEqual([
+      "READY",
+      "CANCELLED",
+    ]);
+    expect(nextStatuses({ ...pickup, status: "CONFIRMED" })).toEqual(["READY", "CANCELLED"]);
+  });
+});

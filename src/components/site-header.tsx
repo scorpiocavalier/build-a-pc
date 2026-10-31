@@ -26,11 +26,11 @@ export function SiteHeader() {
             <Store aria-hidden="true" className="size-5 min-[400px]:hidden" />
             <span className="max-[399px]:sr-only">{t("nav.shop")}</span>
           </Link>
-          <Link href="/#builds" className={`${navLink} hidden lg:block`}>
-            {t("nav.builds")}
+          <Link href="/build" className={`${navLink} hidden md:block`}>
+            {t("nav.builder")}
           </Link>
-          <Link href="/#locations" className={`${navLink} hidden lg:block`}>
-            {t("nav.locations")}
+          <Link href="/prebuilt" className={`${navLink} hidden lg:block`}>
+            {t("nav.prebuilt")}
           </Link>
         </nav>
         <form

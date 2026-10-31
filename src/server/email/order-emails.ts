@@ -85,6 +85,9 @@ export async function buildOrderEmail(
           ] as [string, string],
       ),
       [t("Checkout.subtotal"), money(order.subtotalCents)],
+      ...(order.assemblyCents > 0
+        ? [[t("Checkout.assembly"), money(order.assemblyCents)] as [string, string]]
+        : []),
       ...(order.fulfilment === "DELIVERY"
         ? [
             [
@@ -138,17 +141,37 @@ export async function buildOrderEmail(
     case "received": {
       subject = t("Email.subjectReceived", { number });
       const payment: Block[] = [];
-      if (order.paymentMethod === "ETRANSFER" && order.paymentStatus !== "PAID") {
+      const owing = order.totalCents - order.paidCents;
+      const depositOwing = Math.max(0, order.depositCents - order.paidCents);
+      // e-Transfer orders, and cash orders that need an e-Transfer deposit first.
+      if (
+        (order.paymentMethod === "ETRANSFER" ||
+          (order.paymentMethod === "CASH" && depositOwing > 0)) &&
+        owing > 0
+      ) {
         payment.push({
           kind: "p",
-          text: settings.etransferEmail
-            ? t("Order.etransferSteps", {
-                amount: money(order.totalCents - order.paidCents),
-                email: settings.etransferEmail,
-                number,
-              })
-            : t("Order.etransferPending"),
+          text: !settings.etransferEmail
+            ? t("Order.etransferPending")
+            : depositOwing > 0
+              ? t("Order.etransferDeposit", {
+                  amount: money(depositOwing),
+                  total: money(owing),
+                  email: settings.etransferEmail,
+                  number,
+                })
+              : t("Order.etransferSteps", {
+                  amount: money(owing),
+                  email: settings.etransferEmail,
+                  number,
+                }),
         });
+        if (depositOwing > 0) {
+          payment.push({
+            kind: "p",
+            text: t("Order.assemblyNote", { days: settings.assemblyDays }),
+          });
+        }
         if (order.holdUntil) {
           payment.push({
             kind: "p",
@@ -162,7 +185,7 @@ export async function buildOrderEmail(
           });
         }
       }
-      if (order.paymentMethod === "CASH") {
+      if (order.paymentMethod === "CASH" && depositOwing === 0) {
         payment.push({ kind: "p", text: t("Order.cashInfo", { amount: money(order.totalCents) }) });
       }
       blocks = [

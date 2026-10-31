@@ -485,6 +485,17 @@ financing, stock transfer workflow.
 ### Progress
 
 - **Phase 0: done.**
+- **Phase 3: done.** Differences from §7:
+  - Builds are saved per browser (secret cookie) for everyone, not only signed-in
+    customers; each has a read-only share link (`/build/s/<id>`).
+  - Prebuilt PCs are featured builds (name, description, order) managed in
+    `/admin/builds`, rather than a separate product type.
+  - An assembled PC in the cart is a snapshot of the build. Checkout adds the
+    flat assembly fee and the Windows licence (a stocked product, SKU set in
+    settings) and requires a deposit (30% by default) before assembly. Cash
+    orders pay the deposit by e-Transfer first.
+  - Rules not built yet: BIOS-update warnings and memory-speed notes need data
+    the catalog doesn't have; fans and accessories aren't builder slots.
 - **Phase 2: done.** Differences from §6:
   - Card payments use Stripe's hosted Checkout page (simpler than the
     embedded Payment Element, same PCI scope). Card is hidden at checkout

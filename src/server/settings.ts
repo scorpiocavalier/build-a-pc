@@ -18,6 +18,11 @@ export const settingsSchema = z.object({
   etransferHoldHours: z.number().int().min(1).max(336),
   cashHoldDays: z.number().int().min(1).max(30),
   depositPercent: z.number().int().min(0).max(100),
+  // Flat fee per assembled PC, and the Windows licence included with it.
+  assemblyFeeCents: z.number().int().min(0),
+  windowsSku: z.string().min(1),
+  // Shown as "Ready in about N business days" for assembled builds.
+  assemblyDays: z.number().int().min(1).max(30),
   gstNumber: z.string(),
   qstNumber: z.string(),
 });
@@ -32,6 +37,9 @@ export const DEFAULT_SETTINGS: Settings = {
   etransferHoldHours: 48,
   cashHoldDays: 7,
   depositPercent: 30,
+  assemblyFeeCents: 14_999,
+  windowsSku: "WIN11-HOME",
+  assemblyDays: 2,
   gstNumber: "",
   qstNumber: "",
 };

@@ -36,6 +36,7 @@ async function OrderContent({ params, searchParams }: Props) {
     getTranslations("Order"),
     getTranslations("Checkout"),
   ]);
+  const cartT = await getTranslations("Cart");
   const token = typeof query.t === "string" ? query.t : "";
   const order = await loadOrderForCustomer(id, token);
   if (!order) {
@@ -46,6 +47,8 @@ async function OrderContent({ params, searchParams }: Props) {
   const number = formatOrderNumber(order.number);
   const location = localize(order.location.name, locale);
   const owing = order.totalCents - order.paidCents;
+  // Assembled builds: the part of the deposit still to pay before assembly.
+  const depositOwing = Math.max(0, order.depositCents - order.paidCents);
   const justPlaced = order.status === "PLACED";
 
   return (
@@ -76,35 +79,49 @@ async function OrderContent({ params, searchParams }: Props) {
         order.paymentMethod === "CARD" &&
         order.paymentStatus === "UNPAID" && <Notice icon>{t("cardProcessing")}</Notice>}
 
-      {order.status !== "CANCELLED" && order.paymentMethod === "ETRANSFER" && owing > 0 && (
-        <section className="flex flex-col gap-2 rounded-lg border border-accent/40 bg-accent/10 p-4">
-          <h2 className="font-semibold">{t("etransferTitle")}</h2>
-          <p>
-            {settings.etransferEmail
-              ? t("etransferSteps", {
-                  amount: money(owing),
-                  email: settings.etransferEmail,
-                  number,
-                })
-              : t("etransferPending")}
-          </p>
-          {order.holdUntil && (
-            <p className="text-sm">
-              {t("payBy", {
-                deadline: new Intl.DateTimeFormat(`${locale}-CA`, {
-                  dateStyle: "long",
-                  timeStyle: "short",
-                  timeZone: "America/Toronto",
-                }).format(order.holdUntil),
-              })}
+      {order.status !== "CANCELLED" &&
+        (order.paymentMethod === "ETRANSFER" || depositOwing > 0) &&
+        order.paymentMethod !== "CARD" &&
+        owing > 0 && (
+          <section className="flex flex-col gap-2 rounded-lg border border-accent/40 bg-accent/10 p-4">
+            <h2 className="font-semibold">{t("etransferTitle")}</h2>
+            <p>
+              {!settings.etransferEmail
+                ? t("etransferPending")
+                : depositOwing > 0
+                  ? t("etransferDeposit", {
+                      amount: money(depositOwing),
+                      total: money(owing),
+                      email: settings.etransferEmail,
+                      number,
+                    })
+                  : t("etransferSteps", {
+                      amount: money(owing),
+                      email: settings.etransferEmail,
+                      number,
+                    })}
             </p>
-          )}
-        </section>
-      )}
+            {depositOwing > 0 && (
+              <p className="text-sm">{t("assemblyNote", { days: settings.assemblyDays })}</p>
+            )}
+            {order.holdUntil && (
+              <p className="text-sm">
+                {t("payBy", {
+                  deadline: new Intl.DateTimeFormat(`${locale}-CA`, {
+                    dateStyle: "long",
+                    timeStyle: "short",
+                    timeZone: "America/Toronto",
+                  }).format(order.holdUntil),
+                })}
+              </p>
+            )}
+          </section>
+        )}
 
-      {order.status !== "CANCELLED" && order.paymentMethod === "CASH" && owing > 0 && (
-        <Notice>{t("cashInfo", { amount: money(owing) })}</Notice>
-      )}
+      {order.status !== "CANCELLED" &&
+        order.paymentMethod === "CASH" &&
+        owing > 0 &&
+        depositOwing === 0 && <Notice>{t("cashInfo", { amount: money(owing) })}</Notice>}
 
       <section className="flex flex-col gap-1 rounded-lg border bg-surface p-4">
         <p className="font-medium">
@@ -132,17 +149,27 @@ async function OrderContent({ params, searchParams }: Props) {
       <section className="flex flex-col gap-3 rounded-lg border bg-surface p-4">
         <h2 className="font-semibold">{t("items")}</h2>
         <ul className="flex flex-col gap-2 text-sm">
-          {order.lines.map((line) => (
-            <li key={line.id} className="flex justify-between gap-3">
-              <span>
-                {line.quantity} × {localize(line.name, locale)}
+          {order.lines.map((line, i) => (
+            <li key={line.id} className="flex flex-col gap-1">
+              {line.buildGroup && order.lines[i - 1]?.buildGroup !== line.buildGroup && (
+                <span className="mt-1 text-xs font-semibold tracking-wide text-accent uppercase">
+                  {cartT("assembledBuild")}
+                </span>
+              )}
+              <span className={cn("flex justify-between gap-3", line.buildGroup && "pl-3")}>
+                <span>
+                  {line.quantity} × {localize(line.name, locale)}
+                </span>
+                <span className="tabular-nums">{money(line.unitPriceCents * line.quantity)}</span>
               </span>
-              <span className="tabular-nums">{money(line.unitPriceCents * line.quantity)}</span>
             </li>
           ))}
         </ul>
         <dl className="flex flex-col gap-1 border-t pt-3 text-sm">
           <Row label={checkout("subtotal")} value={money(order.subtotalCents)} />
+          {order.assemblyCents > 0 && (
+            <Row label={checkout("assembly")} value={money(order.assemblyCents)} />
+          )}
           {order.fulfilment === "DELIVERY" && (
             <Row
               label={checkout("deliveryFee")}
