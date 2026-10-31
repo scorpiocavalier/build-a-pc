@@ -3,9 +3,10 @@
 import { refresh, updateTag } from "next/cache";
 
 import { parseDollars } from "@/lib/money";
+import { audit } from "@/server/audit";
 import { db } from "@/server/db";
 import { requireAdmin } from "@/server/require-admin";
-import { SETTINGS_TAG, settingsSchema } from "@/server/settings";
+import { getSettings, SETTINGS_TAG, settingsSchema } from "@/server/settings";
 
 export type SettingsState = { error?: string; saved?: boolean };
 
@@ -15,7 +16,7 @@ export async function saveStoreSettings(
   _prev: SettingsState,
   formData: FormData,
 ): Promise<SettingsState> {
-  await requireAdmin();
+  const user = await requireAdmin();
   const cashMaxCents = parseDollars(str(formData, "cashMax"));
   const parsed = settingsSchema.safeParse({
     etransferEmail: str(formData, "etransferEmail"),
@@ -29,16 +30,34 @@ export async function saveStoreSettings(
     assemblyDays: Number(str(formData, "assemblyDays")),
     gstNumber: str(formData, "gstNumber"),
     qstNumber: str(formData, "qstNumber"),
+    restockingPercent: Number(str(formData, "restockingPercent")),
+    returnWindowDays: Number(str(formData, "returnWindowDays")),
+    lowStockThreshold: Number(str(formData, "lowStockThreshold")),
   });
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     return { error: `Check “${String(issue.path[0])}”: ${issue.message}` };
   }
+  const before = await getSettings();
+  const changed = Object.fromEntries(
+    Object.entries(parsed.data)
+      .filter(([key, value]) => before[key as keyof typeof before] !== value)
+      .map(([key, value]) => [key, { from: before[key as keyof typeof before], to: value }]),
+  );
   await db.$transaction(
     Object.entries(parsed.data).map(([key, value]) =>
       db.setting.upsert({ where: { key }, create: { key, value }, update: { value } }),
     ),
   );
+  if (Object.keys(changed).length) {
+    await audit({
+      actorId: user.id,
+      action: "settings.store",
+      entity: "settings",
+      summary: `Changed ${Object.keys(changed).join(", ")}`,
+      details: changed,
+    });
+  }
   updateTag(SETTINGS_TAG);
   refresh();
   return { saved: true };
@@ -49,7 +68,7 @@ export async function saveLocation(
   _prev: SettingsState,
   formData: FormData,
 ): Promise<SettingsState> {
-  await requireAdmin();
+  const user = await requireAdmin();
   const fee = parseDollars(str(formData, "deliveryFee") || "0");
   if (fee === null) return { error: "Delivery fee must be an amount like 25.00" };
   const prefixes = str(formData, "prefixes")
@@ -68,6 +87,13 @@ export async function saveLocation(
       deliveryFeeCents: fee,
     },
   });
+  await audit({
+    actorId: user.id,
+    action: "settings.location",
+    entity: "settings",
+    entityId: code,
+    summary: `Updated ${code} location: delivery ${prefixes.join(", ") || "none"}, fee $${(fee / 100).toFixed(2)}`,
+  });
   refresh();
   return { saved: true };
 }
@@ -83,7 +109,7 @@ export async function saveTaxRate(
   _prev: SettingsState,
   formData: FormData,
 ): Promise<SettingsState> {
-  await requireAdmin();
+  const user = await requireAdmin();
   const values = {
     gst: rate(str(formData, "gst")),
     pst: rate(str(formData, "pst")),
@@ -95,6 +121,14 @@ export async function saveTaxRate(
   await db.taxRate.update({
     where: { province },
     data: { ...(values as Record<string, number>), collect: formData.get("collect") === "on" },
+  });
+  await audit({
+    actorId: user.id,
+    action: "settings.tax",
+    entity: "settings",
+    entityId: province,
+    summary: `Updated ${province} tax rates (collect: ${formData.get("collect") === "on" ? "on" : "off"})`,
+    details: values,
   });
   refresh();
   return { saved: true };

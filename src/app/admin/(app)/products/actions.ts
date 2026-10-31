@@ -8,6 +8,7 @@ import sharp from "sharp";
 
 import { Prisma } from "@/generated/prisma/client";
 import { parseProductInput, type RawProductInput } from "@/lib/catalog/product-input";
+import { audit } from "@/server/audit";
 import { saveProduct } from "@/server/catalog/save-product";
 import { CATALOG_TAG } from "@/server/catalog/queries";
 import { db } from "@/server/db";
@@ -53,6 +54,13 @@ export async function saveProductAction(
       saveProduct(tx, parsed.input, { productId: productId ?? undefined, actorId: user.id }),
     );
     id = result.id;
+    await audit({
+      actorId: user.id,
+      action: productId ? "product.update" : "product.create",
+      entity: "product",
+      entityId: id,
+      summary: `${productId ? "Updated" : "Created"} ${parsed.input.sku} (${parsed.input.status.toLowerCase()})`,
+    });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return { errors: { sku: "Another product already uses this SKU" }, values: raw };
@@ -73,7 +81,7 @@ export async function uploadProductImage(
   _prev: ImageUploadState,
   formData: FormData,
 ): Promise<ImageUploadState> {
-  await requireAdmin();
+  const user = await requireAdmin();
   const file = formData.get("image");
   if (!(file instanceof File) || file.size === 0) return { error: "Choose an image to upload." };
   if (file.size > MAX_UPLOAD_BYTES) return { error: "That image is larger than 4 MB." };
@@ -109,15 +117,29 @@ export async function uploadProductImage(
       position: product._count.images,
     },
   });
+  await audit({
+    actorId: user.id,
+    action: "product.image.add",
+    entity: "product",
+    entityId: productId,
+    summary: `Added a photo to ${(product.name as { en: string }).en}`,
+  });
 
   updateTag(CATALOG_TAG);
   return {};
 }
 
 export async function deleteProductImage(imageId: string) {
-  await requireAdmin();
+  const user = await requireAdmin();
   // The stored file is left in place; orphaned files can be cleaned up in bulk later.
-  await db.productImage.delete({ where: { id: imageId } });
+  const image = await db.productImage.delete({ where: { id: imageId } });
+  await audit({
+    actorId: user.id,
+    action: "product.image.delete",
+    entity: "product",
+    entityId: image.productId,
+    summary: "Removed a product photo",
+  });
   updateTag(CATALOG_TAG);
 }
 

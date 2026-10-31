@@ -132,6 +132,38 @@ export default async function SettingsPage() {
             <Field label="QST registration number" htmlFor="qstNumber">
               <Input id="qstNumber" name="qstNumber" defaultValue={settings.qstNumber} />
             </Field>
+            <Field
+              label="Restocking fee (%)"
+              htmlFor="restockingPercent"
+              hint="On returns that aren't defective, wrong or misdescribed."
+            >
+              <Input
+                id="restockingPercent"
+                name="restockingPercent"
+                defaultValue={settings.restockingPercent}
+                inputMode="numeric"
+              />
+            </Field>
+            <Field label="Return window (days after handover)" htmlFor="returnWindowDays">
+              <Input
+                id="returnWindowDays"
+                name="returnWindowDays"
+                defaultValue={settings.returnWindowDays}
+                inputMode="numeric"
+              />
+            </Field>
+            <Field
+              label="Low stock at (units per location)"
+              htmlFor="lowStockThreshold"
+              hint="Shown on the dashboard and inventory page."
+            >
+              <Input
+                id="lowStockThreshold"
+                name="lowStockThreshold"
+                defaultValue={settings.lowStockThreshold}
+                inputMode="numeric"
+              />
+            </Field>
           </div>
         </SettingsForm>
       </Section>

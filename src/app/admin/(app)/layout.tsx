@@ -7,13 +7,16 @@ import { Button } from "@/components/ui/button";
 import { requireAdmin } from "@/server/require-admin";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard" },
+  { href: "/admin", label: "Today" },
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/returns", label: "Returns" },
   { href: "/admin/products", label: "Products" },
+  { href: "/admin/inventory", label: "Inventory" },
   { href: "/admin/import", label: "CSV import" },
   { href: "/admin/builds", label: "Prebuilt PCs" },
+  { href: "/admin/reports", label: "Reports" },
   { href: "/admin/settings", label: "Settings" },
+  { href: "/admin/audit", label: "Audit log" },
 ];
 
 export default function AdminAppLayout({ children }: LayoutProps<"/admin">) {
@@ -25,7 +28,7 @@ export default function AdminAppLayout({ children }: LayoutProps<"/admin">) {
             <Logo />
             <span className="rounded-full border px-2 py-0.5 text-xs text-muted">Admin</span>
           </Link>
-          <nav className="flex items-center gap-1 text-sm">
+          <nav className="flex flex-wrap items-center gap-1 text-sm">
             {NAV.map((item) => (
               <Link
                 key={item.href}

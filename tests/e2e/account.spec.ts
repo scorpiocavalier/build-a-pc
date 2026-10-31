@@ -228,5 +228,5 @@ test("customers request returns and staff approve them", async ({
   // After 30 days, returns close.
   await completeOrder(sql, order.id, 31);
   await page.goto(`/en/orders/${order.id}/return?t=${order.accessToken}`);
-  await expect(page.getByText("The 30-day return period for this order has ended.")).toBeVisible();
+  await expect(page.getByText("The return period for this order has ended.")).toBeVisible();
 });

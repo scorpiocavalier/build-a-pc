@@ -19,12 +19,12 @@ import { sendEmail, type Email } from "./send";
 // Customer emails, in the language the order was placed in. Each email is
 // built as HTML and plain text from the same pieces.
 
-export type OrderEmailKind = "received" | "paid" | "ready" | "cancelled";
+export type OrderEmailKind = "received" | "paid" | "ready" | "cancelled" | "scheduled" | "balance";
 
 export async function buildOrderEmail(
   order: OrderView,
   kind: OrderEmailKind,
-  extra: { refundedCents?: number } = {},
+  extra: { refundedCents?: number; amountCents?: number; payUrl?: string } = {},
 ): Promise<Email> {
   const locale = order.locale;
   const t = createTranslator({ locale, messages: locale === "fr" ? fr : en });
@@ -181,6 +181,57 @@ export async function buildOrderEmail(
         link,
       ];
       break;
+    case "balance":
+      subject = t("Email.subjectBalance", { number });
+      blocks = [
+        greeting,
+        {
+          kind: "p",
+          text: t("Email.balanceBody", { amount: money(extra.amountCents ?? 0) }),
+        },
+        {
+          kind: "link",
+          text: t("Email.balanceButton", { amount: money(extra.amountCents ?? 0) }),
+          href: extra.payUrl!,
+        },
+        { kind: "p", text: t("Email.balanceOther") },
+        link,
+      ];
+      break;
+    case "scheduled": {
+      subject = t("Email.subjectScheduled", { number });
+      const when = new Intl.DateTimeFormat(`${locale}-CA`, {
+        dateStyle: "full",
+        timeStyle: "short",
+        timeZone: "America/Toronto",
+      }).format(order.scheduledFor!);
+      blocks = [
+        greeting,
+        {
+          kind: "p",
+          text:
+            order.fulfilment === "PICKUP"
+              ? t("Email.scheduledPickup", { when, location })
+              : t("Email.scheduledDelivery", {
+                  when,
+                  address: formatAddress(order.deliveryAddress!),
+                }),
+        },
+        ...(order.fulfilment === "PICKUP"
+          ? [
+              {
+                kind: "p",
+                text: t("Order.pickupAddress", {
+                  address: localize(order.location.address, locale),
+                  hours: localize(order.location.hours, locale),
+                }),
+              } as Block,
+            ]
+          : []),
+        link,
+      ];
+      break;
+    }
     case "cancelled":
       subject = t("Email.subjectCancelled", { number });
       blocks = [
@@ -213,7 +264,7 @@ export async function buildOrderEmail(
 export async function sendOrderEmail(
   order: OrderView,
   kind: OrderEmailKind,
-  extra?: { refundedCents?: number },
+  extra?: { refundedCents?: number; amountCents?: number; payUrl?: string },
 ) {
   await sendEmail(await buildOrderEmail(order, kind, extra));
 }

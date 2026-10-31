@@ -10,6 +10,8 @@ import {
   cancelOrderAction,
   changeStatusAction,
   recordPaymentAction,
+  scheduleOrderAction,
+  sendBalanceLinkAction,
   type ActionState,
 } from "./actions";
 
@@ -92,7 +94,16 @@ export function RecordPaymentForm({
   );
 }
 
-export function CancelOrderForm({ orderId, willRefund }: { orderId: string; willRefund: boolean }) {
+export function CancelOrderForm({
+  orderId,
+  willRefund,
+  offlinePaid,
+}: {
+  orderId: string;
+  willRefund: boolean;
+  // "$120.00" paid by cash or e-Transfer, if any.
+  offlinePaid: string | null;
+}) {
   const [state, action, pending] = useActionState<ActionState, FormData>(
     cancelOrderAction.bind(null, orderId),
     {},
@@ -105,11 +116,17 @@ export function CancelOrderForm({ orderId, willRefund }: { orderId: string; will
         hint={
           willRefund
             ? "The card payment will be refunded through Stripe."
-            : "Reserved stock is released. Refund any cash or e-Transfer payment yourself."
+            : "Reserved stock is released."
         }
       >
         <Input id="cancel-reason" name="reason" />
       </Field>
+      {offlinePaid && (
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="offlineRefunded" className="size-4 accent-[var(--accent)]" />
+          I&apos;ve given back the {offlinePaid} paid by cash or e-Transfer (records the refund)
+        </label>
+      )}
       <Button
         disabled={pending}
         variant="outline"
@@ -117,6 +134,54 @@ export function CancelOrderForm({ orderId, willRefund }: { orderId: string; will
       >
         Cancel order
       </Button>
+      <Message state={state} />
+    </form>
+  );
+}
+
+export function ScheduleForm({
+  orderId,
+  date,
+  time,
+  booked,
+}: {
+  orderId: string;
+  date: string;
+  time: string;
+  booked: boolean;
+}) {
+  const [state, action, pending] = useActionState<ActionState, FormData>(
+    scheduleOrderAction.bind(null, orderId),
+    {},
+  );
+  return (
+    <form action={action} className="flex flex-wrap items-end gap-2">
+      <Field label="Date" htmlFor="schedule-date">
+        <Input id="schedule-date" name="date" type="date" defaultValue={date} className="w-40" />
+      </Field>
+      <Field label="Time" htmlFor="schedule-time">
+        <Input id="schedule-time" name="time" type="time" defaultValue={time} className="w-32" />
+      </Field>
+      <Button size="sm" variant="outline" disabled={pending}>
+        {booked ? "Change time" : "Confirm time"}
+      </Button>
+      {state.ok && <p className="text-sm text-emerald-300">Customer emailed.</p>}
+      <Message state={state} />
+    </form>
+  );
+}
+
+export function BalanceLinkButton({ orderId, amount }: { orderId: string; amount: string }) {
+  const [state, action, pending] = useActionState<ActionState>(
+    sendBalanceLinkAction.bind(null, orderId),
+    {},
+  );
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-3">
+      <Button size="sm" variant="outline" disabled={pending}>
+        Email a card payment link for {amount}
+      </Button>
+      {state.ok && <p className="text-sm text-emerald-300">Link sent to the customer.</p>}
       <Message state={state} />
     </form>
   );

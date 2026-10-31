@@ -5,14 +5,9 @@ import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
 import { formatOrderNumber } from "@/lib/checkout/order-number";
 import { localize } from "@/lib/localized";
-import {
-  RESTOCKING_PERCENT,
-  RETURN_WINDOW_DAYS,
-  returnBlocker,
-  returnableQuantities,
-  returnWindowEnds,
-} from "@/lib/returns/eligibility";
+import { returnBlocker, returnableQuantities, returnWindowEnds } from "@/lib/returns/eligibility";
 import { loadOrderForReturn } from "@/server/returns";
+import { getSettings } from "@/server/settings";
 
 import { ReturnForm } from "./return-form";
 
@@ -46,8 +41,9 @@ async function ReturnContent({ params, searchParams }: Props) {
     const orderT = await getTranslations("Order");
     return <p className="rounded-lg border bg-surface p-6 text-muted">{orderT("notFound")}</p>;
   }
+  const settings = await getSettings();
   const orderLink = `/orders/${order.id}?t=${order.accessToken}`;
-  const blocker = returnBlocker(order, new Date());
+  const blocker = returnBlocker(order, new Date(), settings.returnWindowDays);
   const left = returnableQuantities(order);
 
   return (
@@ -59,9 +55,9 @@ async function ReturnContent({ params, searchParams }: Props) {
         <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
       </div>
       <section className="flex flex-col gap-1 rounded-lg border bg-surface p-4 text-sm text-muted">
-        <p>{t("policyWindow", { days: RETURN_WINDOW_DAYS })}</p>
+        <p>{t("policyWindow", { days: settings.returnWindowDays })}</p>
         <p>{t("policyAssembled")}</p>
-        <p>{t("policyFee", { percent: RESTOCKING_PERCENT })}</p>
+        <p>{t("policyFee", { percent: settings.restockingPercent })}</p>
         <p>{t("policyWarranty")}</p>
       </section>
       {blocker ? (
@@ -75,7 +71,7 @@ async function ReturnContent({ params, searchParams }: Props) {
               date: new Intl.DateTimeFormat(`${locale}-CA`, {
                 dateStyle: "long",
                 timeZone: "America/Toronto",
-              }).format(returnWindowEnds(order.completedAt!)),
+              }).format(returnWindowEnds(order.completedAt!, settings.returnWindowDays)),
             })}
           </p>
           <ReturnForm

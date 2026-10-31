@@ -17,6 +17,7 @@ const PAYMENT_STYLE: Record<string, string> = {
   UNPAID: "text-amber-300",
   PARTIALLY_PAID: "text-amber-300",
   PAID: "text-emerald-300",
+  PARTIALLY_REFUNDED: "text-muted",
   REFUNDED: "text-muted",
 };
 

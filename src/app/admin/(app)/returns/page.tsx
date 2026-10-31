@@ -4,10 +4,12 @@ import { formatOrderNumber } from "@/lib/checkout/order-number";
 import { localize } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import { listReturns } from "@/server/returns";
+import { listReturns, type ReturnListFilter } from "@/server/returns";
 import { requireAdmin } from "@/server/require-admin";
+import { stripeEnabled } from "@/server/settings";
 
 import { DecisionForm } from "./decision-form";
+import { ReceiveForm } from "./receive-form";
 
 export const metadata = { title: "Returns" };
 export const instant = false;
@@ -30,8 +32,8 @@ const STATUS_STYLE: Record<string, string> = {
 export default async function AdminReturnsPage({ searchParams }: PageProps<"/admin/returns">) {
   await requireAdmin();
   const { show } = await searchParams;
-  const all = show === "all";
-  const requests = await listReturns(all ? "all" : "open");
+  const filter: ReturnListFilter = show === "all" || show === "approved" ? show : "open";
+  const requests = await listReturns(filter);
   const date = new Intl.DateTimeFormat("en-CA", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -44,30 +46,41 @@ export default async function AdminReturnsPage({ searchParams }: PageProps<"/adm
         <div>
           <h1 className="text-2xl font-semibold">Returns</h1>
           <p className="mt-1 max-w-3xl text-muted">
-            Customers ask for returns from their order page within 30 days of handover. Approve or
-            decline here; the customer is emailed either way. Receiving items and refunds are done
-            by hand for now.
+            Customers ask for returns from their order page after handover. Approve or decline the
+            request; once the items are back, inspect them, choose what goes back in stock, and
+            refund. The customer is emailed at each step.
           </p>
         </div>
         <nav className="flex gap-1 text-sm">
-          <Link
-            href="/admin/returns"
-            className={cn("rounded-lg px-3 py-1.5", !all ? "bg-surface-raised" : "text-muted")}
-          >
-            To review
-          </Link>
-          <Link
-            href="/admin/returns?show=all"
-            className={cn("rounded-lg px-3 py-1.5", all ? "bg-surface-raised" : "text-muted")}
-          >
-            All
-          </Link>
+          {(
+            [
+              ["open", "/admin/returns", "To review"],
+              ["approved", "/admin/returns?show=approved", "Waiting for items"],
+              ["all", "/admin/returns?show=all", "All"],
+            ] as const
+          ).map(([key, href, label]) => (
+            <Link
+              key={key}
+              href={href}
+              aria-current={filter === key ? "page" : undefined}
+              className={cn(
+                "rounded-lg px-3 py-1.5",
+                filter === key ? "bg-surface-raised" : "text-muted",
+              )}
+            >
+              {label}
+            </Link>
+          ))}
         </nav>
       </div>
 
       {requests.length === 0 && (
         <p className="rounded-lg border bg-surface/60 p-6 text-muted">
-          {all ? "No return requests yet." : "Nothing to review."}
+          {filter === "all"
+            ? "No return requests yet."
+            : filter === "approved"
+              ? "No approved returns waiting for items."
+              : "Nothing to review."}
         </p>
       )}
 
@@ -98,7 +111,7 @@ export default async function AdminReturnsPage({ searchParams }: PageProps<"/adm
           <p className="text-sm">
             {request.order.name} · {request.order.email} ·{" "}
             <span className="font-medium">{REASONS[request.reason]}</span>
-            {request.feeCents > 0 && (
+            {request.feeCents > 0 && request.status !== "COMPLETED" && (
               <span className="text-muted">
                 {" "}
                 · restocking fee up to {formatMoney(request.feeCents, "en")}
@@ -118,10 +131,41 @@ export default async function AdminReturnsPage({ searchParams }: PageProps<"/adm
           <blockquote className="border-l-2 pl-3 text-sm whitespace-pre-line text-muted">
             {request.details}
           </blockquote>
-          {request.status === "REQUESTED" ? (
-            <DecisionForm id={request.id} />
-          ) : (
-            request.adminNote && <p className="text-sm">Our message: {request.adminNote}</p>
+          {request.adminNote && request.status !== "REQUESTED" && (
+            <p className="text-sm">Our message: {request.adminNote}</p>
+          )}
+          {request.status === "REQUESTED" && <DecisionForm id={request.id} />}
+          {request.status === "APPROVED" && (
+            <ReceiveForm
+              id={request.id}
+              order={request.order}
+              lines={request.lines.map((line) => ({
+                id: line.id,
+                orderLineId: line.orderLineId,
+                quantity: line.quantity,
+                name: localize(line.orderLine.name, "en"),
+                defaultCondition: request.reason === "DEFECTIVE" ? "WRITE_OFF" : "RESTOCK",
+              }))}
+              defaultFeeCents={request.feeCents}
+              refundableCents={request.order.paidCents - request.order.refundedCents}
+              cardRefund={request.order.paidByCard && stripeEnabled()}
+            />
+          )}
+          {request.status === "COMPLETED" && (
+            <p className="text-sm text-emerald-300">
+              Received {request.receivedAt ? date.format(request.receivedAt) : ""} · refunded{" "}
+              {formatMoney(request.refundCents ?? 0, "en")}
+              {request.refunds[0] ? ` by ${request.refunds[0].method.toLowerCase()}` : ""}
+              {request.restockingFeeCents
+                ? ` · fee ${formatMoney(request.restockingFeeCents, "en")}`
+                : ""}
+              {" · "}
+              {request.lines
+                .map(
+                  (l) => `${l.quantity} ${l.condition === "RESTOCK" ? "restocked" : "written off"}`,
+                )
+                .join(", ")}
+            </p>
           )}
         </section>
       ))}

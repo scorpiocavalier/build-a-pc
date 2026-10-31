@@ -1,7 +1,8 @@
 import type { ReturnReason, ReturnStatus } from "@/generated/prisma/enums";
 
 // The return policy (docs/PLAN.md): 30 days from handover; assembled PCs only
-// when defective; a 30% restocking fee on returns that aren't our fault.
+// when defective; a 30% restocking fee on returns that aren't our fault. The
+// window and fee are admin settings; these are the defaults.
 
 export const RETURN_WINDOW_DAYS = 30;
 export const RESTOCKING_PERCENT = 30;
@@ -27,14 +28,18 @@ export type ReturnLineInput = { orderLineId: string; quantity: number };
 
 export type ReturnError = "notEligible" | "expired" | "noItems" | "quantity" | "assembledDefective";
 
-export function returnWindowEnds(completedAt: Date): Date {
-  return new Date(completedAt.getTime() + RETURN_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+export function returnWindowEnds(completedAt: Date, windowDays = RETURN_WINDOW_DAYS): Date {
+  return new Date(completedAt.getTime() + windowDays * 24 * 60 * 60 * 1000);
 }
 
 // Why the order can't take a new return request, or null if it can.
-export function returnBlocker(order: OrderForReturn, now: Date): ReturnError | null {
+export function returnBlocker(
+  order: OrderForReturn,
+  now: Date,
+  windowDays = RETURN_WINDOW_DAYS,
+): ReturnError | null {
   if (order.status !== "COMPLETED" || !order.completedAt) return "notEligible";
-  if (now > returnWindowEnds(order.completedAt)) return "expired";
+  if (now > returnWindowEnds(order.completedAt, windowDays)) return "expired";
   const left = returnableQuantities(order);
   if (Object.values(left).every((n) => n === 0)) return "noItems";
   return null;
@@ -58,8 +63,9 @@ export function validateReturn(
   order: OrderForReturn,
   request: { reason: ReturnReason; lines: ReturnLineInput[] },
   now: Date,
+  windowDays = RETURN_WINDOW_DAYS,
 ): { ok: true; lines: ReturnLineInput[] } | { ok: false; error: ReturnError } {
-  const blocker = returnBlocker(order, now);
+  const blocker = returnBlocker(order, now, windowDays);
   if (blocker) return { ok: false, error: blocker };
 
   const left = returnableQuantities(order);
@@ -82,15 +88,20 @@ export function validateReturn(
 
 // The most the restocking fee can be. Staff confirm the final amount after
 // inspecting the items (Phase 5).
+export function feeApplies(reason: ReturnReason) {
+  return FEE_REASONS.includes(reason);
+}
+
 export function estimateRestockingFee(
   order: Pick<OrderForReturn, "lines">,
   request: { reason: ReturnReason; lines: ReturnLineInput[] },
+  percent = RESTOCKING_PERCENT,
 ): number {
-  if (!FEE_REASONS.includes(request.reason)) return 0;
+  if (!feeApplies(request.reason)) return 0;
   const price = new Map(order.lines.map((l) => [l.id, l.unitPriceCents]));
   const value = request.lines.reduce(
     (sum, l) => sum + (price.get(l.orderLineId) ?? 0) * l.quantity,
     0,
   );
-  return Math.round((value * RESTOCKING_PERCENT) / 100);
+  return Math.round((value * percent) / 100);
 }

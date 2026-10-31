@@ -99,6 +99,26 @@ npm run dev                   # http://localhost:3000
 - Browser tests read emails from `EMAIL_OUTBOX_DIR` (set by
   `playwright.config.ts`) to follow sign-in links.
 
+## Running the stores (admin)
+
+- **Today** (`/admin`, filter by location): orders booked for today, payments
+  and deposits to check, PCs to assemble, orders without a pickup/delivery
+  time, returns waiting, low stock.
+- **Orders**: confirm a pickup or delivery time (the customer is emailed),
+  record cash/e-Transfer payments, email a Stripe card link for the balance
+  (when Stripe is set up), cancel (card payments refund automatically; tick the
+  box to record cash/e-Transfer you gave back).
+- **Returns**: approve or decline, then receive the items: choose what goes
+  back in stock or is written off, adjust the restocking fee, and refund by
+  card (through Stripe) or record an e-Transfer/cash refund. Refunds include the
+  items' share of tax; delivery and assembly fees aren't refunded.
+- **Inventory**: free/on-hand/reserved stock per location, transfers between
+  Toronto and Montreal, count corrections and write-offs, and the stock history.
+- **Reports**: money received and refunded by method and location, orders
+  placed, tax charged, top products, stock value, deposits with a balance owing.
+- **Audit log**: every admin change, who made it and when.
+- **Settings** also hold the restocking %, return window and low-stock level.
+
 ## Catalog design
 
 - Each category's spec fields are defined once in `src/lib/specs/definitions.ts`

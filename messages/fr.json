@@ -233,6 +233,7 @@
       "UNPAID": "Non payée",
       "PARTIALLY_PAID": "Payée en partie",
       "PAID": "Payée",
+      "PARTIALLY_REFUNDED": "Remboursée en partie",
       "REFUNDED": "Remboursée"
     },
     "method": {
@@ -264,7 +265,8 @@
       "APPROVED": "Approuvé",
       "DECLINED": "Refusé",
       "COMPLETED": "Terminé"
-    }
+    },
+    "scheduled": "Prévu le {when}."
   },
   "Email": {
     "subjectReceived": "Commande {number} reçue",
@@ -294,8 +296,18 @@
       "approvedSubject": "Retour {rma} approuvé",
       "approvedBody": "Votre demande de retour pour la commande {number} est approuvée. Apportez les articles ci-dessous, si possible dans leur emballage d’origine, au magasin où vous avez commandé. Nous confirmerons le remboursement après inspection.",
       "declinedSubject": "Mise à jour sur le retour {rma}",
-      "declinedBody": "Nous ne pouvons pas accepter votre demande de retour pour la commande {number}."
-    }
+      "declinedBody": "Nous ne pouvons pas accepter votre demande de retour pour la commande {number}.",
+      "refundedSubject": "Retour {rma} : remboursement de {amount}",
+      "refundedBody": "Nous avons reçu les articles du retour {rma} (commande {number}) et remboursé {amount}. Un remboursement par carte peut prendre de 5 à 10 jours ouvrables.",
+      "feeCharged": "Des frais de restockage de {amount} ont été déduits."
+    },
+    "subjectScheduled": "Commande {number} : heure confirmée",
+    "scheduledPickup": "Votre cueillette à notre magasin de {location} est prévue le {when}.",
+    "scheduledDelivery": "Votre livraison au {address} est prévue le {when}.",
+    "subjectBalance": "Payer le solde de la commande {number}",
+    "balanceBody": "Vous pouvez payer le solde de {amount} par carte avec le lien sécurisé ci-dessous. Il est valide 24 heures.",
+    "balanceButton": "Payer {amount} par carte",
+    "balanceOther": "Vous pouvez aussi payer par virement Interac ou en personne, comme avant."
   },
   "Builder": {
     "title": "Configurateur de PC",
@@ -506,7 +518,7 @@
     "sending": "Envoi…",
     "errors": {
       "notEligible": "Les retours sont possibles une fois la commande ramassée ou livrée.",
-      "expired": "La période de retour de 30 jours pour cette commande est terminée. Les défauts sont couverts par la garantie du fabricant.",
+      "expired": "La période de retour pour cette commande est terminée. Les défauts sont couverts par la garantie du fabricant.",
       "noItems": "Choisissez au moins un article à retourner.",
       "quantity": "Vérifiez les quantités : certains articles ont déjà été demandés.",
       "assembledDefective": "Les pièces d’un PC assemblé ne peuvent être retournées que si elles sont défectueuses.",
@@ -517,6 +529,8 @@
     "storeNote": "Notre message : {note}",
     "approvedNext": "Approuvé. Apportez les articles dans leur emballage d’origine; nous confirmerons le remboursement après inspection.",
     "start": "Demander un retour",
-    "feeEstimate": "Des frais de restockage d’au plus {amount} peuvent s’appliquer. Nous confirmerons le montant final après inspection des articles."
+    "feeEstimate": "Des frais de restockage d’au plus {amount} peuvent s’appliquer. Nous confirmerons le montant final après inspection des articles.",
+    "refundedNote": "Remboursé : {amount}.",
+    "feeNote": "Frais de restockage : {amount}."
   }
 }

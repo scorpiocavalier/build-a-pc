@@ -55,10 +55,46 @@ export async function refundPaymentIntent(
   paymentIntentId: string,
   amountCents: number,
   orderId: string,
+  // Distinguishes several partial refunds of one payment (e.g. two returns).
+  key = `refund-${orderId}-${paymentIntentId}`,
 ) {
   return getStripe().refunds.create(
     { payment_intent: paymentIntentId, amount: amountCents, metadata: { orderId } },
-    { idempotencyKey: `refund-${orderId}-${paymentIntentId}` },
+    { idempotencyKey: key },
+  );
+}
+
+// A card payment link for what's still owing (e.g. the balance after a
+// deposit). Webhooks record it like any other card payment.
+export async function createBalanceSession(order: OrderView, amountCents: number) {
+  const url = orderUrl(order);
+  return getStripe().checkout.sessions.create(
+    {
+      mode: "payment",
+      client_reference_id: order.id,
+      customer_email: order.email,
+      locale: order.locale === "fr" ? "fr-CA" : "en",
+      currency: "cad",
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "cad",
+            unit_amount: amountCents,
+            product_data: {
+              name: `Astral Tech Gaming ${formatOrderNumber(order.number)} (balance)`,
+            },
+          },
+        },
+      ],
+      metadata: { orderId: order.id, kind: "balance" },
+      payment_intent_data: { metadata: { orderId: order.id } },
+      expires_at: Math.floor(Date.now() / 1000) + 24 * 60 * 60,
+      success_url: `${url}&paid=1`,
+      cancel_url: url,
+    },
+    // One link per amount owing; sending again reuses it.
+    { idempotencyKey: `balance-${order.id}-${order.paidCents}-${amountCents}` },
   );
 }
 

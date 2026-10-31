@@ -42,6 +42,7 @@ model User {
   wishlist      WishlistItem[]
   builds        Build[]
   returns       ReturnRequest[]
+  auditLogs     AuditLog[]
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 }
@@ -304,6 +305,7 @@ enum PaymentStatus {
   UNPAID
   PARTIALLY_PAID
   PAID
+  PARTIALLY_REFUNDED
   REFUNDED
 }
 
@@ -346,6 +348,10 @@ model Order {
   placedAt        DateTime      @default(now())
   // When the customer received the order; starts the 30-day return window.
   completedAt     DateTime?
+  // Pickup or delivery time confirmed by staff (the customer only requests one).
+  scheduledFor    DateTime?
+  // Money given back (returns, cancellations), recorded in Refund rows.
+  refundedCents   Int           @default(0)
   updatedAt       DateTime      @updatedAt
 
   user     User?           @relation(fields: [userId], references: [id])
@@ -354,8 +360,10 @@ model Order {
   payments Payment[]
   events   OrderEvent[]
   returns  ReturnRequest[]
+  refunds  Refund[]
 
   @@index([status, placedAt])
+  @@index([scheduledFor])
   @@index([email])
   @@index([userId, placedAt])
 }
@@ -402,7 +410,31 @@ model Payment {
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  refunds Refund[]
+}
+
+// Money returned to a customer. Card refunds go through Stripe; e-Transfer and
+// cash refunds are recorded by staff after sending the money.
+model Refund {
+  id                 String        @id @default(cuid())
+  orderId            String
+  // The card payment refunded through Stripe.
+  paymentId          String?
+  returnId           String?
+  method             PaymentMethod
+  amountCents        Int
+  restockingFeeCents Int           @default(0)
+  reason             String
+  stripeRefundId     String?       @unique
+  actorId            String?
+  createdAt          DateTime      @default(now())
+
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payment Payment?       @relation(fields: [paymentId], references: [id])
+  request ReturnRequest? @relation(fields: [returnId], references: [id])
+
+  @@index([createdAt])
 }
 
 // Timeline of everything that happened to an order (also the audit trail).
@@ -540,36 +572,70 @@ enum ReturnReason {
 }
 
 model ReturnRequest {
-  id          String       @id @default(cuid())
+  id                 String       @id @default(cuid())
   // Shown as RMA-<number>.
-  number      Int          @unique @default(autoincrement())
-  orderId     String
+  number             Int          @unique @default(autoincrement())
+  orderId            String
   // Set when a signed-in customer made the request.
-  userId      String?
-  status      ReturnStatus @default(REQUESTED)
-  reason      ReturnReason
-  details     String
+  userId             String?
+  status             ReturnStatus @default(REQUESTED)
+  reason             ReturnReason
+  details            String
   // Message from the store, shown to the customer with the decision.
-  adminNote   String?
-  decidedById String?
-  decidedAt   DateTime?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  adminNote          String?
+  decidedById        String?
+  decidedAt          DateTime?
+  // Set when the items come back and are inspected.
+  receivedAt         DateTime?
+  restockingFeeCents Int?
+  refundCents        Int?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
-  order Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user  User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
-  lines ReturnLine[]
+  order   Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user    User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  lines   ReturnLine[]
+  refunds Refund[]
 
   @@index([status, createdAt])
   @@index([orderId])
 }
 
+enum ReturnCondition {
+  // Back on the shelf.
+  RESTOCK
+  // Defective or damaged: not resold (goes back to the manufacturer under warranty).
+  WRITE_OFF
+}
+
 model ReturnLine {
-  id          String @id @default(cuid())
+  id          String           @id @default(cuid())
   returnId    String
   orderLineId String
   quantity    Int
+  // Filled in when the item is received.
+  condition   ReturnCondition?
 
   request   ReturnRequest @relation(fields: [returnId], references: [id], onDelete: Cascade)
   orderLine OrderLine     @relation(fields: [orderLineId], references: [id], onDelete: Cascade)
+}
+
+// ─── Audit log ──────────────────────────────────────────────────────────────
+
+// Every admin change: who did what to which record.
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  // e.g. "product.update", "order.status", "inventory.transfer"
+  action    String
+  entity    String
+  entityId  String?
+  summary   String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([entity, entityId])
 }

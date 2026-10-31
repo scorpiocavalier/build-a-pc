@@ -79,7 +79,7 @@ export default async function AdminBuildsPage() {
 
       <section className="rounded-lg border bg-surface/60 p-5">
         <h2 className="mb-4 font-semibold">Feature a build</h2>
-        <SettingsForm action={featureBuildAction} label="Add to Prebuilt PCs">
+        <SettingsForm action={featureBuildAction} label="Add to Prebuilt PCs" keepValues>
           <Field
             label="Share link"
             htmlFor="share"
