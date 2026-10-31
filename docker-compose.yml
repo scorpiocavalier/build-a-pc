@@ -1,0 +1,15 @@
+# Local development database. Start with: docker compose up -d db
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: astral
+      POSTGRES_PASSWORD: astral
+      POSTGRES_DB: astral
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

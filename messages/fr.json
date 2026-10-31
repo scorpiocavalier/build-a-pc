@@ -1,0 +1,63 @@
+{
+  "Metadata": {
+    "title": "Astral Tech Gaming — PC de jeu sur mesure et composantes",
+    "description": "Des PC de jeu sur mesure assemblés à la main à Toronto et à Montréal, et toutes les composantes pour monter le vôtre."
+  },
+  "Header": {
+    "home": "Accueil Astral Tech Gaming",
+    "nav": {
+      "builds": "Nos montages",
+      "locations": "Points de cueillette"
+    },
+    "switchLocale": "English",
+    "switchLocaleLabel": "View the site in English"
+  },
+  "Home": {
+    "eyebrow": "Toronto · Montréal",
+    "title": "Des PC de jeu sur mesure, assemblés à la main.",
+    "lead": "Choisissez vos composantes ou laissez-nous vous conseiller. Nous assemblons, installons Windows, testons chaque montage et vous le remettons en personne.",
+    "ctaBuilds": "Voir nos montages",
+    "ctaLocations": "Points de cueillette",
+    "comingSoon": "La boutique en ligne et le configurateur de PC arrivent bientôt.",
+    "videoLabel": "Vidéo d’un montage Astral Tech Gaming blanc avec un éclairage bleu glacier",
+    "buildsTitle": "Montages récents",
+    "buildsLead": "Chaque PC est assemblé, câblé avec soin et testé avant de quitter notre atelier.",
+    "buildAlt": {
+      "1": "Boîtier blanc à double chambre avec une carte graphique MSI GeForce RTX et un refroidisseur AIO à écran pixel art",
+      "2": "Montage blanc avec une carte graphique Gigabyte GeForce RTX, de la mémoire T-Force et un écran affichant les températures",
+      "3": "Gros plan d’un montage blanc avec trois ventilateurs de radiateur et une carte graphique MSI GeForce RTX",
+      "4": "Gros plan de l’écran de la pompe AIO, des barrettes de mémoire blanches et d’un SSD M.2",
+      "5": "Gros plan d’une carte graphique MSI GeForce RTX et de son connecteur d’alimentation"
+    },
+    "stepsTitle": "Comment ça fonctionne",
+    "steps": {
+      "choose": {
+        "title": "Choisissez vos composantes",
+        "body": "Utilisez le configurateur pour choisir des composantes compatibles, ou partez d’un de nos montages."
+      },
+      "build": {
+        "title": "Nous l’assemblons",
+        "body": "Environ une heure d’assemblage minutieux, Windows installé, puis des tests."
+      },
+      "handoff": {
+        "title": "Cueillette ou livraison",
+        "body": "Récupérez-le à Toronto ou à Montréal, ou nous vous le livrons en personne."
+      }
+    },
+    "locationsTitle": "Points de cueillette",
+    "locations": {
+      "toronto": "Toronto (Ontario)",
+      "montreal": "Montréal (Québec)"
+    },
+    "locationsNote": "Les adresses exactes et les heures d’ouverture seront publiées avant le lancement."
+  },
+  "Footer": {
+    "rights": "© {year} Astral Tech Gaming. Tous droits réservés.",
+    "warranty": "Les composantes sont couvertes par la garantie de leur fabricant."
+  },
+  "NotFound": {
+    "title": "Page introuvable",
+    "body": "Nous n’avons pas trouvé cette page.",
+    "back": "Retour à l’accueil"
+  }
+}

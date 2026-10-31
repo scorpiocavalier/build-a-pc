@@ -1,0 +1,63 @@
+{
+  "Metadata": {
+    "title": "Astral Tech Gaming — Custom gaming PCs & parts",
+    "description": "Custom gaming PCs built by hand in Toronto and Montreal, plus the parts to build your own."
+  },
+  "Header": {
+    "home": "Astral Tech Gaming home",
+    "nav": {
+      "builds": "Our builds",
+      "locations": "Locations"
+    },
+    "switchLocale": "Français",
+    "switchLocaleLabel": "Afficher le site en français"
+  },
+  "Home": {
+    "eyebrow": "Toronto · Montreal",
+    "title": "Custom gaming PCs, built by hand.",
+    "lead": "Pick your parts or let us spec it for you. We assemble, install Windows, test every build and hand it to you in person.",
+    "ctaBuilds": "See our builds",
+    "ctaLocations": "Pickup locations",
+    "comingSoon": "Online store and PC builder coming soon.",
+    "videoLabel": "Video of a finished white Astral Tech Gaming build with ice-blue lighting",
+    "buildsTitle": "Recent builds",
+    "buildsLead": "Every PC is assembled, cable-managed and tested before it leaves our bench.",
+    "buildAlt": {
+      "1": "White dual-chamber case with an MSI GeForce RTX graphics card and an AIO cooler with a pixel-art display",
+      "2": "White build with a Gigabyte GeForce RTX graphics card, T-Force memory and a status screen showing temperatures",
+      "3": "Close-up of a white build with three top radiator fans and an MSI GeForce RTX graphics card",
+      "4": "Close-up of the AIO pump display, white memory modules and an M.2 SSD",
+      "5": "Close-up of an MSI GeForce RTX graphics card with its power connector"
+    },
+    "stepsTitle": "How it works",
+    "steps": {
+      "choose": {
+        "title": "Choose your parts",
+        "body": "Use the PC builder to pick compatible parts, or start from one of our builds."
+      },
+      "build": {
+        "title": "We build it",
+        "body": "About an hour of careful assembly, Windows installed, then testing."
+      },
+      "handoff": {
+        "title": "Pickup or delivery",
+        "body": "Collect it in Toronto or Montreal, or we deliver it to you in person."
+      }
+    },
+    "locationsTitle": "Pickup locations",
+    "locations": {
+      "toronto": "Toronto, Ontario",
+      "montreal": "Montreal, Quebec"
+    },
+    "locationsNote": "Exact addresses and hours will be posted before launch."
+  },
+  "Footer": {
+    "rights": "© {year} Astral Tech Gaming. All rights reserved.",
+    "warranty": "Parts are covered by their manufacturer's warranty."
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "body": "We couldn't find that page.",
+    "back": "Back to home"
+  }
+}
