@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { CategoryIcon } from "@/components/catalog/category-icon";
 import { Price } from "@/components/catalog/price";
+import { AddToCart } from "@/components/cart/add-to-cart";
 import { LOCATION_CODES } from "@/lib/catalog/product-input";
 import { localize } from "@/lib/localized";
 import { getCategoryDefinition } from "@/lib/specs/definitions";
@@ -157,8 +158,16 @@ async function ProductContent({ params }: Pick<Props, "params">) {
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-sm text-muted">{t("orderingSoon")}</p>
           </section>
+
+          {inStock ? (
+            <AddToCart
+              productId={product.id}
+              maxQuantity={Math.max(...LOCATION_CODES.map((code) => product.available[code]))}
+            />
+          ) : (
+            <p className="text-muted">{t("outOfStock")}</p>
+          )}
 
           {product.warrantyMonths ? (
             <p className="text-sm text-muted">

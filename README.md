@@ -50,6 +50,24 @@ npm run dev                   # http://localhost:3000
   the admin form's field names; multi-value spec cells use `|`. Imports are
   all-or-nothing.
 
+## Orders and payments
+
+- Cart → checkout (pickup in Toronto/Montreal, or local delivery by postal
+  code) → order page at `/<locale>/orders/<id>?t=<token>` (guests keep the link).
+- Payment methods: card (Stripe Checkout; hidden until Stripe keys are set),
+  Interac e-Transfer and cash (only under the cash limit). Admins record
+  e-Transfer and cash payments on the order page.
+- Stock is reserved at checkout with a guarded SQL update, so the last unit
+  can't be sold twice, and deducted when the order is completed.
+- `/api/webhooks/stripe` is the only thing that marks card orders paid; it
+  ignores repeated events. `/api/cron/expire-orders` (hourly via
+  `vercel.json`, needs `CRON_SECRET`) cancels unpaid orders past their hold.
+- Emails go through Resend when `AUTH_RESEND_KEY` is set; otherwise they're
+  printed to the server log.
+- `/admin/settings`: pickup addresses and hours, delivery postal prefixes and
+  fees, tax rates with a per-province "collect" switch, e-Transfer email,
+  cash limit and hold times.
+
 ## Catalog design
 
 - Each category's spec fields are defined once in `src/lib/specs/definitions.ts`
@@ -71,7 +89,7 @@ src/
   components/     shared UI (ui/ = button and other primitives)
   i18n/           locale routing and message loading
   lib/            pure helpers: money, specs, catalog filters, CSV
-  server/         server-only code: database, catalog queries, storage, auth guards
+  server/         server-only code: database, catalog, cart, orders, payments, email
   proxy.ts        locale redirects + cheap admin cookie check
 messages/         en.json, fr.json — every customer-facing string
 prisma/           schema and migrations

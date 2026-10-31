@@ -5,7 +5,17 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 
 const className =
-  "rounded-lg px-3 py-2 text-sm text-muted hover:bg-surface-raised hover:text-foreground";
+  "rounded-lg px-2 py-2 text-sm text-muted hover:bg-surface-raised hover:text-foreground sm:px-3";
+
+// Phones show "FR"/"EN" so the header fits; the aria-label always has the full text.
+function Label({ other, text }: { other: string; text: string }) {
+  return (
+    <>
+      <span className="sm:hidden">{other.toUpperCase()}</span>
+      <span className="hidden sm:inline">{text}</span>
+    </>
+  );
+}
 
 function useOtherLocale() {
   const t = useTranslations("Header");
@@ -19,7 +29,7 @@ export function LocaleSwitcher() {
 
   return (
     <Link href={pathname} locale={other} lang={other} aria-label={label} className={className}>
-      {text}
+      <Label other={other} text={text} />
     </Link>
   );
 }
@@ -30,7 +40,7 @@ export function LocaleSwitcherFallback() {
 
   return (
     <Link href="/" locale={other} lang={other} aria-label={label} className={className}>
-      {text}
+      <Label other={other} text={text} />
     </Link>
   );
 }

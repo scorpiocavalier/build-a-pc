@@ -15,10 +15,35 @@ const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
 
+// Addresses, hours, delivery areas and fees are placeholders; the owner sets
+// the real ones in /admin/settings. Seeding never overwrites them.
 const LOCATIONS = [
-  { code: "TOR", name: { en: "Toronto", fr: "Toronto" }, province: "ON" },
-  { code: "MTL", name: { en: "Montreal", fr: "Montréal" }, province: "QC" },
+  {
+    code: "TOR",
+    name: { en: "Toronto", fr: "Toronto" },
+    province: "ON",
+    address: { en: "Toronto, ON (address to come)", fr: "Toronto (Ontario) (adresse à venir)" },
+    hours: { en: "By appointment", fr: "Sur rendez-vous" },
+    deliveryPostalPrefixes: ["M"],
+    deliveryFeeCents: 2500,
+  },
+  {
+    code: "MTL",
+    name: { en: "Montreal", fr: "Montréal" },
+    province: "QC",
+    address: { en: "Montreal, QC (address to come)", fr: "Montréal (Québec) (adresse à venir)" },
+    hours: { en: "By appointment", fr: "Sur rendez-vous" },
+    deliveryPostalPrefixes: ["H"],
+    deliveryFeeCents: 2500,
+  },
 ] as const;
+
+// Collection starts switched off until the owner confirms registration
+// (docs/PLAN.md §6). Rates are thousandths of a percent.
+const TAX_RATES = [
+  { province: "ON", hst: 13000 },
+  { province: "QC", gst: 5000, qst: 9975 },
+];
 
 type Row = Omit<RawProductInput, "category" | "status"> & { price: string };
 
@@ -529,11 +554,17 @@ const PRODUCTS: Record<string, Row[]> = {
 
 async function main() {
   for (const location of LOCATIONS) {
-    await db.location.upsert({
-      where: { code: location.code },
-      create: location,
-      update: { name: location.name, province: location.province },
-    });
+    const data = { ...location, deliveryPostalPrefixes: [...location.deliveryPostalPrefixes] };
+    const existing = await db.location.findUnique({ where: { code: location.code } });
+    if (!existing) await db.location.create({ data });
+    // Fill in placeholders only where the owner hasn't set anything yet.
+    else if (existing.deliveryPostalPrefixes.length === 0) {
+      await db.location.update({ where: { code: location.code }, data });
+    }
+  }
+
+  for (const rate of TAX_RATES) {
+    await db.taxRate.upsert({ where: { province: rate.province }, create: rate, update: {} });
   }
 
   for (const [position, category] of CATEGORIES.entries()) {
