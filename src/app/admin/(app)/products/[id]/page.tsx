@@ -48,7 +48,7 @@ export default async function EditProductPage({
           <Link
             href={`/en/p/${product.slug}`}
             target="_blank"
-            className="text-sm text-accent hover:underline"
+            className="text-sm text-accent underline underline-offset-2"
           >
             View on store ↗
           </Link>

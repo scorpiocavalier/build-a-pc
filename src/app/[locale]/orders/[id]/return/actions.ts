@@ -6,10 +6,11 @@ import type { ReturnReason } from "@/generated/prisma/enums";
 import { RETURN_REASONS, type ReturnError } from "@/lib/returns/eligibility";
 import { getCustomer } from "@/server/customer";
 import { db } from "@/server/db";
+import { hitByIp } from "@/server/rate-limit";
 import { createReturnRequest } from "@/server/returns";
 
 export type ReturnFormState = {
-  error?: ReturnError | "reason" | "details";
+  error?: ReturnError | "reason" | "details" | "tooMany";
   values?: Record<string, string>;
 };
 
@@ -34,6 +35,8 @@ export async function requestReturnAction(
     return { error: "reason", values: raw };
   const details = (raw.details ?? "").trim();
   if (details.length < 10) return { error: "details", values: raw };
+
+  if (!(await hitByIp("returnRequest"))) return { error: "tooMany", values: raw };
 
   const lines = Object.entries(raw)
     .filter(([key]) => key.startsWith("qty_"))

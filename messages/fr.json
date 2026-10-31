@@ -63,7 +63,13 @@
   },
   "Footer": {
     "rights": "© {year} Astral Tech Gaming. Tous droits réservés.",
-    "warranty": "Les composantes sont couvertes par la garantie de leur fabricant."
+    "warranty": "Garantie",
+    "locations": "Magasins",
+    "returns": "Retours",
+    "privacy": "Confidentialité",
+    "terms": "Conditions de vente",
+    "contact": "Contact : {email}",
+    "nav": "Renseignements"
   },
   "NotFound": {
     "title": "Page introuvable",
@@ -110,7 +116,8 @@
     "searchTitle": "Recherche",
     "searchResults": "{count, plural, =0 {Aucun résultat} one {# résultat} other {# résultats}} pour « {query} »",
     "searchEmpty": "Essayez une marque, un numéro de modèle ou un type de composante, comme « RTX 5070 » ou « DDR5 ».",
-    "searchButton": "Rechercher"
+    "searchButton": "Rechercher",
+    "searchTooMany": "Trop de recherches en peu de temps. Veuillez patienter une minute et réessayer."
   },
   "Cart": {
     "title": "Votre panier",
@@ -186,7 +193,7 @@
     },
     "cashLimit": "Le paiement comptant n’est pas offert pour les commandes de {amount} ou plus.",
     "notes": "Remarques (facultatif)",
-    "terms": "J’accepte les conditions de vente et la politique de retour de 30 jours. Des frais de restockage de 30 % s’appliquent aux retours qui ne sont pas dus à un défaut.",
+    "terms": "J’accepte les <terms>conditions de vente</terms> et la <returns>politique de retour</returns> : retours sous {days} jours, avec des frais de restockage de {percent} % sur les articles non défectueux.",
     "summary": "Résumé de la commande",
     "subtotal": "Sous-total",
     "deliveryFee": "Livraison",
@@ -206,7 +213,8 @@
       "stock": "Certains articles ne sont plus disponibles en cette quantité. Veuillez vérifier votre panier.",
       "payment": "Nous n’avons pas pu lancer le paiement par carte. Réessayez ou choisissez un autre mode de paiement.",
       "empty": "Votre panier est vide.",
-      "fulfilment": "Choisissez d’abord la cueillette ou la livraison."
+      "fulfilment": "Choisissez d’abord la cueillette ou la livraison.",
+      "tooMany": "Trop de tentatives. Veuillez patienter quelques minutes et réessayer."
     },
     "assembly": "Assemblage et tests",
     "deposit": "Acompte dû maintenant : {amount} ({percent} %). Le solde est payable à la cueillette ou à la livraison.",
@@ -412,7 +420,8 @@
     "signInErrors": {
       "email": "Entrez une adresse courriel valide.",
       "staff": "Les comptes du personnel se connectent avec Google depuis la page d’administration.",
-      "failed": "Nous n’avons pas pu envoyer le lien. Veuillez réessayer."
+      "failed": "Nous n’avons pas pu envoyer le lien. Veuillez réessayer.",
+      "tooMany": "Trop de tentatives. Veuillez patienter quelques minutes et réessayer."
     },
     "authErrors": {
       "Verification": "Ce lien de connexion a expiré ou a déjà été utilisé. Demandez-en un nouveau ci-dessous.",
@@ -493,7 +502,16 @@
     },
     "saveBuildHint": "Gardez-la dans votre compte pour y revenir plus tard.",
     "savedBuildHint": "Les modifications sont enregistrées automatiquement. Toutes vos configurations :",
-    "unavailable": "La connexion n’est pas encore offerte. Vous pouvez tout de même commander sans compte."
+    "unavailable": "La connexion n’est pas encore offerte. Vous pouvez tout de même commander sans compte.",
+    "yourData": "Vos données",
+    "yourDataLead": "Téléchargez une copie de ce que nous conservons à votre sujet, ou supprimez votre compte. Les commandes restent dans nos dossiers pendant 6 ans à des fins fiscales, sans lien avec votre compte.",
+    "downloadData": "Télécharger mes données (JSON)",
+    "deleteConfirm": "Je comprends que mon compte, mes configurations, mes adresses et ma liste de souhaits seront supprimés définitivement.",
+    "deleteAccount": "Supprimer mon compte",
+    "deleteErrors": {
+      "confirm": "Cochez la case pour confirmer.",
+      "staff": "Les comptes du personnel ne peuvent pas être supprimés ici."
+    }
   },
   "Returns": {
     "title": "Demander un retour",
@@ -523,7 +541,8 @@
       "quantity": "Vérifiez les quantités : certains articles ont déjà été demandés.",
       "assembledDefective": "Les pièces d’un PC assemblé ne peuvent être retournées que si elles sont défectueuses.",
       "reason": "Choisissez une raison.",
-      "details": "Donnez-nous un peu plus de détails (au moins 10 caractères)."
+      "details": "Donnez-nous un peu plus de détails (au moins 10 caractères).",
+      "tooMany": "Trop de tentatives. Veuillez patienter quelques minutes et réessayer."
     },
     "sent": "Demande de retour {rma} envoyée. Nous écrirons à {email} pour la suite.",
     "storeNote": "Notre message : {note}",
@@ -532,5 +551,157 @@
     "feeEstimate": "Des frais de restockage d’au plus {amount} peuvent s’appliquer. Nous confirmerons le montant final après inspection des articles.",
     "refundedNote": "Remboursé : {amount}.",
     "feeNote": "Frais de restockage : {amount}."
+  },
+  "Legal": {
+    "updated": "Dernière mise à jour : {date}",
+    "related": "Voir aussi",
+    "contactLine": "Des questions? Écrivez à {email}.",
+    "locations": {
+      "title": "Nos magasins",
+      "description": "Cueillette et livraison locale à Toronto et Montréal.",
+      "intro": "Commandez en ligne et récupérez votre commande à l’un de nos magasins, ou faites-vous livrer localement. Nous confirmons l’heure avec vous après la commande.",
+      "address": "Adresse",
+      "hours": "Heures",
+      "delivery": "Livraison locale",
+      "deliveryAreas": "Codes postaux commençant par {prefixes}, {fee}.",
+      "noDelivery": "Cueillette seulement pour le moment."
+    },
+    "returns": {
+      "title": "Retours et remboursements",
+      "description": "Retours sous 30 jours, remboursements et frais de restockage.",
+      "intro": "Nous voulons que vous soyez satisfait de vos pièces et de votre PC. Voici comment fonctionnent les retours.",
+      "sections": {
+        "window": {
+          "title": "Délai",
+          "body": "Vous pouvez demander un retour dans les {days} jours suivant la cueillette ou la réception de votre commande.\n\nCommencez à partir de la page de votre commande (le lien dans le courriel de commande, ou Mon compte → Commandes) et choisissez « Demander un retour ». Nous répondons par courriel d’ici 2 jours ouvrables."
+        },
+        "condition": {
+          "title": "Ce que nous acceptons",
+          "body": "Les articles doivent être complets, avec tous les accessoires et, si possible, l’emballage d’origine.\n\nLes licences logicielles, comme Windows, ne peuvent pas être retournées une fois activées."
+        },
+        "assembled": {
+          "title": "PC assemblés",
+          "body": "Les PC que nous avons montés pour vous, et leurs pièces, ne peuvent être retournés que s’ils sont défectueux. Nous inspectons chaque PC retourné et le réparons, le remplaçons ou le remboursons."
+        },
+        "fee": {
+          "title": "Frais de restockage",
+          "body": "Les retours d’articles qui ne sont ni défectueux, ni erronés, ni mal décrits (par exemple si vous avez changé d’avis) entraînent des frais de restockage de {percent} % du prix des articles. Aucuns frais lorsqu’un article est défectueux, que nous avons envoyé le mauvais article ou qu’il ne correspond pas à la description."
+        },
+        "refunds": {
+          "title": "Remboursements",
+          "body": "Après réception et inspection, nous remboursons le prix des articles et les taxes perçues sur ceux-ci, moins les frais de restockage le cas échéant. Les frais de livraison et d’assemblage ne sont pas remboursés.\n\nLes paiements par carte sont remboursés sur la même carte (comptez de 5 à 10 jours ouvrables). Les paiements en argent comptant et par virement sont remboursés par virement Interac."
+        },
+        "cancel": {
+          "title": "Annuler une commande",
+          "body": "Vous pouvez annuler toute commande tant qu’elle n’a pas été récupérée ou livrée en nous contactant; tout montant payé est remboursé. Si nous avons déjà commencé à assembler un PC, le dépôt couvre le travail effectué et pourrait ne pas être remboursé en entier."
+        },
+        "after": {
+          "title": "Après la période de retour",
+          "body": "Les défauts qui apparaissent plus tard sont couverts par la garantie du fabricant. Consultez notre page sur la garantie; nous vous aidons volontiers avec une réclamation."
+        }
+      }
+    },
+    "warranty": {
+      "title": "Garantie",
+      "description": "Garanties des fabricants et notre aide.",
+      "intro": "Toutes les pièces que nous vendons sont neuves et couvertes par la garantie de leur fabricant. La durée figure sur chaque page produit.",
+      "sections": {
+        "parts": {
+          "title": "Pièces",
+          "body": "Le service de garantie est offert par le fabricant. La plupart des réclamations se font directement auprès de lui (gardez votre courriel de commande comme preuve d’achat). Durant les {days} premiers jours, rapportez-nous plutôt une pièce défectueuse : nous la rembourserons ou l’échangerons."
+        },
+        "assembled": {
+          "title": "PC que nous assemblons",
+          "body": "Nous testons chaque PC avant que vous le récupériez. Si quelque chose ne fonctionne pas, contactez-nous : nous l’inspecterons, corrigerons sans frais tout problème lié à notre assemblage et vous aiderons à faire jouer la garantie d’une pièce défectueuse."
+        },
+        "help": {
+          "title": "Obtenir de l’aide",
+          "body": "Écrivez-nous avec votre numéro de commande et une description du problème. Nous vous dirons s’il faut l’apporter en magasin ou contacter le fabricant, et nous vous aiderons avec les démarches."
+        },
+        "rights": {
+          "title": "Vos droits",
+          "body": "Cela ne limite pas les garanties légales prévues par la loi sur la protection du consommateur de votre province, y compris la garantie légale de qualité au Québec."
+        }
+      }
+    },
+    "privacy": {
+      "title": "Politique de confidentialité",
+      "description": "Les renseignements personnels que nous recueillons, pourquoi, et vos droits.",
+      "intro": "Astral Tech Gaming respecte votre vie privée. Cette politique explique ce que nous recueillons, pourquoi, avec qui nous le partageons et comment vous en gardez le contrôle. Elle respecte la LPRPDE canadienne et la Loi 25 du Québec.",
+      "sections": {
+        "responsible": {
+          "title": "Personne responsable",
+          "body": "{officer} est responsable de la protection des renseignements personnels chez Astral Tech Gaming. Contact : {email}."
+        },
+        "collect": {
+          "title": "Ce que nous recueillons",
+          "body": "Lors d’une commande : votre nom, courriel, numéro de téléphone, adresse de livraison, vos achats et votre mode de paiement.\n\nAvec un compte : vos configurations enregistrées, votre liste de souhaits, vos adresses et votre langue préférée.\n\nAutomatiquement : votre adresse IP, brièvement, pour protéger le site contre les abus; des rapports d’erreur qui ne contiennent pas vos renseignements personnels."
+        },
+        "cards": {
+          "title": "Paiements par carte",
+          "body": "Les paiements par carte sont traités par Stripe sur sa page sécurisée. Nous ne voyons ni ne conservons jamais votre numéro de carte complet."
+        },
+        "why": {
+          "title": "Pourquoi nous les utilisons",
+          "body": "Pour traiter et livrer vos commandes, vous contacter à leur sujet, gérer les retours et la garantie, faire fonctionner votre compte, prévenir la fraude et les abus, et respecter nos obligations fiscales et comptables. Nous n’envoyons pas de courriels promotionnels sans votre demande et ne vendons jamais vos renseignements."
+        },
+        "sharing": {
+          "title": "Avec qui nous les partageons",
+          "body": "Seulement avec les fournisseurs qui nous aident à exploiter la boutique : Stripe (paiements), Resend (courriels), Vercel et Neon (hébergement et base de données), Cloudflare (stockage d’images) et Sentry (suivi des erreurs). Certains conservent des données à l’extérieur du Québec et du Canada, surtout aux États-Unis, en vertu de contrats qui les protègent."
+        },
+        "cookies": {
+          "title": "Témoins (cookies)",
+          "body": "Nous utilisons seulement les témoins nécessaires au fonctionnement du site : votre panier, votre configuration de PC, votre langue et votre connexion. Aucun témoin publicitaire ou de suivi."
+        },
+        "retention": {
+          "title": "Durée de conservation",
+          "body": "Dossiers de commande et de paiement : 6 ans, comme l’exige la loi fiscale. Renseignements du compte : jusqu’à la suppression de votre compte. Journaux de sécurité : quelques jours."
+        },
+        "rights": {
+          "title": "Vos droits",
+          "body": "Vous pouvez demander à consulter, corriger ou supprimer vos renseignements personnels, ou retirer votre consentement. Dans Mon compte, vous pouvez télécharger vos données ou supprimer votre compte vous-même; les commandes restent dans nos dossiers à des fins fiscales, sans lien avec votre compte. Pour toute autre demande, écrivez à {email}; nous répondons dans les 30 jours.\n\nSi vous n’êtes pas satisfait, vous pouvez porter plainte auprès du Commissariat à la protection de la vie privée du Canada ou, au Québec, de la Commission d’accès à l’information."
+        },
+        "incidents": {
+          "title": "Incidents de sécurité",
+          "body": "Nous protégeons vos renseignements par le chiffrement, des contrôles d’accès et un accès limité du personnel. Si un incident risque de vous causer un préjudice sérieux, nous vous en informerons, ainsi que les autorités, comme l’exige la loi."
+        }
+      }
+    },
+    "terms": {
+      "title": "Conditions de vente",
+      "description": "Prix, paiement, cueillette et livraison, et retours.",
+      "intro": "Ces conditions s’appliquent aux commandes passées sur astralgaming.ca auprès d’Astral Tech Gaming.",
+      "sections": {
+        "prices": {
+          "title": "Prix et taxes",
+          "body": "Les prix sont en dollars canadiens. Les taxes de vente applicables sont ajoutées au paiement selon le magasin qui traite votre commande. Si un prix est manifestement erroné, nous vous contacterons avant de poursuivre, et vous pourrez annuler."
+        },
+        "orders": {
+          "title": "Votre commande",
+          "body": "Passer une commande réserve les articles au magasin choisi. Nous confirmons la commande à la réception du paiement (ou du dépôt), et nous pouvons annuler une commande si un article s’avère indisponible, en remboursant tout montant payé."
+        },
+        "payment": {
+          "title": "Paiement",
+          "body": "Nous acceptons les cartes (par Stripe), le virement Interac et l’argent comptant à la cueillette ou à la livraison pour les commandes de moins de {cashMax}. Les commandes impayées sont annulées automatiquement après le délai indiqué au paiement, et les articles sont libérés."
+        },
+        "assembled": {
+          "title": "PC assemblés",
+          "body": "Les PC assemblés exigent un dépôt de {deposit} % avant le début de l’assemblage. Le solde est payable avant ou au moment de la cueillette ou de la livraison."
+        },
+        "fulfilment": {
+          "title": "Cueillette et livraison",
+          "body": "La cueillette est offerte à nos magasins de Toronto et de Montréal. La livraison locale est offerte dans les secteurs indiqués sur notre page des magasins. Nous confirmons l’heure exacte avec vous; veuillez apporter une pièce d’identité avec photo à la cueillette."
+        },
+        "returns": {
+          "title": "Retours et garantie",
+          "body": "Les retours sont acceptés dans les {days} jours selon notre politique de retour, y compris les frais de restockage de {percent} % pour les articles non défectueux. Les pièces sont couvertes par la garantie de leur fabricant."
+        },
+        "law": {
+          "title": "Droit applicable",
+          "body": "Ces conditions sont régies par les lois de la province où votre commande est traitée. Rien ici ne limite vos droits en vertu des lois sur la protection du consommateur. Au Québec, ces conditions sont offertes en français et prévalent dans cette langue."
+        }
+      }
+    },
+    "officerFallback": "Le propriétaire d’Astral Tech Gaming"
   }
 }

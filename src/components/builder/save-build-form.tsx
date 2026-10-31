@@ -39,7 +39,7 @@ export function SaveBuildForm({ locale, name }: { locale: string; name: string |
         ) : name ? (
           <>
             {t("savedBuildHint")}{" "}
-            <Link href="/account/builds" className="text-accent hover:underline">
+            <Link href="/account/builds" className="text-accent underline underline-offset-2">
               {t("tabs.builds")}
             </Link>
           </>

@@ -15,7 +15,7 @@ export async function OrderList({ orders }: { orders: MyOrder[] }) {
     return (
       <p className="rounded-lg border bg-surface p-6 text-muted">
         {t("noOrders")}{" "}
-        <Link href="/shop" className="text-accent hover:underline">
+        <Link href="/shop" className="text-accent underline underline-offset-2">
           {t("startShopping")}
         </Link>
       </p>

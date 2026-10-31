@@ -183,7 +183,7 @@ async function FulfilmentStep({
             ? t("pickupAt", { location: locationLabel })
             : t("deliveryFrom", { location: locationLabel, postalCode: current.postalCode })}
         </p>
-        <Link href="/checkout" className="text-sm text-accent hover:underline">
+        <Link href="/checkout" className="text-sm text-accent underline underline-offset-2">
           {t("change")}
         </Link>
       </section>
@@ -270,7 +270,7 @@ async function DetailsStep({
         </ul>
         <p className="text-sm">
           {t("tryOther")}{" "}
-          <Link href="/cart" className="text-accent hover:underline">
+          <Link href="/cart" className="text-accent underline underline-offset-2">
             {t("change")}
           </Link>
         </p>
@@ -297,6 +297,8 @@ async function DetailsStep({
       etransferHours={settings.etransferHoldHours}
       cashLimitNote={cashLimitNote}
       prefill={prefillFor(account, choice)}
+      returnDays={settings.returnWindowDays}
+      restockingPercent={settings.restockingPercent}
       signedIn={!!account}
       depositNote={
         quoted.depositCents > 0

@@ -8,12 +8,13 @@ import { saveAddress } from "@/server/account/addresses";
 import { clearCart, getCheckoutCart } from "@/server/cart";
 import { getCustomer } from "@/server/customer";
 import { placeOrder } from "@/server/orders/lifecycle";
+import { hitByIp } from "@/server/rate-limit";
 
 export type CheckoutState = {
   // Field name → key under "Checkout.errors".
   errors?: Record<string, CheckoutErrorKey>;
   // Problem with the whole order → key under "Checkout.errors".
-  formError?: "stock" | "payment" | "empty" | "method" | "fulfilment";
+  formError?: "stock" | "payment" | "empty" | "method" | "fulfilment" | "tooMany";
   values?: Record<string, string>;
 };
 
@@ -28,6 +29,8 @@ export async function placeOrderAction(
 
   const parsed = parseCheckoutForm(raw, new Date());
   if (!parsed.ok) return { errors: parsed.errors, values: raw };
+  // Each order holds stock, so a script placing many could empty the shelves.
+  if (!(await hitByIp("checkout"))) return { formError: "tooMany", values: raw };
 
   const customer = await getCustomer();
   const result = await placeOrder(parsed.input, await getCheckoutCart(), locale, customer?.id);

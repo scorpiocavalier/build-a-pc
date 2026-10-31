@@ -15,6 +15,7 @@ import { getCategoryDefinition } from "@/lib/specs/definitions";
 import { formatSpecValue } from "@/lib/specs/format";
 import { cn } from "@/lib/utils";
 import { getProduct, type ProductDetail } from "@/server/catalog/queries";
+import { localeAlternates } from "@/server/seo";
 
 type Props = PageProps<"/[locale]/p/[slug]">;
 
@@ -27,6 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: name,
     description: localize(product.description, locale) || undefined,
     openGraph: product.image ? { images: [product.image.url] } : undefined,
+    alternates: await localeAlternates(`/p/${product.slug}`),
   };
 }
 

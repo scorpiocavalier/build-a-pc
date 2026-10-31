@@ -8,10 +8,15 @@ import { Link } from "@/i18n/navigation";
 import { localize } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
 import { getAssemblyExtras, listFeaturedBuilds } from "@/server/builder";
+import { localeAlternates } from "@/server/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Builder");
-  return { title: t("prebuiltTitle"), description: t("prebuiltLead") };
+  return {
+    title: t("prebuiltTitle"),
+    description: t("prebuiltLead"),
+    alternates: await localeAlternates("/prebuilt"),
+  };
 }
 
 // Photos of our own builds, shown on cards in turn until builds have photos.

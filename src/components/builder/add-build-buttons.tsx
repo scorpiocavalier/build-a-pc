@@ -34,7 +34,7 @@ export function AddBuildButtons({
           <span className="flex items-center gap-1.5">
             <Check aria-hidden="true" className="size-4 text-emerald-400" />
             {state.added === "assembled" ? t("buildAdded") : t("partsAdded")}{" "}
-            <Link href="/cart" className="text-accent hover:underline">
+            <Link href="/cart" className="text-accent underline underline-offset-2">
               {t("viewCart")}
             </Link>
           </span>

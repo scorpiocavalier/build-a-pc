@@ -639,3 +639,15 @@ model AuditLog {
   @@index([createdAt])
   @@index([entity, entityId])
 }
+
+// ─── Rate limiting ──────────────────────────────────────────────────────────
+
+// Fixed-window counters, e.g. "sign-in:ip:203.0.113.5". Expired rows are
+// cleared by the hourly cron job.
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+}

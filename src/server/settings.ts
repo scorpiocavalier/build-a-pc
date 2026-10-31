@@ -30,6 +30,10 @@ export const settingsSchema = z.object({
   returnWindowDays: z.number().int().min(0).max(365),
   // Products at or below this many units at a location show as low stock.
   lowStockThreshold: z.number().int().min(0).max(1000),
+  // Shown on the privacy policy and contact details (Quebec Law 25 requires
+  // naming the person responsible for personal information).
+  contactEmail: z.email(),
+  privacyOfficer: z.string(),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;
@@ -50,6 +54,8 @@ export const DEFAULT_SETTINGS: Settings = {
   restockingPercent: 30,
   returnWindowDays: 30,
   lowStockThreshold: 2,
+  contactEmail: "hello@astralgaming.ca",
+  privacyOfficer: "",
 };
 
 export async function getSettings(): Promise<Settings> {

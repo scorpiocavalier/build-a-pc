@@ -63,7 +63,13 @@
   },
   "Footer": {
     "rights": "© {year} Astral Tech Gaming. All rights reserved.",
-    "warranty": "Parts are covered by their manufacturer's warranty."
+    "warranty": "Warranty",
+    "locations": "Locations",
+    "returns": "Returns",
+    "privacy": "Privacy",
+    "terms": "Terms of sale",
+    "contact": "Contact: {email}",
+    "nav": "Store information"
   },
   "NotFound": {
     "title": "Page not found",
@@ -110,7 +116,8 @@
     "searchTitle": "Search",
     "searchResults": "{count, plural, =0 {No results} one {# result} other {# results}} for “{query}”",
     "searchEmpty": "Try a brand, a model number or a part type, like “RTX 5070” or “DDR5”.",
-    "searchButton": "Search"
+    "searchButton": "Search",
+    "searchTooMany": "Too many searches in a short time. Please wait a minute and try again."
   },
   "Cart": {
     "title": "Your cart",
@@ -186,7 +193,7 @@
     },
     "cashLimit": "Cash isn't available for orders of {amount} or more.",
     "notes": "Notes for us (optional)",
-    "terms": "I accept the terms of sale and the 30-day return policy. A 30% restocking fee applies to returns that aren't for a defect.",
+    "terms": "I accept the <terms>terms of sale</terms> and the <returns>return policy</returns>: {days}-day returns, with a {percent}% restocking fee on items that aren't defective.",
     "summary": "Order summary",
     "subtotal": "Subtotal",
     "deliveryFee": "Delivery",
@@ -206,7 +213,8 @@
       "stock": "Some items are no longer available in this quantity. Please review your cart.",
       "payment": "We couldn't start the card payment. Please try again or choose another payment method.",
       "empty": "Your cart is empty.",
-      "fulfilment": "Choose pickup or delivery first."
+      "fulfilment": "Choose pickup or delivery first.",
+      "tooMany": "Too many attempts. Please wait a few minutes and try again."
     },
     "assembly": "Assembly and testing",
     "deposit": "Deposit due now: {amount} ({percent}%). The rest is due at pickup or delivery.",
@@ -412,7 +420,8 @@
     "signInErrors": {
       "email": "Enter a valid email address.",
       "staff": "Staff accounts sign in with Google from the admin page.",
-      "failed": "We couldn't send the link. Please try again."
+      "failed": "We couldn't send the link. Please try again.",
+      "tooMany": "Too many attempts. Please wait a few minutes and try again."
     },
     "authErrors": {
       "Verification": "That sign-in link has expired or was already used. Ask for a new one below.",
@@ -493,7 +502,16 @@
     },
     "saveBuildHint": "Keep it in your account to come back to later.",
     "savedBuildHint": "Changes are saved automatically. All your builds:",
-    "unavailable": "Signing in isn't available yet. You can still order as a guest."
+    "unavailable": "Signing in isn't available yet. You can still order as a guest.",
+    "yourData": "Your data",
+    "yourDataLead": "Download a copy of what we store about you, or delete your account. Orders stay in our records for 6 years for tax purposes, without your account.",
+    "downloadData": "Download my data (JSON)",
+    "deleteConfirm": "I understand my account, saved builds, addresses and wishlist will be deleted permanently.",
+    "deleteAccount": "Delete my account",
+    "deleteErrors": {
+      "confirm": "Tick the box to confirm.",
+      "staff": "Staff accounts can't be deleted here."
+    }
   },
   "Returns": {
     "title": "Request a return",
@@ -523,7 +541,8 @@
       "quantity": "Check the quantities: some items were already requested.",
       "assembledDefective": "Parts of an assembled PC can only be returned when they're defective.",
       "reason": "Choose a reason.",
-      "details": "Tell us a bit more (at least 10 characters)."
+      "details": "Tell us a bit more (at least 10 characters).",
+      "tooMany": "Too many attempts. Please wait a few minutes and try again."
     },
     "sent": "Return request {rma} sent. We'll email {email} with next steps.",
     "storeNote": "Our message: {note}",
@@ -532,5 +551,157 @@
     "feeEstimate": "A restocking fee of up to {amount} may apply. We'll confirm the final amount after inspecting the items.",
     "refundedNote": "Refunded {amount}.",
     "feeNote": "Restocking fee: {amount}."
+  },
+  "Legal": {
+    "updated": "Last updated {date}",
+    "related": "Related",
+    "contactLine": "Questions? Email {email}.",
+    "locations": {
+      "title": "Our locations",
+      "description": "Pickup and local delivery in Toronto and Montreal.",
+      "intro": "Order online and pick up at either store, or get local delivery. We confirm a time with you after you order.",
+      "address": "Address",
+      "hours": "Hours",
+      "delivery": "Local delivery",
+      "deliveryAreas": "Postal codes starting with {prefixes}, {fee}.",
+      "noDelivery": "Pickup only for now."
+    },
+    "returns": {
+      "title": "Returns and refunds",
+      "description": "30-day returns, how refunds work and the restocking fee.",
+      "intro": "We want you to be happy with your parts and your PC. Here's how returns work.",
+      "sections": {
+        "window": {
+          "title": "How long you have",
+          "body": "You can ask for a return within {days} days of picking up or receiving your order.\n\nStart from your order page (the link in your order email, or My account → Orders) and choose “Request a return”. We reply by email within 2 business days."
+        },
+        "condition": {
+          "title": "What we accept",
+          "body": "Items should be complete, with all accessories and, where possible, the original packaging.\n\nSoftware licences, such as Windows, can't be returned once activated."
+        },
+        "assembled": {
+          "title": "Assembled PCs",
+          "body": "PCs we built for you, and the parts in them, can be returned only if they're defective. We inspect every returned PC and repair, replace or refund it."
+        },
+        "fee": {
+          "title": "Restocking fee",
+          "body": "Returns of items that aren't defective, wrong or misdescribed (for example if you changed your mind) have a {percent}% restocking fee on the items' price. There's no fee when an item is defective, when we sent the wrong item, or when it wasn't as described."
+        },
+        "refunds": {
+          "title": "Refunds",
+          "body": "Once we receive and inspect the items, we refund the items' price and the tax charged on them, minus any restocking fee. Delivery and assembly fees aren't refunded.\n\nCard payments are refunded to the same card (allow 5–10 business days). Cash and e-Transfer payments are refunded by Interac e-Transfer."
+        },
+        "cancel": {
+          "title": "Cancelling an order",
+          "body": "You can cancel any order until it has been picked up or delivered by contacting us; whatever you paid is refunded. If we've already started assembling a PC, the deposit covers work done and may not be refunded in full."
+        },
+        "after": {
+          "title": "After the return period",
+          "body": "Defects that appear later are covered by the manufacturer's warranty. See our warranty page; we're happy to help with a claim."
+        }
+      }
+    },
+    "warranty": {
+      "title": "Warranty",
+      "description": "Manufacturer warranties on parts, and how we help.",
+      "intro": "Every part we sell is new and covered by its manufacturer's warranty. The length is shown on each product page.",
+      "sections": {
+        "parts": {
+          "title": "Parts",
+          "body": "Warranty service is provided by the manufacturer. Most claims are made directly with them (keep your order email as proof of purchase). Within the first {days} days, bring or send a defective part back to us instead and we'll refund or exchange it."
+        },
+        "assembled": {
+          "title": "PCs we assemble",
+          "body": "We test every PC we build before you pick it up. If something isn't working, contact us: we'll inspect it, fix any problem caused by our assembly at no charge, and help you claim warranty on a faulty part."
+        },
+        "help": {
+          "title": "Getting help",
+          "body": "Email us with your order number and a description of the problem. We'll tell you whether to bring it in or contact the manufacturer, and help with the paperwork."
+        },
+        "rights": {
+          "title": "Your legal rights",
+          "body": "This doesn't limit the legal warranties you have under provincial consumer protection law, including Quebec's legal warranty of quality."
+        }
+      }
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "description": "What personal information we collect, why, and your rights.",
+      "intro": "Astral Tech Gaming respects your privacy. This policy explains what we collect, why, who we share it with, and how you control it. It follows Canada's PIPEDA and Quebec's Law 25.",
+      "sections": {
+        "responsible": {
+          "title": "Person responsible",
+          "body": "{officer} is responsible for protecting personal information at Astral Tech Gaming. Contact: {email}."
+        },
+        "collect": {
+          "title": "What we collect",
+          "body": "When you order: your name, email, phone number, delivery address, what you bought and how you paid.\n\nWith an account: your saved builds, wishlist, addresses and preferred language.\n\nAutomatically: your IP address, briefly, to protect the site from abuse; error reports that don't include your personal information."
+        },
+        "cards": {
+          "title": "Card payments",
+          "body": "Card payments are handled by Stripe on their secure page. We never see or store your full card number."
+        },
+        "why": {
+          "title": "Why we use it",
+          "body": "To process and deliver your orders, contact you about them, handle returns and warranty, keep your account working, prevent fraud and abuse, and meet tax and accounting obligations. We don't send marketing emails unless you ask for them, and we never sell your information."
+        },
+        "sharing": {
+          "title": "Who we share it with",
+          "body": "Only service providers who help us run the store: Stripe (payments), Resend (email), Vercel and Neon (hosting and database), Cloudflare (image storage) and Sentry (error monitoring). Some of them store data outside Quebec and Canada, mainly in the United States, under contracts that protect it."
+        },
+        "cookies": {
+          "title": "Cookies",
+          "body": "We only use cookies the site needs to work: your cart, your PC build, your language and your sign-in. No advertising or tracking cookies."
+        },
+        "retention": {
+          "title": "How long we keep it",
+          "body": "Order and payment records: 6 years, as tax law requires. Account information: until you delete your account. Security logs: a few days."
+        },
+        "rights": {
+          "title": "Your rights",
+          "body": "You can ask to see, correct or delete your personal information, or withdraw your consent. In My account you can download your data or delete your account yourself; orders stay in our records for tax purposes, without your account. Email {email} for anything else; we reply within 30 days.\n\nIf you're not satisfied, you can complain to the Office of the Privacy Commissioner of Canada or, in Quebec, the Commission d'accès à l'information."
+        },
+        "incidents": {
+          "title": "Security incidents",
+          "body": "We protect your information with encryption, access controls and limited staff access. If an incident could cause you serious harm, we'll tell you and the authorities as the law requires."
+        }
+      }
+    },
+    "terms": {
+      "title": "Terms of sale",
+      "description": "Prices, payment, pickup and delivery, and returns.",
+      "intro": "These terms apply to orders placed on astralgaming.ca with Astral Tech Gaming.",
+      "sections": {
+        "prices": {
+          "title": "Prices and taxes",
+          "body": "Prices are in Canadian dollars. Applicable sales taxes are added at checkout based on the store that fulfils your order. If a price is clearly wrong, we'll contact you before going ahead, and you can cancel."
+        },
+        "orders": {
+          "title": "Your order",
+          "body": "Placing an order reserves the items at your chosen store. We confirm the order once payment (or the deposit) is received, and we may cancel an order if an item turns out to be unavailable, refunding anything you paid."
+        },
+        "payment": {
+          "title": "Payment",
+          "body": "We accept cards (through Stripe), Interac e-Transfer and cash on pickup or delivery for orders under {cashMax}. Unpaid orders are cancelled automatically after the time shown at checkout, and the items are released."
+        },
+        "assembled": {
+          "title": "Assembled PCs",
+          "body": "Assembled PCs need a {deposit}% deposit before we start building. The rest is due before or at pickup or delivery."
+        },
+        "fulfilment": {
+          "title": "Pickup and delivery",
+          "body": "Pickup is available at our Toronto and Montreal stores. Local delivery is available in the areas listed on our locations page. We confirm the exact time with you; please bring photo ID when picking up."
+        },
+        "returns": {
+          "title": "Returns and warranty",
+          "body": "Returns are accepted within {days} days as described in our returns policy, including the {percent}% restocking fee for items that aren't defective. Parts carry their manufacturer's warranty."
+        },
+        "law": {
+          "title": "Applicable law",
+          "body": "These terms are governed by the laws of the province where your order is fulfilled. Nothing here limits your rights under consumer protection law. In Quebec, these terms are available in French and prevail in that language."
+        }
+      }
+    },
+    "officerFallback": "The owner of Astral Tech Gaming"
   }
 }

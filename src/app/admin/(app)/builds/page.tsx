@@ -106,7 +106,7 @@ export default async function AdminBuildsPage() {
                 <a
                   href={`/en/build/s/${build.shareId}`}
                   target="_blank"
-                  className="text-accent hover:underline"
+                  className="text-accent underline underline-offset-2"
                 >
                   view ↗
                 </a>

@@ -6,6 +6,7 @@ import { parseDollars } from "@/lib/money";
 import { audit } from "@/server/audit";
 import { db } from "@/server/db";
 import { requireAdmin } from "@/server/require-admin";
+import { LOCATIONS_TAG } from "@/server/locations";
 import { getSettings, SETTINGS_TAG, settingsSchema } from "@/server/settings";
 
 export type SettingsState = { error?: string; saved?: boolean };
@@ -33,6 +34,8 @@ export async function saveStoreSettings(
     restockingPercent: Number(str(formData, "restockingPercent")),
     returnWindowDays: Number(str(formData, "returnWindowDays")),
     lowStockThreshold: Number(str(formData, "lowStockThreshold")),
+    contactEmail: str(formData, "contactEmail"),
+    privacyOfficer: str(formData, "privacyOfficer"),
   });
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
@@ -94,6 +97,7 @@ export async function saveLocation(
     entityId: code,
     summary: `Updated ${code} location: delivery ${prefixes.join(", ") || "none"}, fee $${(fee / 100).toFixed(2)}`,
   });
+  updateTag(LOCATIONS_TAG);
   refresh();
   return { saved: true };
 }

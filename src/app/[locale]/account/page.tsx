@@ -13,6 +13,7 @@ import { getCustomerProfile, requireCustomer } from "@/server/customer";
 import { db } from "@/server/db";
 
 import { signOutAction } from "./actions";
+import { DeleteAccountForm } from "./delete-account-form";
 import { ProfileForm } from "./profile-form";
 
 type Props = PageProps<"/[locale]/account">;
@@ -102,6 +103,19 @@ async function Overview({ searchParams }: Pick<Props, "searchParams">) {
           name={profile.name ?? ""}
           preferredLocale={profile.locale ?? locale}
         />
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-lg border bg-surface p-5">
+        <h2 className="text-lg font-semibold">{t("yourData")}</h2>
+        <p className="text-sm text-muted">{t("yourDataLead")}</p>
+        <a
+          href="/api/account/export"
+          download
+          className="self-start text-sm text-accent underline underline-offset-2"
+        >
+          {t("downloadData")}
+        </a>
+        <DeleteAccountForm locale={locale} />
       </section>
     </div>
   );

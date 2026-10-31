@@ -2,6 +2,7 @@ import { Hammer, MapPin, Truck, Wrench } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 
+import { HomeStructuredData } from "@/components/seo/home-structured-data";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 
@@ -18,6 +19,7 @@ export default function HomePage() {
 
   return (
     <>
+      <HomeStructuredData />
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div

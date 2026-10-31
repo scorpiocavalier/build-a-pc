@@ -22,6 +22,7 @@ import { getCategoryDefinition } from "@/lib/specs/definitions";
 import { formatOption, formatSpecValue } from "@/lib/specs/format";
 import { cn } from "@/lib/utils";
 import { getCategoryProducts } from "@/server/catalog/queries";
+import { localeAlternates } from "@/server/seo";
 
 type Props = PageProps<"/[locale]/c/[category]">;
 
@@ -29,7 +30,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { category } = await params;
   const definition = getCategoryDefinition(category);
   if (!definition) return {};
-  return { title: localize(definition.name, await getLocale()) };
+  return {
+    title: localize(definition.name, await getLocale()),
+    alternates: await localeAlternates(`/c/${category}`),
+  };
 }
 
 export default function CategoryPage({ params, searchParams }: Props) {
@@ -101,7 +105,7 @@ async function CategoryListing({ params, searchParams }: Props) {
       {hasFilters && (
         <Link
           href={`/c/${slug}`}
-          className="flex items-center gap-1 text-sm text-accent hover:underline"
+          className="flex items-center gap-1 text-sm text-accent underline underline-offset-2"
         >
           <X aria-hidden="true" className="size-4" />
           {t("clearFilters")}

@@ -102,7 +102,7 @@ export default async function AdminReturnsPage({ searchParams }: PageProps<"/adm
             </span>
             <Link
               href={`/admin/orders/${request.order.id}`}
-              className="text-sm text-accent hover:underline"
+              className="text-sm text-accent underline underline-offset-2"
             >
               {formatOrderNumber(request.order.number)}
             </Link>

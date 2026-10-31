@@ -6,10 +6,15 @@ import { CategoryIcon } from "@/components/catalog/category-icon";
 import { Link } from "@/i18n/navigation";
 import { localize } from "@/lib/localized";
 import { getCategories } from "@/server/catalog/queries";
+import { localeAlternates } from "@/server/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Catalog");
-  return { title: t("shopTitle"), description: t("shopLead") };
+  return {
+    title: t("shopTitle"),
+    description: t("shopLead"),
+    alternates: await localeAlternates("/shop"),
+  };
 }
 
 export default async function ShopPage() {
