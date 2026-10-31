@@ -12,7 +12,10 @@ import { formatRate } from "@/lib/checkout/pricing";
 import { availableDates, formatDate } from "@/lib/checkout/windows";
 import { localize } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
+import { listAddresses, type SavedAddress } from "@/server/account/addresses";
 import { getCheckoutCart, type CartLineView } from "@/server/cart";
+import { getCustomer, getCustomerProfile } from "@/server/customer";
+import { db } from "@/server/db";
 import {
   quoteCheckout,
   type CheckoutCart,
@@ -54,6 +57,7 @@ async function CheckoutContent({ searchParams }: Pick<Props, "searchParams">) {
     getTranslations("Checkout"),
   ]);
   if (cart.lines.length === 0 && cart.builds.length === 0) redirect(`/${locale}/cart`);
+  const account = await loadAccountDetails();
 
   // Step 1 is a plain GET form, so it works without JavaScript and the
   // chosen option stays in the URL.
@@ -81,7 +85,7 @@ async function CheckoutContent({ searchParams }: Pick<Props, "searchParams">) {
       <div className="flex flex-col gap-8">
         <FulfilmentStep
           current={choice}
-          postalInput={one(params.pc)}
+          postalInput={one(params.pc) || account?.addresses[0]?.postalCode || ""}
           postalError={postalError}
           locationLabel={ready ? localize(ready.location.name, locale) : null}
         />
@@ -91,12 +95,71 @@ async function CheckoutContent({ searchParams }: Pick<Props, "searchParams">) {
           </p>
         )}
         {ready && choice && (
-          <DetailsStep choice={choice} quoted={ready} cart={cart} locale={locale} />
+          <DetailsStep
+            choice={choice}
+            quoted={ready}
+            cart={cart}
+            locale={locale}
+            account={account}
+          />
         )}
       </div>
       <OrderSummary cart={cart} quoted={ready} locale={locale} />
     </div>
   );
+}
+
+type AccountDetails = {
+  name: string;
+  email: string;
+  phone: string;
+  // Default first.
+  addresses: SavedAddress[];
+};
+
+// Signed-in customers get their details filled in.
+async function loadAccountDetails(): Promise<AccountDetails | null> {
+  const customer = await getCustomer();
+  if (!customer) return null;
+  const [profile, addresses, lastOrder] = await Promise.all([
+    getCustomerProfile(customer.id),
+    listAddresses(customer.id),
+    db.order.findFirst({
+      where: { userId: customer.id },
+      orderBy: { placedAt: "desc" },
+      select: { name: true, phone: true },
+    }),
+  ]);
+  return {
+    name: profile?.name || lastOrder?.name || addresses[0]?.name || "",
+    email: profile?.email ?? customer.email,
+    phone: addresses[0]?.phone || lastOrder?.phone || "",
+    addresses,
+  };
+}
+
+function prefillFor(account: AccountDetails | null, choice: FulfilmentChoice) {
+  if (!account) return {};
+  const values: Record<string, string> = {
+    name: account.name,
+    email: account.email,
+    phone: account.phone,
+  };
+  const address =
+    choice.kind === "DELIVERY"
+      ? account.addresses.find((a) => a.postalCode === choice.postalCode)
+      : undefined;
+  if (address) {
+    Object.assign(values, {
+      addressId: address.id,
+      name: address.name,
+      phone: address.phone,
+      line1: address.line1,
+      line2: address.line2,
+      city: address.city,
+    });
+  }
+  return values;
 }
 
 async function FulfilmentStep({
@@ -180,11 +243,13 @@ async function DetailsStep({
   quoted,
   cart,
   locale,
+  account,
 }: {
   choice: FulfilmentChoice;
   quoted: CheckoutQuote;
   cart: CheckoutCart;
   locale: string;
+  account: AccountDetails | null;
 }) {
   const [t, settings] = await Promise.all([getTranslations("Checkout"), getSettings()]);
   const location = localize(quoted.location.name, locale);
@@ -231,6 +296,8 @@ async function DetailsStep({
       methods={quoted.methods}
       etransferHours={settings.etransferHoldHours}
       cashLimitNote={cashLimitNote}
+      prefill={prefillFor(account, choice)}
+      signedIn={!!account}
       depositNote={
         quoted.depositCents > 0
           ? {

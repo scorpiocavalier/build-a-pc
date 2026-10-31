@@ -45,7 +45,7 @@ export type ProductDetail = ProductSummary & {
   images: ProductImageView[];
 };
 
-const summarySelect = {
+export const summarySelect = {
   id: true,
   slug: true,
   sku: true,
@@ -73,7 +73,7 @@ function toImage(image: SummaryRow["images"][number]): ProductImageView {
   };
 }
 
-function toSummary(row: SummaryRow): ProductSummary {
+export function toSummary(row: SummaryRow): ProductSummary {
   const available: Availability = { TOR: 0, MTL: 0 };
   for (const stock of row.inventory) {
     available[stock.location.code] = Math.max(0, stock.onHand - stock.reserved);

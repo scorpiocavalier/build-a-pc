@@ -485,6 +485,16 @@ financing, stock transfer workflow.
 ### Progress
 
 - **Phase 0: done.**
+- **Phase 4: done.** Differences from the plan:
+  - Customers sign in with an emailed link or Google; no passwords. Earlier guest
+    orders with the same (now verified) email join the account.
+  - The cart stays per browser (cookie) rather than syncing across devices;
+    builds are saved to the account by name and edited in place.
+  - Return requests (RMA-<n>) are approved or declined in `/admin/returns`, with
+    an email to the customer. Receiving, refunds, restocking and the final
+    restocking fee are Phase 5.
+  - The preferred language is used when landing on the account after sign-in.
+    Order emails stay in the language the order was placed in.
 - **Phase 3: done.** Differences from §7:
   - Builds are saved per browser (secret cookie) for everyone, not only signed-in
     customers; each has a read-only share link (`/build/s/<id>`).

@@ -11,7 +11,8 @@
       "shop": "Boutique",
       "cart": "Panier",
       "builder": "Configurateur",
-      "prebuilt": "PC préassemblés"
+      "prebuilt": "PC préassemblés",
+      "account": "Mon compte"
     },
     "switchLocale": "English",
     "switchLocaleLabel": "View the site in English",
@@ -210,7 +211,8 @@
     "assembly": "Assemblage et tests",
     "deposit": "Acompte dû maintenant : {amount} ({percent} %). Le solde est payable à la cueillette ou à la livraison.",
     "depositCash": "Payez un acompte de {amount} par virement Interac pour lancer l’assemblage, puis le solde comptant.",
-    "depositEtransfer": "Envoyez au moins l’acompte de {amount} pour lancer l’assemblage, ou le montant complet."
+    "depositEtransfer": "Envoyez au moins l’acompte de {amount} pour lancer l’assemblage, ou le montant complet.",
+    "saveAddress": "Enregistrer cette adresse dans mon compte"
   },
   "Order": {
     "title": "Commande {number}",
@@ -256,7 +258,13 @@
     "keepLink": "Conservez ce lien pour suivre votre commande.",
     "depositDue": "Acompte pour lancer l’assemblage : {amount}",
     "etransferDeposit": "Envoyez au moins l’acompte de {amount} (ou le total de {total}) à {email} et indiquez {number} dans le message.",
-    "assemblyNote": "Nous commencerons l’assemblage dès la réception de l’acompte. Prêt environ {days, plural, one {# jour ouvrable} other {# jours ouvrables}} plus tard."
+    "assemblyNote": "Nous commencerons l’assemblage dès la réception de l’acompte. Prêt environ {days, plural, one {# jour ouvrable} other {# jours ouvrables}} plus tard.",
+    "returnStatus": {
+      "REQUESTED": "Demandé",
+      "APPROVED": "Approuvé",
+      "DECLINED": "Refusé",
+      "COMPLETED": "Terminé"
+    }
   },
   "Email": {
     "subjectReceived": "Commande {number} reçue",
@@ -273,7 +281,21 @@
     "refunded": "Votre paiement par carte de {amount} a été remboursé. Le remboursement peut prendre de 5 à 10 jours ouvrables à paraître.",
     "viewOrder": "Voir votre commande",
     "signoff": "Astral Tech Gaming",
-    "receiptNumbers": "Numéros de taxe : {numbers}"
+    "receiptNumbers": "Numéros de taxe : {numbers}",
+    "signIn": {
+      "subject": "Connexion à Astral Tech Gaming",
+      "intro": "Cliquez sur le bouton pour vous connecter. Le lien fonctionne une seule fois et expire dans 24 heures.",
+      "button": "Se connecter",
+      "ignore": "Si vous n’avez rien demandé, vous pouvez ignorer ce courriel."
+    },
+    "return": {
+      "requestedSubject": "Nous avons reçu votre demande de retour {rma}",
+      "requestedBody": "Nous avons reçu votre demande de retour pour ces articles de la commande {number}. Nous l’examinerons et vous écrirons d’ici 2 jours ouvrables.",
+      "approvedSubject": "Retour {rma} approuvé",
+      "approvedBody": "Votre demande de retour pour la commande {number} est approuvée. Apportez les articles ci-dessous, si possible dans leur emballage d’origine, au magasin où vous avez commandé. Nous confirmerons le remboursement après inspection.",
+      "declinedSubject": "Mise à jour sur le retour {rma}",
+      "declinedBody": "Nous ne pouvons pas accepter votre demande de retour pour la commande {number}."
+    }
   },
   "Builder": {
     "title": "Configurateur de PC",
@@ -355,6 +377,146 @@
       "gpuConnector": "Le bloc d’alimentation n’a pas de connecteur {connector} pour la carte graphique; un adaptateur serait nécessaire.",
       "noGraphics": "Ce processeur n’a pas de graphiques intégrés : le montage a besoin d’une carte graphique.",
       "noCooler": "Ce processeur n’est pas livré avec un refroidisseur. Choisissez-en un."
-    }
+    },
+    "newBuild": "Nouvelle configuration",
+    "signInToSave": "Connectez-vous pour enregistrer cette configuration dans votre compte"
+  },
+  "Account": {
+    "title": "Mon compte",
+    "tabs": {
+      "overview": "Aperçu",
+      "orders": "Commandes",
+      "builds": "Configurations",
+      "wishlist": "Liste de souhaits",
+      "addresses": "Adresses"
+    },
+    "signInTitle": "Connexion",
+    "signInLead": "Suivez vos commandes, enregistrez vos configurations et adresses, et gardez une liste de souhaits. Aucun mot de passe requis.",
+    "email": "Courriel",
+    "sendLink": "M’envoyer un lien de connexion",
+    "sending": "Envoi…",
+    "checkEmail": "Vérifiez vos courriels",
+    "checkEmailBody": "Nous avons envoyé un lien de connexion à {email}. Il fonctionne une seule fois et expire dans 24 heures.",
+    "signInErrors": {
+      "email": "Entrez une adresse courriel valide.",
+      "staff": "Les comptes du personnel se connectent avec Google depuis la page d’administration.",
+      "failed": "Nous n’avons pas pu envoyer le lien. Veuillez réessayer."
+    },
+    "authErrors": {
+      "Verification": "Ce lien de connexion a expiré ou a déjà été utilisé. Demandez-en un nouveau ci-dessous.",
+      "AccessDenied": "Ce compte ne peut pas se connecter ici.",
+      "Default": "La connexion n’a pas fonctionné. Veuillez réessayer."
+    },
+    "or": "ou",
+    "google": "Continuer avec Google",
+    "guestNote": "Vous pouvez aussi commander sans compte. Les commandes passées avec le même courriel apparaissent dans votre compte dès que vous vous connectez.",
+    "signedInAs": "Connecté en tant que {email}",
+    "signOut": "Se déconnecter",
+    "recentOrders": "Commandes récentes",
+    "profile": "Profil",
+    "name": "Nom",
+    "language": "Langue préférée",
+    "languageHint": "Utilisée à la connexion et pour les courriels liés à votre compte.",
+    "save": "Enregistrer",
+    "saved": "Enregistré.",
+    "noOrders": "Aucune commande pour l’instant.",
+    "startShopping": "Magasiner",
+    "returnBadge": "Retour : {status}",
+    "ordersNote": "Les commandes passées sans compte avec votre courriel apparaissent aussi ici.",
+    "noBuilds": "Aucune configuration enregistrée. Montez-en une dans le configurateur et enregistrez-la.",
+    "openBuilder": "Ouvrir le configurateur",
+    "buildMeta": "{parts, plural, one {# pièce} other {# pièces}} · modifiée le {date}",
+    "buildReady": "Prête à assembler",
+    "buildErrors": "{count, plural, one {# erreur de compatibilité} other {# erreurs de compatibilité}}",
+    "buildIncomplete": "Pièces manquantes",
+    "openBuild": "Ouvrir dans le configurateur",
+    "shareLink": "Lien de partage",
+    "delete": "Supprimer",
+    "noWishlist": "Votre liste de souhaits est vide. Touchez le cœur sur un produit pour l’enregistrer ici.",
+    "addToWishlist": "Ajouter à la liste de souhaits",
+    "inWishlist": "Dans votre liste de souhaits",
+    "removeFromWishlist": "Retirer",
+    "errors": {
+      "required": "Obligatoire",
+      "phone": "Entrez un numéro de téléphone à 10 chiffres",
+      "postalCode": "Entrez un code postal canadien, comme H2X 1Y4",
+      "province": "Choisissez une province",
+      "limit": "Vous pouvez enregistrer jusqu’à 10 adresses.",
+      "notFound": "Cette adresse n’existe plus."
+    },
+    "province": "Province",
+    "provinces": {
+      "AB": "Alberta",
+      "BC": "Colombie-Britannique",
+      "MB": "Manitoba",
+      "NB": "Nouveau-Brunswick",
+      "NL": "Terre-Neuve-et-Labrador",
+      "NS": "Nouvelle-Écosse",
+      "NT": "Territoires du Nord-Ouest",
+      "NU": "Nunavut",
+      "ON": "Ontario",
+      "PE": "Île-du-Prince-Édouard",
+      "QC": "Québec",
+      "SK": "Saskatchewan",
+      "YT": "Yukon"
+    },
+    "makeDefault": "Utiliser comme adresse par défaut",
+    "makeDefaultShort": "Par défaut",
+    "addAddress": "Ajouter l’adresse",
+    "noAddresses": "Aucune adresse enregistrée.",
+    "default": "Par défaut",
+    "edit": "Modifier",
+    "editAddress": "Modifier l’adresse",
+    "newAddress": "Ajouter une adresse",
+    "addressHint": "Les adresses enregistrées remplissent le formulaire de livraison au paiement.",
+    "cancelEdit": "Annuler",
+    "saveBuildTitle": "Enregistrer cette configuration",
+    "savedBuildTitle": "Enregistrée dans votre compte",
+    "buildNamePlaceholder": "p. ex. PC de diffusion",
+    "saveBuild": "Enregistrer",
+    "rename": "Renommer",
+    "buildErrorsForm": {
+      "name": "Donnez un nom à la configuration.",
+      "empty": "Ajoutez une pièce avant d’enregistrer."
+    },
+    "saveBuildHint": "Gardez-la dans votre compte pour y revenir plus tard.",
+    "savedBuildHint": "Les modifications sont enregistrées automatiquement. Toutes vos configurations :",
+    "unavailable": "La connexion n’est pas encore offerte. Vous pouvez tout de même commander sans compte."
+  },
+  "Returns": {
+    "title": "Demander un retour",
+    "sectionTitle": "Retours",
+    "policyWindow": "Les articles peuvent être retournés dans les {days} jours suivant le ramassage ou la livraison.",
+    "policyAssembled": "Les PC assemblés et leurs pièces ne peuvent être retournés que s’ils sont défectueux.",
+    "policyFee": "Les retours d’articles qui ne sont ni défectueux, ni erronés, ni mal décrits entraînent des frais de restockage de {percent} %.",
+    "policyWarranty": "Ensuite, les défauts sont couverts par la garantie du fabricant.",
+    "deadline": "Vous pouvez demander un retour jusqu’au {date}.",
+    "whichItems": "Quels articles?",
+    "reason": "Raison",
+    "reasons": {
+      "DEFECTIVE": "Il est défectueux ou ne fonctionne pas",
+      "WRONG_ITEM": "J’ai reçu le mauvais article",
+      "NOT_AS_DESCRIBED": "Il ne correspond pas à la description",
+      "CHANGED_MIND": "J’ai changé d’avis",
+      "OTHER": "Autre chose"
+    },
+    "details": "Que s’est-il passé?",
+    "detailsHint": "Pour un défaut, décrivez ce que vous constatez et ce que vous avez essayé. Nous répondrons par courriel.",
+    "submit": "Envoyer la demande de retour",
+    "sending": "Envoi…",
+    "errors": {
+      "notEligible": "Les retours sont possibles une fois la commande ramassée ou livrée.",
+      "expired": "La période de retour de 30 jours pour cette commande est terminée. Les défauts sont couverts par la garantie du fabricant.",
+      "noItems": "Choisissez au moins un article à retourner.",
+      "quantity": "Vérifiez les quantités : certains articles ont déjà été demandés.",
+      "assembledDefective": "Les pièces d’un PC assemblé ne peuvent être retournées que si elles sont défectueuses.",
+      "reason": "Choisissez une raison.",
+      "details": "Donnez-nous un peu plus de détails (au moins 10 caractères)."
+    },
+    "sent": "Demande de retour {rma} envoyée. Nous écrirons à {email} pour la suite.",
+    "storeNote": "Notre message : {note}",
+    "approvedNext": "Approuvé. Apportez les articles dans leur emballage d’origine; nous confirmerons le remboursement après inspection.",
+    "start": "Demander un retour",
+    "feeEstimate": "Des frais de restockage d’au plus {amount} peuvent s’appliquer. Nous confirmerons le montant final après inspection des articles."
   }
 }

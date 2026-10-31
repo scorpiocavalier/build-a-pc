@@ -9,6 +9,7 @@ import { requireAdmin } from "@/server/require-admin";
 const NAV = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/returns", label: "Returns" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/import", label: "CSV import" },
   { href: "/admin/builds", label: "Prebuilt PCs" },

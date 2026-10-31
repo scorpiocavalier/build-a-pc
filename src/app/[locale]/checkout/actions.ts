@@ -4,7 +4,9 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { parseCheckoutForm, type CheckoutErrorKey } from "@/lib/checkout/checkout-input";
+import { saveAddress } from "@/server/account/addresses";
 import { clearCart, getCheckoutCart } from "@/server/cart";
+import { getCustomer } from "@/server/customer";
 import { placeOrder } from "@/server/orders/lifecycle";
 
 export type CheckoutState = {
@@ -27,12 +29,27 @@ export async function placeOrderAction(
   const parsed = parseCheckoutForm(raw, new Date());
   if (!parsed.ok) return { errors: parsed.errors, values: raw };
 
-  const result = await placeOrder(parsed.input, await getCheckoutCart(), locale);
+  const customer = await getCustomer();
+  const result = await placeOrder(parsed.input, await getCheckoutCart(), locale, customer?.id);
   if (!result.ok) {
     return {
       formError: result.error === "noDelivery" ? "fulfilment" : result.error,
       values: raw,
     };
+  }
+
+  const address = result.order.deliveryAddress;
+  if (customer && address && raw.saveAddress === "on") {
+    await saveAddress(customer.id, {
+      name: parsed.input.name,
+      phone: parsed.input.phone,
+      line1: address.line1,
+      line2: address.line2,
+      city: address.city,
+      province: address.province as Parameters<typeof saveAddress>[1]["province"],
+      postalCode: address.postalCode,
+      isDefault: false,
+    });
   }
 
   await clearCart();

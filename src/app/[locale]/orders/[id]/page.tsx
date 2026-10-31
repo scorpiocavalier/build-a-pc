@@ -1,13 +1,16 @@
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock, RotateCcw } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import { formatOrderNumber } from "@/lib/checkout/order-number";
 import { formatRate } from "@/lib/checkout/pricing";
 import { formatDate } from "@/lib/checkout/windows";
 import { localize } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
+import { returnBlocker, returnWindowEnds } from "@/lib/returns/eligibility";
 import { cn } from "@/lib/utils";
 import { formatAddress, loadOrderForCustomer } from "@/server/orders/view";
 import { getSettings } from "@/server/settings";
@@ -50,6 +53,13 @@ async function OrderContent({ params, searchParams }: Props) {
   // Assembled builds: the part of the deposit still to pay before assembly.
   const depositOwing = Math.max(0, order.depositCents - order.paidCents);
   const justPlaced = order.status === "PLACED";
+  const canReturn = returnBlocker(order, new Date()) === null;
+  const returnsT = await getTranslations("Returns");
+  const longDate = new Intl.DateTimeFormat(`${locale}-CA`, {
+    dateStyle: "long",
+    timeZone: "America/Toronto",
+  });
+  const lineName = new Map(order.lines.map((l) => [l.id, localize(l.name, locale)]));
 
   return (
     <>
@@ -64,6 +74,14 @@ async function OrderContent({ params, searchParams }: Props) {
             : t("thanks", { name: order.name.split(" ")[0] })}
         </h1>
         {justPlaced && <p className="text-muted">{t("received", { email: order.email })}</p>}
+        {typeof query.rma === "string" && (
+          <p
+            role="status"
+            className="rounded-lg border border-emerald-400/40 bg-emerald-400/10 p-3"
+          >
+            {returnsT("sent", { rma: `RMA-${query.rma}`, email: order.email })}
+          </p>
+        )}
         <p className="text-sm text-muted">{t("keepLink")}</p>
       </div>
 
@@ -189,6 +207,49 @@ async function OrderContent({ params, searchParams }: Props) {
           </div>
         </dl>
       </section>
+
+      {(order.returns.length > 0 || canReturn) && (
+        <section className="flex flex-col gap-3 rounded-lg border bg-surface p-4">
+          <h2 className="flex items-center gap-2 font-semibold">
+            <RotateCcw aria-hidden="true" className="size-4 text-accent" />
+            {returnsT("sectionTitle")}
+          </h2>
+          {order.returns.map((request) => (
+            <div key={request.id} className="flex flex-col gap-1 rounded-md border p-3 text-sm">
+              <p className="flex flex-wrap items-center gap-2">
+                <span className="font-medium">RMA-{request.number}</span>
+                <span className="rounded-full border px-2 py-0.5 text-xs">
+                  {t(`returnStatus.${request.status}`)}
+                </span>
+                <span className="text-muted">{longDate.format(request.createdAt)}</span>
+              </p>
+              <ul className="text-muted">
+                {request.lines.map((line) => (
+                  <li key={line.id}>
+                    {line.quantity} × {lineName.get(line.orderLineId)}
+                  </li>
+                ))}
+              </ul>
+              {request.adminNote && <p>{returnsT("storeNote", { note: request.adminNote })}</p>}
+              {request.status === "APPROVED" && <p>{returnsT("approvedNext")}</p>}
+            </div>
+          ))}
+          {canReturn && (
+            <div className="flex flex-wrap items-center gap-3">
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/orders/${order.id}/return?t=${order.accessToken}`}>
+                  {returnsT("start")}
+                </Link>
+              </Button>
+              <span className="text-sm text-muted">
+                {returnsT("deadline", {
+                  date: longDate.format(returnWindowEnds(order.completedAt!)),
+                })}
+              </span>
+            </div>
+          )}
+        </section>
+      )}
     </>
   );
 }

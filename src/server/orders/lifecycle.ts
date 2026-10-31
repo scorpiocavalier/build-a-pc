@@ -156,6 +156,8 @@ export async function placeOrder(
   input: CheckoutInput,
   cart: CheckoutCart,
   locale: "en" | "fr",
+  // The signed-in customer, so the order shows in their account.
+  userId: string | null = null,
 ): Promise<PlaceOrderResult> {
   if (cart.lines.length === 0 && cart.builds.length === 0) return { ok: false, error: "empty" };
   const quoted = await quoteCheckout(
@@ -194,6 +196,7 @@ export async function placeOrder(
       const order = await tx.order.create({
         data: {
           accessToken: randomBytes(24).toString("base64url"),
+          userId,
           locale,
           name: input.name,
           email: input.email,
@@ -392,7 +395,11 @@ export async function changeStatus(
     // reservation until pickup instead of letting it expire.
     await tx.order.update({
       where: { id: orderId },
-      data: { status: to, ...(to === "CONFIRMED" ? { holdUntil: null } : {}) },
+      data: {
+        status: to,
+        ...(to === "CONFIRMED" ? { holdUntil: null } : {}),
+        ...(to === "COMPLETED" ? { completedAt: new Date() } : {}),
+      },
     });
     await event(tx, orderId, `status:${to}`, undefined, actorId);
   });

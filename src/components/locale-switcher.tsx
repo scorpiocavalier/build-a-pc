@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 
 const className =
-  "rounded-lg px-2 py-2 text-sm text-muted hover:bg-surface-raised hover:text-foreground sm:px-3";
+  "rounded-lg px-1 py-2 text-sm text-muted hover:bg-surface-raised hover:text-foreground min-[360px]:px-2 sm:px-3";
 
 // Phones show "FR"/"EN" so the header fits; the aria-label always has the full text.
 function Label({ other, text }: { other: string; text: string }) {

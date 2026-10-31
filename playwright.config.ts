@@ -1,5 +1,7 @@
 import "dotenv/config";
 
+import path from "node:path";
+
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -9,6 +11,9 @@ const PORT = Number(process.env.PORT ?? 3000);
 // Stripe API calls) while webhook handling is still tested.
 process.env.STRIPE_WEBHOOK_SECRET ||= "whsec_e2e_test_secret";
 process.env.CRON_SECRET ||= "cron_e2e_test_secret";
+// The app writes emails here instead of sending them, so tests can follow
+// sign-in links (see tests/e2e/shop-helpers.ts).
+process.env.EMAIL_OUTBOX_DIR ||= path.resolve(".e2e-outbox");
 
 export default defineConfig({
   testDir: "./tests/e2e",

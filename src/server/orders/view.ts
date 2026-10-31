@@ -14,6 +14,7 @@ const orderInclude = {
   lines: { orderBy: { id: "asc" } },
   payments: { orderBy: { createdAt: "asc" } },
   events: { orderBy: { createdAt: "asc" } },
+  returns: { include: { lines: true }, orderBy: { createdAt: "asc" } },
 } satisfies Prisma.OrderInclude;
 
 type OrderRow = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;

@@ -1,4 +1,7 @@
 import { createHmac, randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { readdir, readFile } from "node:fs/promises";
+import path from "node:path";
 
 import type { Page } from "@playwright/test";
 import type pg from "pg";
@@ -107,4 +110,42 @@ export function checkoutEvent(
       },
     },
   });
+}
+
+// Waits for the newest email to an address in the outbox the app writes to
+// during browser tests (EMAIL_OUTBOX_DIR).
+export async function latestEmailTo(to: string, timeoutMs = 10_000) {
+  const dir = process.env.EMAIL_OUTBOX_DIR!;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const files = existsSync(dir) ? (await readdir(dir)).sort().reverse() : [];
+    for (const file of files) {
+      const email = JSON.parse(await readFile(path.join(dir, file), "utf8"));
+      if (email.to === to) return email as { to: string; subject: string; text: string };
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error(`No email to ${to}`);
+}
+
+// A guest order for one new product, picked up in Toronto and paid by
+// e-Transfer. Returns the order row.
+export async function placePickupOrder(page: Page, sql: pg.Client, email: string) {
+  const product = await createProduct(sql, { priceCents: 10000 });
+  await addToCart(page, product.slug, "en", 2);
+  await page.goto("/en/checkout?f=pickup&l=TOR");
+  await fillContactAndWindow(page, email);
+  await page.getByRole("radio", { name: /e-Transfer/ }).check();
+  await page.getByRole("button", { name: "Place order" }).click();
+  await page.getByRole("heading", { name: "Thank you, Alex!" }).waitFor();
+  return { order: await orderFor(sql, email), product };
+}
+
+// Marks an order handed over `daysAgo` days ago, skipping payment steps.
+export async function completeOrder(sql: pg.Client, orderId: string, daysAgo = 0) {
+  await sql.query(
+    `UPDATE "Order" SET status = 'COMPLETED', "paymentStatus" = 'PAID', "paidCents" = "totalCents",
+       "completedAt" = now() - make_interval(days => $2) WHERE id = $1`,
+    [orderId, daysAgo],
+  );
 }

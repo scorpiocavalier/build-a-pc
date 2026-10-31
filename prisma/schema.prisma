@@ -31,11 +31,17 @@ model User {
   emailVerified DateTime?
   image         String?
   role          Role                @default(CUSTOMER)
-  locale        Locale              @default(en)
+  // Preferred language; null until the customer signs in on the storefront
+  // for the first time (then it's set to the language they used).
+  locale        Locale?
   accounts      Account[]
   sessions      Session[]
   movements     InventoryMovement[]
   orders        Order[]
+  addresses     Address[]
+  wishlist      WishlistItem[]
+  builds        Build[]
+  returns       ReturnRequest[]
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 }
@@ -152,14 +158,15 @@ model Product {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  brand      Brand               @relation(fields: [brandId], references: [id])
-  category   Category            @relation(fields: [categoryId], references: [id])
-  images     ProductImage[]
-  inventory  Inventory[]
-  movements  InventoryMovement[]
-  cartLines  CartLine[]
-  orderLines OrderLine[]
-  buildItems BuildItem[]
+  brand        Brand               @relation(fields: [brandId], references: [id])
+  category     Category            @relation(fields: [categoryId], references: [id])
+  images       ProductImage[]
+  inventory    Inventory[]
+  movements    InventoryMovement[]
+  cartLines    CartLine[]
+  orderLines   OrderLine[]
+  buildItems   BuildItem[]
+  wishlistedBy WishlistItem[]
 
   @@index([categoryId, status])
 }
@@ -337,16 +344,20 @@ model Order {
   holdUntil       DateTime?
   cancelReason    String?
   placedAt        DateTime      @default(now())
+  // When the customer received the order; starts the 30-day return window.
+  completedAt     DateTime?
   updatedAt       DateTime      @updatedAt
 
-  user     User?        @relation(fields: [userId], references: [id])
-  location Location     @relation(fields: [locationId], references: [id])
+  user     User?           @relation(fields: [userId], references: [id])
+  location Location        @relation(fields: [locationId], references: [id])
   lines    OrderLine[]
   payments Payment[]
   events   OrderEvent[]
+  returns  ReturnRequest[]
 
   @@index([status, placedAt])
   @@index([email])
+  @@index([userId, placedAt])
 }
 
 model OrderLine {
@@ -363,8 +374,9 @@ model OrderLine {
   // Which builder slot the part filled, for the build sheet.
   slot           BuildSlot?
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product      @relation(fields: [productId], references: [id])
+  returnLines ReturnLine[]
 }
 
 enum PaymentRecordStatus {
@@ -441,9 +453,16 @@ model Build {
   title       Json? // LocalizedText
   description Json? // LocalizedText
   position    Int          @default(0)
+  // Saved to a customer's account under a name they chose.
+  userId      String?
+  name        String?
   items       BuildItem[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
 }
 
 model BuildItem {
@@ -468,4 +487,89 @@ model CartBuild {
   createdAt DateTime @default(now())
 
   cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+}
+
+// ─── Customer accounts ──────────────────────────────────────────────────────
+
+model Address {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  phone      String
+  line1      String
+  line2      String   @default("")
+  city       String
+  province   String
+  postalCode String
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model WishlistItem {
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+}
+
+// ─── Returns ────────────────────────────────────────────────────────────────
+
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  DECLINED
+  // Phase 5: items received, refunded and restocked.
+  COMPLETED
+}
+
+enum ReturnReason {
+  DEFECTIVE
+  WRONG_ITEM
+  NOT_AS_DESCRIBED
+  CHANGED_MIND
+  OTHER
+}
+
+model ReturnRequest {
+  id          String       @id @default(cuid())
+  // Shown as RMA-<number>.
+  number      Int          @unique @default(autoincrement())
+  orderId     String
+  // Set when a signed-in customer made the request.
+  userId      String?
+  status      ReturnStatus @default(REQUESTED)
+  reason      ReturnReason
+  details     String
+  // Message from the store, shown to the customer with the decision.
+  adminNote   String?
+  decidedById String?
+  decidedAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  order Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  lines ReturnLine[]
+
+  @@index([status, createdAt])
+  @@index([orderId])
+}
+
+model ReturnLine {
+  id          String @id @default(cuid())
+  returnId    String
+  orderLineId String
+  quantity    Int
+
+  request   ReturnRequest @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  orderLine OrderLine     @relation(fields: [orderLineId], references: [id], onDelete: Cascade)
 }

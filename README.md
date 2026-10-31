@@ -19,7 +19,7 @@ cp .env.example .env          # then set AUTH_SECRET (npx auth secret)
 docker compose up -d db       # local Postgres on :5432
 npm install                   # also generates the Prisma client
 npm run db:migrate            # apply migrations
-npm run db:seed               # placeholder catalog: 2 locations, 8 categories, 24 products
+npm run db:seed               # placeholder catalog, tax rates and two prebuilt PCs
 npm run dev                   # http://localhost:3000
 ```
 
@@ -80,6 +80,24 @@ npm run dev                   # http://localhost:3000
   print a build sheet.
 - `/prebuilt` lists featured builds; manage them in `/admin/builds` by pasting
   a build's share link.
+
+## Customer accounts
+
+- `/sign-in`: customers get a one-time sign-in link by email (Resend), or use
+  Google when it's configured. No passwords. Without `AUTH_RESEND_KEY`, the link
+  is printed to the server log in development; production shows "sign-in isn't
+  available yet" until a key is set. Staff emails are refused here (Google only).
+- Signing in claims earlier guest orders placed with the same email.
+- `/account`: orders, saved builds (save from `/build`; changes save
+  automatically), wishlist (heart on product pages), delivery addresses (fill in
+  checkout), and preferred language.
+- Returns: on a completed order, customers (or guests with their order link)
+  can request a return for 30 days. Assembled PC parts only if defective; a 30%
+  restocking fee estimate is shown for "changed my mind"/"other". Staff approve
+  or decline in `/admin/returns`, and the customer is emailed. Receiving items
+  and refunds are still manual (Phase 5).
+- Browser tests read emails from `EMAIL_OUTBOX_DIR` (set by
+  `playwright.config.ts`) to follow sign-in links.
 
 ## Catalog design
 

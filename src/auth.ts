@@ -6,6 +6,8 @@ import Resend from "next-auth/providers/resend";
 
 import { isAdminEmail } from "@/server/admin-allowlist";
 import { db } from "@/server/db";
+import { sendEmail } from "@/server/email/send";
+import { buildSignInEmail } from "@/server/email/sign-in-email";
 
 declare module "next-auth" {
   interface Session {
@@ -17,8 +19,23 @@ declare module "next-auth" {
 // app still boots locally without Google or Resend keys.
 const providers: Provider[] = [];
 if (process.env.AUTH_GOOGLE_ID) providers.push(Google);
-if (process.env.AUTH_RESEND_KEY) {
-  providers.push(Resend({ from: process.env.EMAIL_FROM }));
+
+// Customers sign in with a link sent by email. Without a Resend key the link
+// is printed to the server log, which is only acceptable outside production
+// (or when browser tests collect emails from EMAIL_OUTBOX_DIR).
+export const emailSignInEnabled =
+  !!process.env.AUTH_RESEND_KEY ||
+  !!process.env.EMAIL_OUTBOX_DIR ||
+  process.env.NODE_ENV !== "production";
+if (emailSignInEnabled) {
+  providers.push(
+    Resend({
+      from: process.env.EMAIL_FROM,
+      async sendVerificationRequest({ identifier, url }) {
+        await sendEmail(buildSignInEmail(identifier, url));
+      },
+    }),
+  );
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -27,6 +44,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db as unknown as Parameters<typeof PrismaAdapter>[0]),
   session: { strategy: "database" },
   providers,
+  // Expired or reused sign-in links land back on the storefront sign-in page,
+  // which shows the error. The proxy adds the visitor's language.
+  pages: { error: "/sign-in" },
   callbacks: {
     signIn({ user, account }) {
       // Admins must use Google (which enforces 2-step verification), never a
@@ -48,6 +68,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!user.id) return;
       const role = isAdminEmail(user.email) ? "ADMIN" : "CUSTOMER";
       await db.user.update({ where: { id: user.id }, data: { role } });
+      // The email address is verified now (magic link or Google), so guest
+      // orders placed with it belong in this account.
+      if (user.email) {
+        await db.order.updateMany({
+          where: { userId: null, email: { equals: user.email, mode: "insensitive" } },
+          data: { userId: user.id },
+        });
+      }
     },
   },
 });
