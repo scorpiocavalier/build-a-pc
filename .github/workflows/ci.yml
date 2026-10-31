@@ -49,6 +49,9 @@ jobs:
       - name: Apply database migrations
         run: npx prisma migrate deploy
 
+      - name: Seed placeholder catalog (used by e2e tests)
+        run: npm run db:seed
+
       - name: Check migrations match the schema
         run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
 

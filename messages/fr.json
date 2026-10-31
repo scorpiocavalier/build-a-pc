@@ -7,10 +7,14 @@
     "home": "Accueil Astral Tech Gaming",
     "nav": {
       "builds": "Nos montages",
-      "locations": "Points de cueillette"
+      "locations": "Points de cueillette",
+      "shop": "Boutique"
     },
     "switchLocale": "English",
-    "switchLocaleLabel": "View the site in English"
+    "switchLocaleLabel": "View the site in English",
+    "searchLabel": "Rechercher des produits",
+    "searchPlaceholder": "Rechercher des composantes",
+    "menu": "Menu"
   },
   "Home": {
     "eyebrow": "Toronto · Montréal",
@@ -59,5 +63,48 @@
     "title": "Page introuvable",
     "body": "Nous n’avons pas trouvé cette page.",
     "back": "Retour à l’accueil"
+  },
+  "Catalog": {
+    "breadcrumb": "Fil d’Ariane",
+    "home": "Accueil",
+    "shop": "Boutique",
+    "shopTitle": "Composantes de PC",
+    "shopLead": "Tout ce que nous avons en stock pour votre prochain montage, à Toronto et à Montréal.",
+    "productCount": "{count, plural, =0 {Aucun produit} one {# produit} other {# produits}}",
+    "filters": "Filtres",
+    "brand": "Marque",
+    "availability": "Disponibilité",
+    "availableAt": "En stock à {location}",
+    "clearFilters": "Effacer les filtres",
+    "sortBy": "Trier par",
+    "sort": {
+      "price-asc": "Prix : croissant",
+      "price-desc": "Prix : décroissant",
+      "name": "Nom"
+    },
+    "applySort": "Appliquer",
+    "results": "{count, plural, =0 {Aucun produit} one {# produit} other {# produits}}",
+    "noResults": "Aucun produit ne correspond à ces filtres.",
+    "selected": "sélectionné",
+    "locations": {
+      "TOR": "Toronto",
+      "MTL": "Montréal"
+    },
+    "inStockAt": "En stock : {locations}",
+    "outOfStock": "Rupture de stock",
+    "stockAt": "{location} : {count, plural, =0 {rupture de stock} one {# en stock} other {# en stock}}",
+    "wasPrice": "Avant {price}",
+    "sku": "UGS",
+    "mpn": "Numéro de modèle",
+    "specs": "Caractéristiques",
+    "description": "Description",
+    "availabilityTitle": "Disponibilité",
+    "warranty": "Garantie du fabricant de {months, plural, one {# mois} other {# mois}}",
+    "orderingSoon": "La commande en ligne arrive bientôt. D’ici là, venez nous voir à Toronto ou à Montréal.",
+    "noImage": "Pas encore de photo",
+    "searchTitle": "Recherche",
+    "searchResults": "{count, plural, =0 {Aucun résultat} one {# résultat} other {# résultats}} pour « {query} »",
+    "searchEmpty": "Essayez une marque, un numéro de modèle ou un type de composante, comme « RTX 5070 » ou « DDR5 ».",
+    "searchButton": "Rechercher"
   }
 }

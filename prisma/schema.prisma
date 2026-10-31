@@ -1,6 +1,8 @@
-// Astral Tech Gaming database schema.
-// Phase 0 only contains what authentication needs. Catalog, inventory and
-// order models arrive in later phases (see docs/PLAN.md §5).
+// Astral Tech Gaming database schema (see docs/PLAN.md §5).
+// Cart, order and payment models arrive in Phase 2.
+//
+// Translatable text is stored as JSONB { "en": "...", "fr": "..." } and
+// typed as LocalizedText in src/lib/localized.ts.
 
 generator client {
   provider = "prisma-client"
@@ -24,17 +26,18 @@ enum Locale {
 // ─── Auth.js (@auth/prisma-adapter) ──────────────────────────────────────────
 
 model User {
-  id            String    @id @default(cuid())
+  id            String              @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String              @unique
   emailVerified DateTime?
   image         String?
-  role          Role      @default(CUSTOMER)
-  locale        Locale    @default(en)
+  role          Role                @default(CUSTOMER)
+  locale        Locale              @default(en)
   accounts      Account[]
   sessions      Session[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  movements     InventoryMovement[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 }
 
 model Account {
@@ -73,4 +76,139 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
+}
+
+// ─── Locations ───────────────────────────────────────────────────────────────
+
+enum LocationCode {
+  TOR
+  MTL
+}
+
+model Location {
+  id        String              @id @default(cuid())
+  code      LocationCode        @unique
+  name      Json // LocalizedText
+  province  String // "ON", "QC"
+  active    Boolean             @default(true)
+  inventory Inventory[]
+  movements InventoryMovement[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+// ─── Catalog ─────────────────────────────────────────────────────────────────
+
+model Category {
+  id        String    @id @default(cuid())
+  // Also the key into the spec definitions in src/lib/specs.
+  slug      String    @unique
+  name      Json // LocalizedText
+  position  Int       @default(0)
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model Product {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  sku            String        @unique
+  mpn            String?
+  upc            String?
+  name           Json // LocalizedText
+  description    Json // LocalizedText
+  brandId        String
+  categoryId     String
+  // Validated against the category's spec definition on every write.
+  specs          Json
+  priceCents     Int
+  compareAtCents Int?
+  currency       String        @default("CAD")
+  warrantyMonths Int?
+  status         ProductStatus @default(DRAFT)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  brand     Brand               @relation(fields: [brandId], references: [id])
+  category  Category            @relation(fields: [categoryId], references: [id])
+  images    ProductImage[]
+  inventory Inventory[]
+  movements InventoryMovement[]
+
+  @@index([categoryId, status])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  // Storage key; the public URL is derived by src/server/storage.
+  key       String
+  alt       Json // LocalizedText
+  width     Int
+  height    Int
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, position])
+}
+
+// ─── Inventory ───────────────────────────────────────────────────────────────
+
+model Inventory {
+  productId    String
+  locationId   String
+  onHand       Int    @default(0)
+  // Held by unpaid orders (Phase 2). Available = onHand - reserved.
+  reserved     Int    @default(0)
+  reorderPoint Int    @default(0)
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id])
+
+  @@id([productId, locationId])
+}
+
+enum MovementReason {
+  INITIAL
+  ADJUSTMENT
+  IMPORT
+  TRANSFER
+  SALE
+  RETURN
+  WRITE_OFF
+}
+
+model InventoryMovement {
+  id         String         @id @default(cuid())
+  productId  String
+  locationId String
+  delta      Int
+  reason     MovementReason
+  note       String?
+  actorId    String?
+  createdAt  DateTime       @default(now())
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id])
+  actor    User?    @relation(fields: [actorId], references: [id])
+
+  @@index([productId, createdAt])
 }

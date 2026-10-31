@@ -482,6 +482,15 @@ financing, stock transfer workflow.
 
 ---
 
+### Progress
+
+- **Phase 0: done.**
+- **Phase 1: done**, with two deliberate differences from §5:
+  - Product URLs use one slug for both languages (e.g. `/fr/p/amd-ryzen-7-9800x3d`).
+    Model names are mostly the same in both languages; per-language slugs can come later.
+  - Unknown product URLs show the not-found page with `noindex` but an HTTP
+    200 status, because pages stream before the product lookup finishes.
+
 ## 11. Open questions
 
 1. **Delivery areas**: how far from each location do you deliver (e.g.

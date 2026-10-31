@@ -19,6 +19,7 @@ cp .env.example .env          # then set AUTH_SECRET (npx auth secret)
 docker compose up -d db       # local Postgres on :5432
 npm install                   # also generates the Prisma client
 npm run db:migrate            # apply migrations
+npm run db:seed               # placeholder catalog: 2 locations, 8 categories, 24 products
 npm run dev                   # http://localhost:3000
 ```
 
@@ -33,7 +34,32 @@ npm run dev                   # http://localhost:3000
 | `npm test`                           | Unit tests (Vitest)                            |
 | `npm run test:e2e`                   | Browser tests (Playwright; run `build` first)  |
 | `npm run db:migrate`                 | Create/apply a migration after schema changes  |
+| `npm run db:seed`                    | Load/refresh the placeholder catalog           |
 | `npm run db:studio`                  | Browse the database                            |
+
+## Admin
+
+- `/admin` needs a Google account listed in `ADMIN_EMAILS`.
+- In `npm run dev` only, the sign-in page also has a **Development sign-in**
+  button that signs in as the first `ADMIN_EMAILS` address without Google.
+  It returns 404 in production builds.
+- **Products**: create and edit products with English/French text, specs,
+  price, stock per location and photos.
+- **CSV import**: download a template per category (or an export of current
+  products), fill it in a spreadsheet, then check and import. Columns match
+  the admin form's field names; multi-value spec cells use `|`. Imports are
+  all-or-nothing.
+
+## Catalog design
+
+- Each category's spec fields are defined once in `src/lib/specs/definitions.ts`
+  (labels in English and French, allowed values, which are required, which
+  are storefront filters). The admin form, CSV columns, validation and
+  filters all come from there.
+- Storefront reads (`src/server/catalog/queries.ts`) are cached and tagged
+  `catalog`; admin writes call `updateTag("catalog")`.
+- Stock is per location (`Inventory`), and every change is recorded in
+  `InventoryMovement`.
 
 ## Project layout
 
@@ -44,8 +70,8 @@ src/
   app/api/        route handlers (Auth.js)
   components/     shared UI (ui/ = button and other primitives)
   i18n/           locale routing and message loading
-  lib/            pure helpers (money, utils)
-  server/         server-only code: database, auth guards
+  lib/            pure helpers: money, specs, catalog filters, CSV
+  server/         server-only code: database, catalog queries, storage, auth guards
   proxy.ts        locale redirects + cheap admin cookie check
 messages/         en.json, fr.json — every customer-facing string
 prisma/           schema and migrations

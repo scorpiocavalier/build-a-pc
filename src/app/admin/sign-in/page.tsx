@@ -40,6 +40,13 @@ export default function AdminSignInPage({ searchParams }: PageProps<"/admin/sign
           <code>AUTH_GOOGLE_SECRET</code> in your environment.
         </p>
       )}
+      {process.env.NODE_ENV !== "production" && (
+        <form method="post" action="/api/dev/admin-sign-in">
+          <Button variant="outline" className="w-full">
+            Development sign-in (first ADMIN_EMAILS address)
+          </Button>
+        </form>
+      )}
     </div>
   );
 }
