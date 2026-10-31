@@ -8,6 +8,7 @@ import {
   MemoryStick,
   Package,
   PlugZap,
+  Disc3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,6 +21,7 @@ const ICONS: Record<string, LucideIcon> = {
   case: Box,
   psu: PlugZap,
   cooler: Fan,
+  software: Disc3,
 };
 
 export function CategoryIcon({ slug, className }: { slug: string; className?: string }) {

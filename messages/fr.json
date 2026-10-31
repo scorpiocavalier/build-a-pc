@@ -9,7 +9,9 @@
       "builds": "Nos montages",
       "locations": "Points de cueillette",
       "shop": "Boutique",
-      "cart": "Panier"
+      "cart": "Panier",
+      "builder": "Configurateur",
+      "prebuilt": "PC préassemblés"
     },
     "switchLocale": "English",
     "switchLocaleLabel": "View the site in English",
@@ -23,7 +25,7 @@
     "lead": "Choisissez vos composantes ou laissez-nous vous conseiller. Nous assemblons, installons Windows, testons chaque montage et vous le remettons en personne.",
     "ctaBuilds": "Voir nos montages",
     "ctaLocations": "Points de cueillette",
-    "comingSoon": "La boutique en ligne est ouverte. Le configurateur de PC arrive bientôt.",
+    "comingSoon": "Achetez des composantes, configurez votre PC ou choisissez l’un des nôtres.",
     "videoLabel": "Vidéo d’un montage Astral Tech Gaming blanc avec un éclairage bleu glacier",
     "buildsTitle": "Montages récents",
     "buildsLead": "Chaque PC est assemblé, câblé avec soin et testé avant de quitter notre atelier.",
@@ -54,7 +56,9 @@
       "toronto": "Toronto (Ontario)",
       "montreal": "Montréal (Québec)"
     },
-    "locationsNote": "Les adresses exactes et les heures d’ouverture seront publiées avant le lancement."
+    "locationsNote": "Les adresses exactes et les heures d’ouverture seront publiées avant le lancement.",
+    "ctaBuild": "Configurez votre PC",
+    "ctaPrebuilt": "PC préassemblés"
   },
   "Footer": {
     "rights": "© {year} Astral Tech Gaming. Tous droits réservés.",
@@ -125,7 +129,11 @@
     "notAvailable": "En rupture de stock",
     "cartLabel": "Panier, {count, plural, =0 {vide} one {# article} other {# articles}}",
     "taxNote": "Les taxes et la livraison sont calculées à la caisse.",
-    "quantityFor": "Quantité pour {name}"
+    "quantityFor": "Quantité pour {name}",
+    "assembledBuild": "PC assemblé",
+    "assembledIncludes": "Comprend l’assemblage, Windows et les tests.",
+    "removeBuild": "Retirer le montage",
+    "assemblyFee": "Assemblage et tests"
   },
   "Checkout": {
     "title": "Caisse",
@@ -198,7 +206,11 @@
       "payment": "Nous n’avons pas pu lancer le paiement par carte. Réessayez ou choisissez un autre mode de paiement.",
       "empty": "Votre panier est vide.",
       "fulfilment": "Choisissez d’abord la cueillette ou la livraison."
-    }
+    },
+    "assembly": "Assemblage et tests",
+    "deposit": "Acompte dû maintenant : {amount} ({percent} %). Le solde est payable à la cueillette ou à la livraison.",
+    "depositCash": "Payez un acompte de {amount} par virement Interac pour lancer l’assemblage, puis le solde comptant.",
+    "depositEtransfer": "Envoyez au moins l’acompte de {amount} pour lancer l’assemblage, ou le montant complet."
   },
   "Order": {
     "title": "Commande {number}",
@@ -212,7 +224,8 @@
       "READY": "Prête",
       "OUT_FOR_DELIVERY": "En livraison",
       "COMPLETED": "Terminée",
-      "CANCELLED": "Annulée"
+      "CANCELLED": "Annulée",
+      "ASSEMBLING": "En assemblage"
     },
     "paymentStatus": {
       "UNPAID": "Non payée",
@@ -240,7 +253,10 @@
     "qty": "Qté {count}",
     "cancelled": "Cette commande a été annulée.",
     "notFound": "Nous n’avons pas trouvé cette commande.",
-    "keepLink": "Conservez ce lien pour suivre votre commande."
+    "keepLink": "Conservez ce lien pour suivre votre commande.",
+    "depositDue": "Acompte pour lancer l’assemblage : {amount}",
+    "etransferDeposit": "Envoyez au moins l’acompte de {amount} (ou le total de {total}) à {email} et indiquez {number} dans le message.",
+    "assemblyNote": "Nous commencerons l’assemblage dès la réception de l’acompte. Prêt environ {days, plural, one {# jour ouvrable} other {# jours ouvrables}} plus tard."
   },
   "Email": {
     "subjectReceived": "Commande {number} reçue",
@@ -258,5 +274,87 @@
     "viewOrder": "Voir votre commande",
     "signoff": "Astral Tech Gaming",
     "receiptNumbers": "Numéros de taxe : {numbers}"
+  },
+  "Builder": {
+    "title": "Configurateur de PC",
+    "lead": "Choisissez chaque composante et nous vérifions que tout est compatible. Commandez ensuite les composantes, ou laissez-nous l’assembler.",
+    "slots": {
+      "CPU": "Processeur",
+      "MOTHERBOARD": "Carte mère",
+      "MEMORY": "Mémoire",
+      "STORAGE": "Stockage",
+      "STORAGE_2": "Deuxième disque",
+      "GPU": "Carte graphique",
+      "CASE": "Boîtier",
+      "PSU": "Bloc d’alimentation",
+      "COOLER": "Refroidisseur"
+    },
+    "optional": "facultatif",
+    "choose": "Choisir",
+    "change": "Modifier",
+    "remove": "Retirer",
+    "quantity": "Qté",
+    "stockFor": "Afficher le stock de",
+    "inStockHere": "En stock à {location}",
+    "notHere": "Pas en stock à {location}",
+    "summary": "Votre montage",
+    "parts": "Composantes",
+    "assembly": "Assemblage, installation de Windows et tests",
+    "windows": "{name}",
+    "estimatedTotal": "Total estimé",
+    "taxNote": "Les taxes et la livraison sont calculées à la caisse.",
+    "wattage": "Consommation estimée : {watts} W",
+    "noIssues": "Toutes les composantes choisies sont compatibles.",
+    "issuesTitle": "Compatibilité",
+    "missing": "Pour que nous l’assemblions, ajoutez : {slots}.",
+    "assemble": "Faites-le assembler",
+    "assembleNote": "Nous l’assemblons, installons Windows et testons tout. Prêt dans environ {days, plural, one {# jour ouvrable} other {# jours ouvrables}}.",
+    "assembleBlocked": "Corrigez les problèmes ci-dessus avant que nous puissions l’assembler.",
+    "addParts": "Ajouter les composantes au panier",
+    "partsAdded": "Composantes ajoutées au panier.",
+    "buildAdded": "Votre montage a été ajouté au panier.",
+    "viewCart": "Voir le panier",
+    "share": "Lien de partage",
+    "shareHint": "Toute personne ayant ce lien peut voir ce montage, sans pouvoir le modifier.",
+    "clear": "Recommencer",
+    "empty": "Commencez par choisir un processeur.",
+    "pickerTitle": "Choisir : {slot}",
+    "back": "Retour à votre montage",
+    "compatible": "{count, plural, =0 {Aucune composante compatible} one {# composante compatible} other {# composantes compatibles}}",
+    "notCompatible": "{count, plural, one {# composante n’est pas compatible avec votre montage} other {# composantes ne sont pas compatibles avec votre montage}}",
+    "select": "Sélectionner",
+    "current": "Dans votre montage",
+    "sharedTitle": "Montage partagé",
+    "customize": "Personnaliser ce montage",
+    "orderThis": "Copier dans mon configurateur",
+    "prebuiltTitle": "PC préassemblés",
+    "prebuiltLead": "Nos montages préférés, à commander tels quels ou à personnaliser dans le configurateur.",
+    "fromPrice": "{price} avec assemblage",
+    "viewBuild": "Voir le montage",
+    "severity": {
+      "error": "Problème",
+      "warning": "À vérifier",
+      "info": "Remarque"
+    },
+    "issues": {
+      "cpuSocket": "Le processeur utilise le socle {cpu}, mais la carte mère est {board}.",
+      "memoryBoard": "La carte mère prend de la mémoire {board}, pas {type}.",
+      "memoryCpu": "Le processeur ne prend pas en charge la mémoire {type}.",
+      "memorySlots": "Cela fait {modules} barrettes de mémoire, mais la carte mère a {slots} fentes.",
+      "memoryCapacity": "Cela fait {capacity} Go de mémoire; la carte mère en prend jusqu’à {max} Go.",
+      "caseBoard": "Une carte mère {formFactor} n’entre pas dans ce boîtier.",
+      "gpuLength": "La carte graphique mesure {length} mm; le boîtier accepte jusqu’à {max} mm.",
+      "coolerSocket": "Le refroidisseur n’est pas compatible avec le socle {socket}.",
+      "coolerHeight": "Le refroidisseur mesure {height} mm de haut; le boîtier accepte jusqu’à {max} mm.",
+      "radiator": "Le boîtier n’a pas d’emplacement pour un radiateur de {size} mm.",
+      "casePsu": "Un bloc d’alimentation {formFactor} n’entre pas dans ce boîtier.",
+      "m2Slots": "Cela fait {drives} disques M.2, mais la carte mère a {slots} fentes M.2.",
+      "sataPorts": "Cela fait {drives} disques SATA, mais la carte mère a {ports} ports SATA.",
+      "psuTooSmall": "Le montage peut consommer environ {estimate} W, plus que ce bloc de {wattage} W.",
+      "psuHeadroom": "Le montage peut consommer environ {estimate} W. Nous recommandons un bloc de {recommended} W ou plus.",
+      "gpuConnector": "Le bloc d’alimentation n’a pas de connecteur {connector} pour la carte graphique; un adaptateur serait nécessaire.",
+      "noGraphics": "Ce processeur n’a pas de graphiques intégrés : le montage a besoin d’une carte graphique.",
+      "noCooler": "Ce processeur n’est pas livré avec un refroidisseur. Choisissez-en un."
+    }
   }
 }

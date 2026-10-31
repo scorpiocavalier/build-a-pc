@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 
 const BUILD_PHOTOS = [1, 2, 3, 4, 5] as const;
 
@@ -34,10 +35,10 @@ export default function HomePage() {
             <p className="max-w-xl text-lg text-pretty text-muted">{t("lead")}</p>
             <div className="flex flex-wrap gap-3">
               <Button asChild>
-                <a href="#builds">{t("ctaBuilds")}</a>
+                <Link href="/build">{t("ctaBuild")}</Link>
               </Button>
               <Button asChild variant="outline">
-                <a href="#locations">{t("ctaLocations")}</a>
+                <Link href="/prebuilt">{t("ctaPrebuilt")}</Link>
               </Button>
             </div>
             <p className="text-sm text-muted">{t("comingSoon")}</p>

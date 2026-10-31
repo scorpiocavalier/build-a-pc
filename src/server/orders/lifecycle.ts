@@ -8,10 +8,10 @@ import type { OrderStatus, PaymentMethod, Prisma } from "@/generated/prisma/clie
 import type { LocationCode } from "@/lib/catalog/product-input";
 import type { CheckoutInput } from "@/lib/checkout/checkout-input";
 import { canTransition } from "@/lib/checkout/order-status";
-import { allowedPaymentMethods, paymentStatusFor } from "@/lib/checkout/payment-rules";
+import { allowedPaymentMethods, depositFor, paymentStatusFor } from "@/lib/checkout/payment-rules";
 import { matchDeliveryLocation } from "@/lib/checkout/postal";
 import { computeQuote, type Quote } from "@/lib/checkout/pricing";
-import type { CartLineView } from "@/server/cart";
+import type { CartBuildView, CartLineView } from "@/server/cart";
 import { CATALOG_TAG } from "@/server/catalog/queries";
 import { db } from "@/server/db";
 import { sendOrderEmail } from "@/server/email/order-emails";
@@ -70,24 +70,55 @@ export async function listLocations() {
   return db.location.findMany({ where: { active: true }, orderBy: { code: "desc" } });
 }
 
+// Everything in the cart: loose parts plus assembled builds.
+export type CheckoutCart = { lines: CartLineView[]; builds: CartBuildView[] };
+
+type OrderLineDraft = CartLineView & { buildGroup: string | null };
+
+// Every product the order contains, with build parts and the Windows licence
+// tagged with their build. Null when an assembled build can't get Windows.
+function orderLines(cart: CheckoutCart): OrderLineDraft[] | null {
+  const lines: OrderLineDraft[] = cart.lines.map((line) => ({ ...line, buildGroup: null }));
+  for (const build of cart.builds) {
+    if (!build.windows) return null;
+    for (const part of [...build.parts, build.windows])
+      lines.push({ ...part, buildGroup: build.id });
+  }
+  return lines;
+}
+
+// Total quantity per product, since a part can be both loose and in a build.
+function totalsByProduct(lines: OrderLineDraft[]) {
+  const totals = new Map<string, { quantity: number; available: CartLineView["available"] }>();
+  for (const line of lines) {
+    const entry = totals.get(line.productId) ?? { quantity: 0, available: line.available };
+    entry.quantity += line.quantity;
+    totals.set(line.productId, entry);
+  }
+  return totals;
+}
+
 export type CheckoutQuote = {
   location: Awaited<ReturnType<typeof listLocations>>[number];
   quote: Quote;
   methods: PaymentMethod[];
-  // Lines without enough free stock at this location.
+  depositCents: number;
+  // Products without enough free stock at this location.
   shortages: string[];
 };
 
 export async function quoteCheckout(
-  lines: CartLineView[],
+  cart: CheckoutCart,
   choice: FulfilmentChoice,
-): Promise<CheckoutQuote | { error: "noDelivery" }> {
+): Promise<CheckoutQuote | { error: "noDelivery" | "windows" }> {
   const locations = await listLocations();
   const location =
     choice.kind === "PICKUP"
       ? locations.find((l) => l.code === choice.locationCode)
       : matchDeliveryLocation(choice.postalCode, locations);
   if (!location) return { error: "noDelivery" };
+  const lines = orderLines(cart);
+  if (!lines) return { error: "windows" };
 
   const [rate, settings] = await Promise.all([
     db.taxRate.findUnique({ where: { province: location.province } }),
@@ -98,15 +129,17 @@ export async function quoteCheckout(
     lines,
     choice.kind === "DELIVERY" ? location.deliveryFeeCents : 0,
     rate,
+    cart.builds.length * settings.assemblyFeeCents,
   );
   const methods = allowedPaymentMethods(quote.totalCents, {
     ...settings,
     cardEnabled: stripeEnabled(),
   });
-  const shortages = lines
-    .filter((line) => line.available[location.code] < line.quantity)
-    .map((line) => line.productId);
-  return { location, quote, methods, shortages };
+  const depositCents = depositFor(quote.totalCents, cart.builds.length > 0, settings);
+  const shortages = [...totalsByProduct(lines)]
+    .filter(([, t]) => t.available[location.code] < t.quantity)
+    .map(([productId]) => productId);
+  return { location, quote, methods, depositCents, shortages };
 }
 
 // ─── Placing orders ─────────────────────────────────────────────────────────
@@ -121,38 +154,40 @@ export type PlaceOrderResult =
 
 export async function placeOrder(
   input: CheckoutInput,
-  lines: CartLineView[],
+  cart: CheckoutCart,
   locale: "en" | "fr",
 ): Promise<PlaceOrderResult> {
-  if (lines.length === 0) return { ok: false, error: "empty" };
+  if (cart.lines.length === 0 && cart.builds.length === 0) return { ok: false, error: "empty" };
   const quoted = await quoteCheckout(
-    lines,
+    cart,
     input.fulfilment === "PICKUP"
       ? { kind: "PICKUP", locationCode: input.locationCode! }
       : { kind: "DELIVERY", postalCode: input.address!.postalCode },
   );
-  if ("error" in quoted) return { ok: false, error: "noDelivery" };
-  const { location, quote, methods } = quoted;
+  if ("error" in quoted) {
+    return { ok: false, error: quoted.error === "windows" ? "stock" : "noDelivery" };
+  }
+  const { location, quote, methods, depositCents } = quoted;
   if (!methods.includes(input.method)) return { ok: false, error: "method" };
+  const lines = orderLines(cart)!;
 
   const settings = await getSettings();
-  const now = Date.now();
-  const holdUntil = new Date(
-    now +
-      (input.method === "CARD"
-        ? settings.cardHoldMinutes * 60_000
-        : input.method === "ETRANSFER"
-          ? settings.etransferHoldHours * 3_600_000
-          : settings.cashHoldDays * 86_400_000),
-  );
+  // Cash orders for an assembled PC still need an e-Transfer deposit first,
+  // so they're held for the e-Transfer window, not the cash one.
+  const holdMs =
+    input.method === "CARD"
+      ? settings.cardHoldMinutes * 60_000
+      : input.method === "ETRANSFER" || depositCents > 0
+        ? settings.etransferHoldHours * 3_600_000
+        : settings.cashHoldDays * 86_400_000;
+  const holdUntil = new Date(Date.now() + holdMs);
 
   let orderId: string;
   try {
     orderId = await db.$transaction(async (tx) => {
       const short: string[] = [];
-      for (const line of lines) {
-        if (!(await reserve(tx, line.productId, location.id, line.quantity)))
-          short.push(line.productId);
+      for (const [productId, { quantity }] of totalsByProduct(lines)) {
+        if (!(await reserve(tx, productId, location.id, quantity))) short.push(productId);
       }
       if (short.length) throw new OutOfStockError(short);
 
@@ -173,8 +208,11 @@ export async function placeOrder(
           paymentMethod: input.method,
           subtotalCents: quote.subtotalCents,
           deliveryCents: quote.deliveryCents,
+          assemblyCents: quote.assemblyCents,
           taxCents: quote.taxCents,
           totalCents: quote.totalCents,
+          // Card orders are paid in full up front, so no deposit applies.
+          depositCents: input.method === "CARD" ? 0 : depositCents,
           taxBreakdown: quote.taxes,
           holdUntil,
           lines: {
@@ -184,11 +222,18 @@ export async function placeOrder(
               name: line.name,
               unitPriceCents: line.unitPriceCents,
               quantity: line.quantity,
+              buildGroup: line.buildGroup,
+              slot: line.slot ?? null,
             })),
           },
         },
       });
-      await event(tx, order.id, "placed", `${input.method} · ${location.code}`);
+      await event(
+        tx,
+        order.id,
+        "placed",
+        `${input.method} · ${location.code}${cart.builds.length ? ` · ${cart.builds.length} assembled` : ""}`,
+      );
       return order.id;
     });
   } catch (error) {

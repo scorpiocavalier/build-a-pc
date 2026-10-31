@@ -19,6 +19,7 @@ describe("computeQuote", () => {
     expect(computeQuote(lines, 2500, ON)).toEqual({
       subtotalCents: 94997,
       deliveryCents: 2500,
+      assemblyCents: 0,
       taxes: [{ name: "HST", rate: 13000, cents: 12675 }], // 974.97 × 13% = 126.7461
       taxCents: 12675,
       totalCents: 110172,
@@ -32,6 +33,11 @@ describe("computeQuote", () => {
       { name: "QST", rate: 9975, cents: 998 }, // 9.975 rounds up
     ]);
     expect(quote.totalCents).toBe(11498);
+  });
+
+  it("taxes the assembly fee like the goods", () => {
+    const quote = computeQuote([{ unitPriceCents: 100000, quantity: 1 }], 0, ON, 15000);
+    expect(quote).toMatchObject({ assemblyCents: 15000, taxCents: 14950, totalCents: 129950 });
   });
 
   it("charges no tax while collection is switched off", () => {

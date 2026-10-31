@@ -159,6 +159,7 @@ model Product {
   movements  InventoryMovement[]
   cartLines  CartLine[]
   orderLines OrderLine[]
+  buildItems BuildItem[]
 
   @@index([categoryId, status])
 }
@@ -247,12 +248,13 @@ model TaxRate {
 // ─── Cart ────────────────────────────────────────────────────────────────────
 
 model Cart {
-  id        String     @id @default(cuid())
+  id        String      @id @default(cuid())
   // Random value stored in the customer's httpOnly cookie.
-  token     String     @unique
+  token     String      @unique
   lines     CartLine[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  builds    CartBuild[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 }
 
 model CartLine {
@@ -273,6 +275,7 @@ model CartLine {
 enum OrderStatus {
   PLACED // waiting for payment or confirmation
   CONFIRMED // paid, or confirmed by an admin for cash orders
+  ASSEMBLING // assembled builds only: on the bench
   READY // ready for pickup or delivery
   OUT_FOR_DELIVERY
   COMPLETED // picked up or delivered; stock deducted
@@ -320,6 +323,8 @@ model Order {
   paymentStatus   PaymentStatus @default(UNPAID)
   subtotalCents   Int
   deliveryCents   Int
+  // Flat assembly fee × number of assembled builds (Windows is a line item).
+  assemblyCents   Int           @default(0)
   taxCents        Int
   totalCents      Int
   paidCents       Int           @default(0)
@@ -345,7 +350,7 @@ model Order {
 }
 
 model OrderLine {
-  id             String @id @default(cuid())
+  id             String     @id @default(cuid())
   orderId        String
   productId      String
   // Snapshots, so later product edits don't change past orders.
@@ -353,6 +358,10 @@ model OrderLine {
   name           Json // LocalizedText
   unitPriceCents Int
   quantity       Int
+  // Lines of one assembled PC share this id (the cart build's id).
+  buildGroup     String?
+  // Which builder slot the part filled, for the build sheet.
+  slot           BuildSlot?
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
@@ -403,4 +412,60 @@ model StripeEvent {
   id          String   @id
   type        String
   processedAt DateTime @default(now())
+}
+
+// ─── PC builder ──────────────────────────────────────────────────────────────
+
+enum BuildSlot {
+  CPU
+  MOTHERBOARD
+  MEMORY
+  STORAGE
+  STORAGE_2
+  GPU
+  CASE
+  PSU
+  COOLER
+}
+
+model Build {
+  id          String       @id @default(cuid())
+  // Public, read-only link: /build/s/<shareId>.
+  shareId     String       @unique
+  // Secret held in the owner's cookie; only the owner can change the build.
+  editToken   String       @unique
+  // Location whose stock the part picker shows.
+  location    LocationCode @default(TOR)
+  // Featured builds appear on /prebuilt with a name and description.
+  featured    Boolean      @default(false)
+  title       Json? // LocalizedText
+  description Json? // LocalizedText
+  position    Int          @default(0)
+  items       BuildItem[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model BuildItem {
+  buildId   String
+  slot      BuildSlot
+  productId String
+  quantity  Int       @default(1)
+
+  build   Build   @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([buildId, slot])
+}
+
+// An assembled PC in the cart: a snapshot of the build's parts, so later
+// edits in the builder don't change what's in the cart.
+model CartBuild {
+  id        String   @id @default(cuid())
+  cartId    String
+  // [{ slot, productId, quantity }]
+  items     Json
+  createdAt DateTime @default(now())
+
+  cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
 }

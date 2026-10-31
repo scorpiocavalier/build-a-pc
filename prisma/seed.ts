@@ -4,6 +4,8 @@
 // Every row goes through the same validation as a CSV import, so the seed
 // doubles as a check that the spec definitions accept realistic data.
 
+import { randomBytes } from "node:crypto";
+
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
@@ -50,6 +52,33 @@ type Row = Omit<RawProductInput, "category" | "status"> & { price: string };
 const desc = (en: string, fr: string) => ({ description_en: en, description_fr: fr });
 
 const PRODUCTS: Record<string, Row[]> = {
+  software: [
+    {
+      sku: "WIN11-HOME",
+      brand: "Microsoft",
+      name_en: "Windows 11 Home (OEM licence)",
+      name_fr: "Windows 11 Famille (licence OEM)",
+      ...desc("Included with every PC we assemble.", "Inclus avec chaque PC que nous assemblons."),
+      price: "159.99",
+      stock_TOR: "10",
+      stock_MTL: "10",
+      "spec.edition": "windows-11-home",
+    },
+    {
+      sku: "WIN11-PRO",
+      brand: "Microsoft",
+      name_en: "Windows 11 Pro (OEM licence)",
+      name_fr: "Windows 11 Professionnel (licence OEM)",
+      ...desc(
+        "For business features like BitLocker and Remote Desktop.",
+        "Pour les fonctions d’entreprise comme BitLocker et le Bureau à distance.",
+      ),
+      price: "219.99",
+      stock_TOR: "5",
+      stock_MTL: "5",
+      "spec.edition": "windows-11-pro",
+    },
+  ],
   cpu: [
     {
       sku: "CPU-AMD-9800X3D",
@@ -552,6 +581,48 @@ const PRODUCTS: Record<string, Row[]> = {
   ],
 };
 
+// Example prebuilt PCs for /prebuilt, made from the placeholder parts above.
+const FEATURED_BUILDS = [
+  {
+    shareId: "astral-white",
+    title: { en: "Astral White", fr: "Astral Blanc" },
+    description: {
+      en: "An all-white 1440p build with a Radeon RX 9070 XT and a 360 mm liquid cooler with a screen.",
+      fr: "Un montage tout blanc pour le 1440p avec une Radeon RX 9070 XT et un refroidisseur liquide de 360 mm à écran.",
+    },
+    location: "MTL" as const,
+    parts: {
+      CPU: "CPU-AMD-9600X",
+      MOTHERBOARD: "MB-GIGA-B850-AE",
+      MEMORY: "RAM-TF-D5-32-6000W",
+      STORAGE: "SSD-WD-SN850X-1T",
+      GPU: "GPU-SAP-9070XT-PURE",
+      CASE: "CASE-LL-O11V-W",
+      PSU: "PSU-MSI-A1000G-W",
+      COOLER: "AIO-TT-MINICUBE-360W",
+    },
+  },
+  {
+    shareId: "astral-midnight",
+    title: { en: "Astral Midnight", fr: "Astral Minuit" },
+    description: {
+      en: "A quiet black-and-walnut gaming PC with the Ryzen 7 9800X3D and an RTX 5070.",
+      fr: "Un PC de jeu silencieux noir et noyer avec le Ryzen 7 9800X3D et une RTX 5070.",
+    },
+    location: "TOR" as const,
+    parts: {
+      CPU: "CPU-AMD-9800X3D",
+      MOTHERBOARD: "MB-MSI-B650M-A",
+      MEMORY: "RAM-CORS-D5-64-6000",
+      STORAGE: "SSD-SAM-990P-2T",
+      GPU: "GPU-MSI-5070-VENTUS",
+      CASE: "CASE-FD-NORTH-B",
+      PSU: "PSU-CORS-RM850X",
+      COOLER: "AIO-ARC-LF3-360",
+    },
+  },
+];
+
 async function main() {
   for (const location of LOCATIONS) {
     const data = { ...location, deliveryPostalPrefixes: [...location.deliveryPostalPrefixes] };
@@ -587,8 +658,39 @@ async function main() {
     }
   }
 
+  for (const [position, featured] of FEATURED_BUILDS.entries()) {
+    const products = await db.product.findMany({
+      where: { sku: { in: Object.values(featured.parts) } },
+    });
+    const bySku = new Map(products.map((p) => [p.sku, p.id]));
+    const data = {
+      featured: true,
+      title: featured.title,
+      description: featured.description,
+      location: featured.location,
+      position,
+    };
+    const build = await db.build.upsert({
+      where: { shareId: featured.shareId },
+      create: {
+        ...data,
+        shareId: featured.shareId,
+        editToken: randomBytes(24).toString("base64url"),
+      },
+      update: data,
+    });
+    await db.buildItem.deleteMany({ where: { buildId: build.id } });
+    await db.buildItem.createMany({
+      data: Object.entries(featured.parts).map(([slot, sku]) => ({
+        buildId: build.id,
+        slot: slot as keyof typeof featured.parts,
+        productId: bySku.get(sku)!,
+      })),
+    });
+  }
+
   console.log(
-    `Seeded ${LOCATIONS.length} locations, ${CATEGORIES.length} categories, ${created} new products.`,
+    `Seeded ${LOCATIONS.length} locations, ${CATEGORIES.length} categories, ${created} new products, ${FEATURED_BUILDS.length} featured builds.`,
   );
 }
 

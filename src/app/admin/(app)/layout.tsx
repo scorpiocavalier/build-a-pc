@@ -11,13 +11,14 @@ const NAV = [
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/import", label: "CSV import" },
+  { href: "/admin/builds", label: "Prebuilt PCs" },
   { href: "/admin/settings", label: "Settings" },
 ];
 
 export default function AdminAppLayout({ children }: LayoutProps<"/admin">) {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b bg-surface/60">
+      <header className="border-b bg-surface/60 print:hidden">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
           <Link href="/admin" className="flex items-center gap-2">
             <Logo />

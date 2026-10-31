@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 
-import { addToCart, setLineQuantity } from "@/server/cart";
+import { addToCart, removeCartBuild, setLineQuantity } from "@/server/cart";
 
 export type AddToCartState = { added?: number };
 
@@ -22,5 +22,10 @@ export async function updateCartLineAction(formData: FormData) {
   const quantity = Number(formData.get("quantity"));
   if (!productId || !Number.isInteger(quantity)) return;
   await setLineQuantity(productId, quantity);
+  refresh();
+}
+
+export async function removeCartBuildAction(formData: FormData) {
+  await removeCartBuild(String(formData.get("buildId") ?? ""));
   refresh();
 }

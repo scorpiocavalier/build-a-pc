@@ -24,6 +24,9 @@ export async function saveStoreSettings(
     etransferHoldHours: Number(str(formData, "etransferHoldHours")),
     cashHoldDays: Number(str(formData, "cashHoldDays")),
     depositPercent: Number(str(formData, "depositPercent")),
+    assemblyFeeCents: parseDollars(str(formData, "assemblyFee")),
+    windowsSku: str(formData, "windowsSku").toUpperCase(),
+    assemblyDays: Number(str(formData, "assemblyDays")),
     gstNumber: str(formData, "gstNumber"),
     qstNumber: str(formData, "qstNumber"),
   });

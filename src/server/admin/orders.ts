@@ -9,6 +9,7 @@ import { requireAdmin } from "@/server/require-admin";
 const STATUSES: OrderStatus[] = [
   "PLACED",
   "CONFIRMED",
+  "ASSEMBLING",
   "READY",
   "OUT_FOR_DELIVERY",
   "COMPLETED",
@@ -52,7 +53,7 @@ export async function getOrderCounts() {
   await requireAdmin();
   const [placed, toPrepare, ready] = await Promise.all([
     db.order.count({ where: { status: "PLACED" } }),
-    db.order.count({ where: { status: "CONFIRMED" } }),
+    db.order.count({ where: { status: { in: ["CONFIRMED", "ASSEMBLING"] } } }),
     db.order.count({ where: { status: { in: ["READY", "OUT_FOR_DELIVERY"] } } }),
   ]);
   return { placed, toPrepare, ready };

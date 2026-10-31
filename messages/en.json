@@ -9,7 +9,9 @@
       "builds": "Our builds",
       "locations": "Locations",
       "shop": "Shop parts",
-      "cart": "Cart"
+      "cart": "Cart",
+      "builder": "PC builder",
+      "prebuilt": "Prebuilt PCs"
     },
     "switchLocale": "Français",
     "switchLocaleLabel": "Afficher le site en français",
@@ -23,7 +25,7 @@
     "lead": "Pick your parts or let us spec it for you. We assemble, install Windows, test every build and hand it to you in person.",
     "ctaBuilds": "See our builds",
     "ctaLocations": "Pickup locations",
-    "comingSoon": "The online store is open. The PC builder is coming soon.",
+    "comingSoon": "Shop parts, design your own PC, or pick one of ours.",
     "videoLabel": "Video of a finished white Astral Tech Gaming build with ice-blue lighting",
     "buildsTitle": "Recent builds",
     "buildsLead": "Every PC is assembled, cable-managed and tested before it leaves our bench.",
@@ -54,7 +56,9 @@
       "toronto": "Toronto, Ontario",
       "montreal": "Montreal, Quebec"
     },
-    "locationsNote": "Exact addresses and hours will be posted before launch."
+    "locationsNote": "Exact addresses and hours will be posted before launch.",
+    "ctaBuild": "Build your PC",
+    "ctaPrebuilt": "Prebuilt PCs"
   },
   "Footer": {
     "rights": "© {year} Astral Tech Gaming. All rights reserved.",
@@ -125,7 +129,11 @@
     "notAvailable": "Out of stock right now",
     "cartLabel": "Cart, {count, plural, =0 {empty} one {# item} other {# items}}",
     "taxNote": "Taxes and delivery are calculated at checkout.",
-    "quantityFor": "Quantity for {name}"
+    "quantityFor": "Quantity for {name}",
+    "assembledBuild": "Assembled PC",
+    "assembledIncludes": "Includes assembly, Windows and testing.",
+    "removeBuild": "Remove build",
+    "assemblyFee": "Assembly and testing"
   },
   "Checkout": {
     "title": "Checkout",
@@ -198,7 +206,11 @@
       "payment": "We couldn't start the card payment. Please try again or choose another payment method.",
       "empty": "Your cart is empty.",
       "fulfilment": "Choose pickup or delivery first."
-    }
+    },
+    "assembly": "Assembly and testing",
+    "deposit": "Deposit due now: {amount} ({percent}%). The rest is due at pickup or delivery.",
+    "depositCash": "Pay a deposit of {amount} by Interac e-Transfer to start assembly, then the rest in cash.",
+    "depositEtransfer": "Send at least the {amount} deposit to start assembly, or the full amount."
   },
   "Order": {
     "title": "Order {number}",
@@ -212,7 +224,8 @@
       "READY": "Ready",
       "OUT_FOR_DELIVERY": "Out for delivery",
       "COMPLETED": "Completed",
-      "CANCELLED": "Cancelled"
+      "CANCELLED": "Cancelled",
+      "ASSEMBLING": "Being assembled"
     },
     "paymentStatus": {
       "UNPAID": "Not paid yet",
@@ -240,7 +253,10 @@
     "qty": "Qty {count}",
     "cancelled": "This order was cancelled.",
     "notFound": "We couldn't find that order.",
-    "keepLink": "Keep this link to check your order later."
+    "keepLink": "Keep this link to check your order later.",
+    "depositDue": "Deposit to start assembly: {amount}",
+    "etransferDeposit": "Send at least the {amount} deposit (or the full {total}) to {email} and put {number} in the message.",
+    "assemblyNote": "We'll start assembling once the deposit is in. Ready in about {days, plural, one {# business day} other {# business days}} after that."
   },
   "Email": {
     "subjectReceived": "Order {number} received",
@@ -258,5 +274,87 @@
     "viewOrder": "View your order",
     "signoff": "Astral Tech Gaming",
     "receiptNumbers": "Tax numbers: {numbers}"
+  },
+  "Builder": {
+    "title": "PC builder",
+    "lead": "Pick each part and we'll check that everything fits and works together. Then order the parts, or have us build it.",
+    "slots": {
+      "CPU": "Processor",
+      "MOTHERBOARD": "Motherboard",
+      "MEMORY": "Memory",
+      "STORAGE": "Storage",
+      "STORAGE_2": "Second drive",
+      "GPU": "Graphics card",
+      "CASE": "Case",
+      "PSU": "Power supply",
+      "COOLER": "CPU cooler"
+    },
+    "optional": "optional",
+    "choose": "Choose",
+    "change": "Change",
+    "remove": "Remove",
+    "quantity": "Qty",
+    "stockFor": "Show stock for",
+    "inStockHere": "In stock in {location}",
+    "notHere": "Not in stock in {location}",
+    "summary": "Your build",
+    "parts": "Parts",
+    "assembly": "Assembly, Windows install and testing",
+    "windows": "{name}",
+    "estimatedTotal": "Estimated total",
+    "taxNote": "Taxes and delivery are calculated at checkout.",
+    "wattage": "Estimated power draw: {watts} W",
+    "noIssues": "Everything you've picked is compatible.",
+    "issuesTitle": "Compatibility",
+    "missing": "To have us build it, add: {slots}.",
+    "assemble": "Have us build it",
+    "assembleNote": "We assemble it, install Windows and test everything. Ready in about {days, plural, one {# business day} other {# business days}}.",
+    "assembleBlocked": "Fix the problems above before we can build it.",
+    "addParts": "Add parts to cart",
+    "partsAdded": "Parts added to your cart.",
+    "buildAdded": "Your build was added to the cart.",
+    "viewCart": "View cart",
+    "share": "Share link",
+    "shareHint": "Anyone with this link can see this build, but not change it.",
+    "clear": "Start over",
+    "empty": "Start by choosing a processor.",
+    "pickerTitle": "Choose a {slot}",
+    "back": "Back to your build",
+    "compatible": "{count, plural, =0 {No compatible parts} one {# compatible part} other {# compatible parts}}",
+    "notCompatible": "{count, plural, one {# part doesn't fit your build} other {# parts don't fit your build}}",
+    "select": "Select",
+    "current": "In your build",
+    "sharedTitle": "Shared build",
+    "customize": "Customize this build",
+    "orderThis": "Copy to my builder",
+    "prebuiltTitle": "Prebuilt PCs",
+    "prebuiltLead": "Builds we love, ready to order as they are or to customize in the builder.",
+    "fromPrice": "{price} with assembly",
+    "viewBuild": "See the build",
+    "severity": {
+      "error": "Problem",
+      "warning": "Check",
+      "info": "Note"
+    },
+    "issues": {
+      "cpuSocket": "The processor uses {cpu} but the motherboard is {board}.",
+      "memoryBoard": "The motherboard takes {board} memory, not {type}.",
+      "memoryCpu": "The processor doesn't support {type} memory.",
+      "memorySlots": "That's {modules} memory modules, but the motherboard has {slots} slots.",
+      "memoryCapacity": "That's {capacity} GB of memory; the motherboard supports up to {max} GB.",
+      "caseBoard": "A {formFactor} motherboard doesn't fit in this case.",
+      "gpuLength": "The graphics card is {length} mm long; the case fits up to {max} mm.",
+      "coolerSocket": "The cooler doesn't fit the {socket} socket.",
+      "coolerHeight": "The cooler is {height} mm tall; the case fits up to {max} mm.",
+      "radiator": "The case has no mount for a {size} mm radiator.",
+      "casePsu": "An {formFactor} power supply doesn't fit in this case.",
+      "m2Slots": "That's {drives} M.2 drives, but the motherboard has {slots} M.2 slots.",
+      "sataPorts": "That's {drives} SATA drives, but the motherboard has {ports} SATA ports.",
+      "psuTooSmall": "The build can draw about {estimate} W, more than this {wattage} W power supply.",
+      "psuHeadroom": "The build can draw about {estimate} W. We recommend a {recommended} W power supply or larger.",
+      "gpuConnector": "The power supply has no {connector} connector for the graphics card; an adapter would be needed.",
+      "noGraphics": "This processor has no built-in graphics, so the build needs a graphics card.",
+      "noCooler": "This processor doesn't come with a cooler. Choose one."
+    }
   }
 }
