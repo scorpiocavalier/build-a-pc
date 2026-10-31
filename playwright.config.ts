@@ -4,6 +4,12 @@ import { defineConfig, devices } from "@playwright/test";
 
 const PORT = Number(process.env.PORT ?? 3000);
 
+// Secrets the tests use to sign Stripe webhooks and call the cron route. Only
+// the webhook secret is set, so card payments stay hidden at checkout (no
+// Stripe API calls) while webhook handling is still tested.
+process.env.STRIPE_WEBHOOK_SECRET ||= "whsec_e2e_test_secret";
+process.env.CRON_SECRET ||= "cron_e2e_test_secret";
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
@@ -23,5 +29,6 @@ export default defineConfig({
     command: `npm run start -- --port ${PORT}`,
     port: PORT,
     reuseExistingServer: !process.env.CI,
+    env: { ...(process.env as Record<string, string>) },
   },
 });

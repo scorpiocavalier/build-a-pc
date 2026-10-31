@@ -1,13 +1,14 @@
-import { Search } from "lucide-react";
+import { Search, Store } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Suspense } from "react";
 
+import { CartLink, CartLinkFallback } from "@/components/cart/cart-link";
 import { LocaleSwitcher, LocaleSwitcherFallback } from "@/components/locale-switcher";
 import { Logo } from "@/components/logo";
 import { Link } from "@/i18n/navigation";
 
 const navLink =
-  "rounded-lg px-3 py-2 text-sm text-muted hover:bg-surface-raised hover:text-foreground";
+  "rounded-lg px-2 py-2 text-sm text-muted hover:bg-surface-raised hover:text-foreground min-[400px]:px-3";
 
 export function SiteHeader() {
   const t = useTranslations("Header");
@@ -15,13 +16,15 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-0 px-4 min-[400px]:gap-1 sm:gap-2">
         <Link href="/" aria-label={t("home")} className="mr-auto shrink-0 lg:mr-4">
-          <Logo className="text-base sm:text-lg" />
+          <Logo className="text-sm min-[400px]:text-base sm:text-lg" />
         </Link>
         <nav className="flex items-center gap-1">
           <Link href="/shop" className={navLink}>
-            {t("nav.shop")}
+            {/* Icon only on the narrowest phones so the header fits. */}
+            <Store aria-hidden="true" className="size-5 min-[400px]:hidden" />
+            <span className="max-[399px]:sr-only">{t("nav.shop")}</span>
           </Link>
           <Link href="/#builds" className={`${navLink} hidden lg:block`}>
             {t("nav.builds")}
@@ -53,10 +56,13 @@ export function SiteHeader() {
         <Link
           href="/search"
           aria-label={t("searchLabel")}
-          className="rounded-lg p-2 text-muted hover:bg-surface-raised hover:text-foreground md:hidden"
+          className="rounded-lg p-1.5 text-muted hover:bg-surface-raised hover:text-foreground min-[400px]:p-2 md:hidden"
         >
           <Search aria-hidden="true" className="size-5" />
         </Link>
+        <Suspense fallback={<CartLinkFallback />}>
+          <CartLink />
+        </Suspense>
         {/* The switcher reads the current URL, so it streams in on dynamic pages. */}
         <Suspense fallback={<LocaleSwitcherFallback />}>
           <LocaleSwitcher />

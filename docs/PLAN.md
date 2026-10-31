@@ -485,6 +485,19 @@ financing, stock transfer workflow.
 ### Progress
 
 - **Phase 0: done.**
+- **Phase 2: done.** Differences from §6:
+  - Card payments use Stripe's hosted Checkout page (simpler than the
+    embedded Payment Element, same PCI scope). Card is hidden at checkout
+    until `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set.
+  - Tax is charged for the province of the fulfilling location (deliveries
+    are local), and only once collection is switched on in admin settings.
+  - Order statuses are PLACED → CONFIRMED → READY → (OUT_FOR_DELIVERY) →
+    COMPLETED, or CANCELLED. ASSEMBLING arrives with assembled builds in Phase 3.
+  - Stock is reserved when an order is placed and deducted when it's handed
+    over (COMPLETED). Unpaid orders are cancelled by an hourly job after their
+    hold (card 30 min, e-Transfer 48 h, unconfirmed cash 7 days; editable).
+  - Deposits are implemented in the payment rules but only apply to assembled
+    builds (Phase 3). Refunds for cash/e-Transfer and returns are Phase 5.
 - **Phase 1: done**, with two deliberate differences from §5:
   - Product URLs use one slug for both languages (e.g. `/fr/p/amd-ryzen-7-9800x3d`).
     Model names are mostly the same in both languages; per-language slugs can come later.

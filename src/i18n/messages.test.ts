@@ -17,8 +17,12 @@ function flatten(messages: Messages, prefix = ""): Map<string, string> {
   return out;
 }
 
-// Matches "{name}" and "{name, plural, ...}" but not plural branch text.
-const placeholders = (s: string) => [...s.matchAll(/\{(\w+)\s*[,}]/g)].map((m) => m[1]).sort();
+// Matches "{name}" and "{name, plural, ...}" but not plural branches such as
+// "one {item}" or "=0 {empty}".
+const placeholders = (s: string) =>
+  [...s.matchAll(/(?<!(?:=\d+|zero|one|two|few|many|other)\s*)\{(\w+)\s*[,}]/g)]
+    .map((m) => m[1])
+    .sort();
 
 describe("translation messages", () => {
   const enKeys = flatten(en);

@@ -1,5 +1,4 @@
 // Astral Tech Gaming database schema (see docs/PLAN.md §5).
-// Cart, order and payment models arrive in Phase 2.
 //
 // Translatable text is stored as JSONB { "en": "...", "fr": "..." } and
 // typed as LocalizedText in src/lib/localized.ts.
@@ -36,6 +35,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   movements     InventoryMovement[]
+  orders        Order[]
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 }
@@ -86,15 +86,22 @@ enum LocationCode {
 }
 
 model Location {
-  id        String              @id @default(cuid())
-  code      LocationCode        @unique
-  name      Json // LocalizedText
-  province  String // "ON", "QC"
-  active    Boolean             @default(true)
-  inventory Inventory[]
-  movements InventoryMovement[]
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  id                     String              @id @default(cuid())
+  code                   LocationCode        @unique
+  name                   Json // LocalizedText
+  province               String // "ON", "QC"
+  active                 Boolean             @default(true)
+  // Pickup address and hours, shown to customers. LocalizedText.
+  address                Json                @default("{\"en\":\"\",\"fr\":\"\"}")
+  hours                  Json                @default("{\"en\":\"\",\"fr\":\"\"}")
+  // Local delivery: postal codes starting with one of these prefixes.
+  deliveryPostalPrefixes String[]            @default([])
+  deliveryFeeCents       Int                 @default(0)
+  inventory              Inventory[]
+  movements              InventoryMovement[]
+  orders                 Order[]
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
 }
 
 // ─── Catalog ─────────────────────────────────────────────────────────────────
@@ -145,11 +152,13 @@ model Product {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  brand     Brand               @relation(fields: [brandId], references: [id])
-  category  Category            @relation(fields: [categoryId], references: [id])
-  images    ProductImage[]
-  inventory Inventory[]
-  movements InventoryMovement[]
+  brand      Brand               @relation(fields: [brandId], references: [id])
+  category   Category            @relation(fields: [categoryId], references: [id])
+  images     ProductImage[]
+  inventory  Inventory[]
+  movements  InventoryMovement[]
+  cartLines  CartLine[]
+  orderLines OrderLine[]
 
   @@index([categoryId, status])
 }
@@ -211,4 +220,187 @@ model InventoryMovement {
   actor    User?    @relation(fields: [actorId], references: [id])
 
   @@index([productId, createdAt])
+}
+
+// ─── Settings & tax ──────────────────────────────────────────────────────────
+
+// Admin-editable business settings, read through src/server/settings.ts,
+// which supplies defaults for anything not stored yet.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+// Rates are in thousandths of a percent: 13% = 13000, 9.975% = 9975.
+model TaxRate {
+  province  String   @id // "ON", "QC"
+  gst       Int      @default(0)
+  pst       Int      @default(0)
+  hst       Int      @default(0)
+  qst       Int      @default(0)
+  // Off until the business is registered to collect tax in this province.
+  collect   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Cart ────────────────────────────────────────────────────────────────────
+
+model Cart {
+  id        String     @id @default(cuid())
+  // Random value stored in the customer's httpOnly cookie.
+  token     String     @unique
+  lines     CartLine[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartLine {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+}
+
+// ─── Orders & payments ───────────────────────────────────────────────────────
+
+enum OrderStatus {
+  PLACED // waiting for payment or confirmation
+  CONFIRMED // paid, or confirmed by an admin for cash orders
+  READY // ready for pickup or delivery
+  OUT_FOR_DELIVERY
+  COMPLETED // picked up or delivered; stock deducted
+  CANCELLED // reservation released
+}
+
+enum Fulfilment {
+  PICKUP
+  DELIVERY
+}
+
+enum PaymentMethod {
+  CARD
+  ETRANSFER
+  CASH
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  REFUNDED
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  // Shown to customers as ATG-<number>, e.g. ATG-10042.
+  number          Int           @unique @default(autoincrement())
+  // Lets a guest open their order page without an account.
+  accessToken     String        @unique
+  userId          String?
+  locale          Locale        @default(en)
+  status          OrderStatus   @default(PLACED)
+  name            String
+  email           String
+  phone           String
+  fulfilment      Fulfilment
+  locationId      String
+  // { line1, line2, city, province, postalCode } for deliveries.
+  deliveryAddress Json?
+  // { date: "2026-11-03", slot: "afternoon" } as requested by the customer.
+  requestedWindow Json
+  notes           String?
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus @default(UNPAID)
+  subtotalCents   Int
+  deliveryCents   Int
+  taxCents        Int
+  totalCents      Int
+  paidCents       Int           @default(0)
+  // Deposit needed before work starts (assembled builds, Phase 3).
+  depositCents    Int           @default(0)
+  // [{ name: "HST", rate: 13000, cents: 1234 }], as charged.
+  taxBreakdown    Json
+  currency        String        @default("CAD")
+  // Unpaid orders are cancelled and their stock released after this.
+  holdUntil       DateTime?
+  cancelReason    String?
+  placedAt        DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user     User?        @relation(fields: [userId], references: [id])
+  location Location     @relation(fields: [locationId], references: [id])
+  lines    OrderLine[]
+  payments Payment[]
+  events   OrderEvent[]
+
+  @@index([status, placedAt])
+  @@index([email])
+}
+
+model OrderLine {
+  id             String @id @default(cuid())
+  orderId        String
+  productId      String
+  // Snapshots, so later product edits don't change past orders.
+  sku            String
+  name           Json // LocalizedText
+  unitPriceCents Int
+  quantity       Int
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+enum PaymentRecordStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+model Payment {
+  id                    String              @id @default(cuid())
+  orderId               String
+  method                PaymentMethod
+  amountCents           Int
+  status                PaymentRecordStatus @default(PENDING)
+  stripeSessionId       String?             @unique
+  stripePaymentIntentId String?
+  // e-Transfer reference or receipt note, entered by an admin.
+  reference             String?
+  recordedById          String?
+  receivedAt            DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// Timeline of everything that happened to an order (also the audit trail).
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  type      String // "placed", "paid", "status:READY", "cancelled", ...
+  message   String?
+  actorId   String?
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+}
+
+// Stripe webhook events already handled, so retries are ignored.
+model StripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
 }
