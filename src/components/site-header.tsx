@@ -1,4 +1,4 @@
-import { Search, Store } from "lucide-react";
+import { Search, Store, UserRound } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Suspense } from "react";
 
@@ -8,7 +8,7 @@ import { Logo } from "@/components/logo";
 import { Link } from "@/i18n/navigation";
 
 const navLink =
-  "rounded-lg px-2 py-2 text-sm text-muted hover:bg-surface-raised hover:text-foreground min-[400px]:px-3";
+  "rounded-lg px-1 py-2 text-sm text-muted hover:bg-surface-raised hover:text-foreground min-[360px]:px-2 sm:px-3";
 
 export function SiteHeader() {
   const t = useTranslations("Header");
@@ -22,9 +22,9 @@ export function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-1">
           <Link href="/shop" className={navLink}>
-            {/* Icon only on the narrowest phones so the header fits. */}
-            <Store aria-hidden="true" className="size-5 min-[400px]:hidden" />
-            <span className="max-[399px]:sr-only">{t("nav.shop")}</span>
+            {/* Icon only on phones so the header fits. */}
+            <Store aria-hidden="true" className="size-5 sm:hidden" />
+            <span className="max-sm:sr-only">{t("nav.shop")}</span>
           </Link>
           <Link href="/build" className={`${navLink} hidden md:block`}>
             {t("nav.builder")}
@@ -56,9 +56,16 @@ export function SiteHeader() {
         <Link
           href="/search"
           aria-label={t("searchLabel")}
-          className="rounded-lg p-1.5 text-muted hover:bg-surface-raised hover:text-foreground min-[400px]:p-2 md:hidden"
+          className="rounded-lg p-1 text-muted hover:bg-surface-raised hover:text-foreground min-[360px]:p-1.5 min-[400px]:p-2 md:hidden"
         >
           <Search aria-hidden="true" className="size-5" />
+        </Link>
+        <Link
+          href="/account"
+          aria-label={t("nav.account")}
+          className="rounded-lg p-1 text-muted hover:bg-surface-raised hover:text-foreground min-[360px]:p-1.5 min-[400px]:p-2"
+        >
+          <UserRound aria-hidden="true" className="size-5" />
         </Link>
         <Suspense fallback={<CartLinkFallback />}>
           <CartLink />

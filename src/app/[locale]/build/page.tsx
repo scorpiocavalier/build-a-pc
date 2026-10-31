@@ -5,12 +5,14 @@ import { Suspense } from "react";
 
 import { AddBuildButtons } from "@/components/builder/add-build-buttons";
 import { BuildSummary } from "@/components/builder/build-summary";
+import { SaveBuildForm } from "@/components/builder/save-build-form";
 import { SlotList } from "@/components/builder/slot-list";
 import { Button } from "@/components/ui/button";
 import { LOCATION_CODES } from "@/lib/catalog/product-input";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { getAssemblyExtras, getMyBuild, type BuildView } from "@/server/builder";
+import { getCustomer } from "@/server/customer";
 
 import { clearAction, locationAction } from "./actions";
 
@@ -37,12 +39,13 @@ export default async function BuilderPage() {
 }
 
 async function Builder() {
-  const [build, extras, t, catalog, locale] = await Promise.all([
+  const [build, extras, t, catalog, locale, customer] = await Promise.all([
     getMyBuild(),
     getAssemblyExtras(),
     getTranslations("Builder"),
     getTranslations("Catalog"),
     getLocale(),
+    getCustomer(),
   ]);
   const empty: BuildView = {
     id: "",
@@ -50,6 +53,9 @@ async function Builder() {
     location: "TOR",
     featured: false,
     position: 0,
+    name: null,
+    userId: null,
+    updatedAt: new Date(0),
     title: null,
     description: null,
     items: {},
@@ -86,12 +92,26 @@ async function Builder() {
           {hasParts && (
             <form action={clearAction}>
               <Button size="sm" variant="ghost">
-                {t("clear")}
+                {/* A saved build stays in the account; this starts a new one. */}
+                {view.userId ? t("newBuild") : t("clear")}
               </Button>
             </form>
           )}
         </div>
         <SlotList build={view} editable />
+        {hasParts &&
+          (customer ? (
+            <SaveBuildForm locale={locale} name={view.userId === customer.id ? view.name : null} />
+          ) : (
+            <p className="rounded-lg border bg-surface p-4 text-sm text-muted">
+              <a
+                href={`/${locale}/sign-in?next=${encodeURIComponent(`/${locale}/build`)}`}
+                className="text-accent hover:underline"
+              >
+                {t("signInToSave")}
+              </a>
+            </p>
+          ))}
         {hasParts && (
           <div className="flex flex-col gap-1 rounded-lg border bg-surface p-4 text-sm">
             <p className="flex items-center gap-2 font-medium">

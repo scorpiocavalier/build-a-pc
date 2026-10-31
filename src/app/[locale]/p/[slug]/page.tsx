@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { CategoryIcon } from "@/components/catalog/category-icon";
 import { Price } from "@/components/catalog/price";
+import { WishlistButton, WishlistButtonFallback } from "@/components/account/wishlist-button";
 import { AddToCart } from "@/components/cart/add-to-cart";
 import { LOCATION_CODES } from "@/lib/catalog/product-input";
 import { localize } from "@/lib/localized";
@@ -168,6 +169,10 @@ async function ProductContent({ params }: Pick<Props, "params">) {
           ) : (
             <p className="text-muted">{t("outOfStock")}</p>
           )}
+
+          <Suspense fallback={<WishlistButtonFallback />}>
+            <WishlistButton productId={product.id} path={`/p/${product.slug}`} />
+          </Suspense>
 
           {product.warrantyMonths ? (
             <p className="text-sm text-muted">

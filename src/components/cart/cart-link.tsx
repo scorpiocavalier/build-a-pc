@@ -5,7 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { getCartCount } from "@/server/cart";
 
 const className =
-  "relative rounded-lg p-1.5 text-muted hover:bg-surface-raised hover:text-foreground min-[400px]:p-2";
+  "relative rounded-lg p-1 text-muted hover:bg-surface-raised hover:text-foreground min-[360px]:p-1.5 min-[400px]:p-2";
 
 // Reads the cart cookie, so it streams in behind a Suspense boundary.
 export async function CartLink() {

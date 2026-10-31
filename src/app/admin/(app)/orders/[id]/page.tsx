@@ -212,6 +212,29 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
         )}
       </section>
 
+      {order.returns.length > 0 && (
+        <section className="flex flex-col gap-2 rounded-lg border bg-surface/60 p-5 text-sm">
+          <h2 className="mb-1 font-semibold">Returns</h2>
+          <ul className="flex flex-col gap-1">
+            {order.returns.map((request) => (
+              <li key={request.id}>
+                <Link href="/admin/returns?show=all" className="text-accent hover:underline">
+                  RMA-{request.number}
+                </Link>{" "}
+                · {request.status.toLowerCase()} · {request.reason.toLowerCase().replace(/_/g, " ")}{" "}
+                ·{" "}
+                {request.lines
+                  .map((line) => {
+                    const orderLine = order.lines.find((l) => l.id === line.orderLineId);
+                    return `${line.quantity} × ${orderLine?.name.en ?? "?"}`;
+                  })
+                  .join(", ")}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="flex flex-col gap-2 rounded-lg border bg-surface/60 p-5 text-sm">
         <h2 className="mb-1 font-semibold">Timeline</h2>
         <ol className="flex flex-col gap-1">

@@ -63,6 +63,10 @@ export type BuildView = {
   location: LocationCode;
   featured: boolean;
   position: number;
+  // Saved to a customer's account under this name.
+  name: string | null;
+  userId: string | null;
+  updatedAt: Date;
   title: LocalizedText | null;
   description: LocalizedText | null;
   items: Partial<Record<BuildSlot, BuildItemView>>;
@@ -123,6 +127,9 @@ function toView(row: BuildRow): BuildView {
     location: row.location,
     featured: row.featured,
     position: row.position,
+    name: row.name,
+    userId: row.userId,
+    updatedAt: row.updatedAt,
     title: row.title as LocalizedText | null,
     description: row.description as LocalizedText | null,
     items,
@@ -170,6 +177,11 @@ async function ensureMyBuildId(): Promise<string> {
   const build = await db.build.create({
     data: { editToken, shareId: randomBytes(6).toString("base64url").toLowerCase() },
   });
+  await setBuildCookie(editToken);
+  return build.id;
+}
+
+async function setBuildCookie(editToken: string) {
   (await cookies()).set(BUILD_COOKIE, editToken, {
     httpOnly: true,
     sameSite: "lax",
@@ -177,7 +189,6 @@ async function ensureMyBuildId(): Promise<string> {
     path: "/",
     maxAge: 60 * 60 * 24 * 90,
   });
-  return build.id;
 }
 
 export async function setSlot(slot: BuildSlot, productId: string, quantity: number) {
@@ -205,7 +216,82 @@ export async function clearSlot(slot: BuildSlot) {
 export async function clearBuild() {
   const token = await myToken();
   if (!token) return;
-  await db.buildItem.deleteMany({ where: { build: { editToken: token } } });
+  const build = await db.build.findUnique({
+    where: { editToken: token },
+    select: { userId: true },
+  });
+  // A build saved to an account is kept; the browser starts a fresh one.
+  if (build?.userId) await forgetMyBuild();
+  else await db.buildItem.deleteMany({ where: { build: { editToken: token } } });
+}
+
+export async function forgetMyBuild() {
+  (await cookies()).delete(BUILD_COOKIE);
+}
+
+// ─── Saved builds (customer accounts) ───────────────────────────────────────
+
+// Saves the browser's current build to the customer's account. A build saved
+// by someone else on this browser is copied rather than taken over.
+export async function saveMyBuild(userId: string, name: string): Promise<boolean> {
+  const token = await myToken();
+  if (!token) return false;
+  const build = await db.build.findUnique({
+    where: { editToken: token },
+    include: { items: true },
+  });
+  if (!build || build.items.length === 0) return false;
+  if (!build.userId || build.userId === userId) {
+    await db.build.update({ where: { id: build.id }, data: { userId, name } });
+    return true;
+  }
+  const editToken = randomBytes(24).toString("base64url");
+  await db.build.create({
+    data: {
+      editToken,
+      shareId: randomBytes(6).toString("base64url").toLowerCase(),
+      location: build.location,
+      userId,
+      name,
+      items: {
+        create: build.items.map(({ slot, productId, quantity }) => ({ slot, productId, quantity })),
+      },
+    },
+  });
+  await setBuildCookie(editToken);
+  return true;
+}
+
+export async function listSavedBuilds(userId: string): Promise<BuildView[]> {
+  const rows = await db.build.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    include: { items: { include: itemInclude } },
+  });
+  return rows.map(toView);
+}
+
+// Makes a saved build the one the builder edits on this browser.
+export async function openSavedBuild(userId: string, id: string): Promise<boolean> {
+  const build = await db.build.findFirst({ where: { id, userId }, select: { editToken: true } });
+  if (!build) return false;
+  await setBuildCookie(build.editToken);
+  return true;
+}
+
+export async function deleteSavedBuild(userId: string, id: string) {
+  const build = await db.build.findFirst({
+    where: { id, userId },
+    select: { featured: true, editToken: true },
+  });
+  if (!build) return;
+  // A build the store features on /prebuilt stays; it just leaves the account.
+  if (build.featured) {
+    await db.build.update({ where: { id }, data: { userId: null } });
+  } else {
+    await db.build.delete({ where: { id } });
+  }
+  if ((await myToken()) === build.editToken) await forgetMyBuild();
 }
 
 export async function setBuildLocation(location: LocationCode) {

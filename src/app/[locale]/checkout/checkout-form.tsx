@@ -22,12 +22,15 @@ export type CheckoutFormProps = {
   cashLimitNote: string | null;
   // Assembled builds: deposit wording, overall and per payment method.
   depositNote: { general: string; CASH: string; ETRANSFER: string } | null;
+  // Signed-in customers: contact details and a matching saved address.
+  prefill: Record<string, string>;
+  signedIn: boolean;
 };
 
 export function CheckoutForm(props: CheckoutFormProps) {
   const t = useTranslations("Checkout");
   const [state, action, pending] = useActionState<CheckoutState, FormData>(placeOrderAction, {});
-  const values = state.values ?? {};
+  const values = state.values ?? props.prefill;
   const errors = state.errors ?? {};
   const err = (key: string) => (errors[key] ? t(`errors.${errors[key]}`) : undefined);
   const field = (key: string) => ({
@@ -90,6 +93,17 @@ export function CheckoutForm(props: CheckoutFormProps) {
               <Input id="postal-display" value={props.postalCode} readOnly className="text-muted" />
             </Field>
           </div>
+          {props.signedIn && !values.addressId && (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="saveAddress"
+                defaultChecked={values.saveAddress === "on"}
+                className="size-4 accent-[var(--accent)]"
+              />
+              {t("saveAddress")}
+            </label>
+          )}
         </fieldset>
       )}
 
