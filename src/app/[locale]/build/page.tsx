@@ -10,6 +10,7 @@ import { SlotList } from "@/components/builder/slot-list";
 import { Button } from "@/components/ui/button";
 import { LOCATION_CODES } from "@/lib/catalog/product-input";
 import { formatMoney } from "@/lib/money";
+import { siteUrl } from "@/lib/site-url";
 import { cn } from "@/lib/utils";
 import { getAssemblyExtras, getMyBuild, type BuildView } from "@/server/builder";
 import { getCustomer } from "@/server/customer";
@@ -126,7 +127,7 @@ async function Builder() {
             <input
               readOnly
               aria-label={t("share")}
-              value={`${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/${locale}/build/s/${view.shareId}`}
+              value={`${siteUrl()}/${locale}/build/s/${view.shareId}`}
               className="h-9 w-full rounded-lg border bg-background px-3 font-mono text-xs"
             />
             <p className="text-xs text-muted">{t("shareHint")}</p>

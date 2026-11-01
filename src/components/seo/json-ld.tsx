@@ -1,10 +1,11 @@
 import { localize } from "@/lib/localized";
 import type { StoreLocation } from "@/server/locations";
+import { siteUrl } from "@/lib/site-url";
 
 // schema.org structured data, so search engines can show prices, stock and
 // store details.
 
-const base = () => (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+const base = () => siteUrl();
 
 export function JsonLd({ data }: { data: object | object[] }) {
   return (

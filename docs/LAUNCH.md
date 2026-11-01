@@ -38,7 +38,7 @@ or the text in `messages/en.json` / `messages/fr.json` (`Legal.*`) if needed.
 | Service | What to do | Environment variables |
 | --- | --- | --- |
 | Domain | Register `astralgaming.ca` (CIRA registrar) | — |
-| Vercel (Pro) | Import the GitHub repo; set the production domain | all below |
+| Vercel (Pro) | Import the GitHub repo (see [`DEPLOY.md`](DEPLOY.md)); upgrade to Pro, set `vercel.json`'s cron back to hourly (`0 * * * *`); add the production domain | all below |
 | Neon | Create the production database (Canada region if offered); enable daily backups | `DATABASE_URL` |
 | Auth.js | Generate a secret: `npx auth secret` | `AUTH_SECRET` |
 | Google Cloud | OAuth client for the 2 admins; redirect `https://astralgaming.ca/api/auth/callback/google`; both admins turn on 2-step verification | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `ADMIN_EMAILS` |
