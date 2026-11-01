@@ -5,8 +5,7 @@ import { getLocale } from "next-intl/server";
 
 import { routing } from "@/i18n/routing";
 
-export const siteUrl = () =>
-  (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+export { siteUrl } from "@/lib/site-url";
 
 // Canonical URL and hreflang links for a page that exists in both languages.
 // `path` is the part after the locale, e.g. "/p/amd-ryzen-7-9800x3d" or "".

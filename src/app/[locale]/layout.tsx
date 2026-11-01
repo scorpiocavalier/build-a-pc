@@ -9,6 +9,7 @@ import { locale as rootLocale } from "next/root-params";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { routing } from "@/i18n/routing";
+import { siteUrl } from "@/lib/site-url";
 import { localeAlternates } from "@/server/seo";
 
 import "../globals.css";
@@ -19,9 +20,9 @@ export function generateStaticParams() {
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata");
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
   return {
-    metadataBase: new URL(siteUrl),
+    metadataBase: new URL(siteUrl()),
     title: { default: t("title"), template: "%s · Astral Tech Gaming" },
     description: t("description"),
     // Pages set their own canonical URL and language alternates.

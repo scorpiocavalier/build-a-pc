@@ -4,7 +4,8 @@ Online store for PC parts and custom-built gaming PCs — **astralgaming.ca**.
 Bilingual (English/French), with pickup and delivery in Toronto and Montreal.
 
 The full product and technical plan is in [`docs/PLAN.md`](docs/PLAN.md), and
-what's left before going live is in [`docs/LAUNCH.md`](docs/LAUNCH.md).
+what's left before going live is in [`docs/LAUNCH.md`](docs/LAUNCH.md). To put
+a first version online on Vercel, follow [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## Stack
 
@@ -61,8 +62,8 @@ npm run dev                   # http://localhost:3000
 - Stock is reserved at checkout with a guarded SQL update, so the last unit
   can't be sold twice, and deducted when the order is completed.
 - `/api/webhooks/stripe` is the only thing that marks card orders paid; it
-  ignores repeated events. `/api/cron/expire-orders` (hourly via
-  `vercel.json`, needs `CRON_SECRET`) cancels unpaid orders past their hold.
+  ignores repeated events. `/api/cron/expire-orders` (via
+  `vercel.json`: daily on Vercel Hobby, hourly on Pro; needs `CRON_SECRET`) cancels unpaid orders past their hold.
 - Emails go through Resend when `AUTH_RESEND_KEY` is set; otherwise they're
   printed to the server log.
 - `/admin/settings`: pickup addresses and hours, delivery postal prefixes and
@@ -175,8 +176,10 @@ tests/e2e/        Playwright tests
 - With Cache Components on, anything that reads cookies or the session must
   sit inside a `<Suspense>` boundary.
 
-## Deployment (planned)
+## Deployment
 
-Vercel (Pro) for the app, Neon for Postgres. Set the variables from
-`.env.example` in the Vercel project, and run `npm run db:deploy` against the
-production database on release.
+Vercel for the app, Neon for Postgres; step by step in
+[`docs/DEPLOY.md`](docs/DEPLOY.md). On Vercel, `npm run vercel-build`
+(`scripts/vercel-build.sh`) applies migrations before building, and loads the
+demo catalog once when `SEED_DEMO_DATA=1`. Without `NEXT_PUBLIC_SITE_URL`, the
+site uses its Vercel address and asks search engines not to index it.

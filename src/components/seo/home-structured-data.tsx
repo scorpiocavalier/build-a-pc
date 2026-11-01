@@ -1,13 +1,14 @@
 import { getLocale } from "next-intl/server";
 
 import { getLocations } from "@/server/locations";
+import { siteUrl } from "@/lib/site-url";
 
 import { JsonLd, storeJsonLd } from "./json-ld";
 
 // The business and both stores, for search results and maps.
 export async function HomeStructuredData() {
   const [locale, locations] = await Promise.all([getLocale(), getLocations()]);
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const base = siteUrl();
   return (
     <JsonLd
       data={[

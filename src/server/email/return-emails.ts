@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/money";
 import { parseAdminEmails } from "@/server/admin-allowlist";
 import { orderUrl } from "@/server/orders/view";
 import type { ReturnView } from "@/server/returns";
+import { siteUrl } from "@/lib/site-url";
 
 import en from "../../../messages/en.json";
 import fr from "../../../messages/fr.json";
@@ -16,9 +17,6 @@ import { renderEmail, type Block } from "./render";
 import { sendEmail } from "./send";
 
 export type ReturnEmailKind = "requested" | "approved" | "declined" | "refunded";
-
-const siteUrl = () =>
-  (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
 // To the customer, in the language of the order.
 export async function sendReturnEmail(request: ReturnView, kind: ReturnEmailKind) {

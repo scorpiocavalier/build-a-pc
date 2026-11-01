@@ -5,6 +5,7 @@ import type { TaxLine } from "@/lib/checkout/pricing";
 import type { RequestedWindow } from "@/lib/checkout/windows";
 import type { LocalizedText } from "@/lib/localized";
 import { db } from "@/server/db";
+import { siteUrl } from "@/lib/site-url";
 
 // One shape for an order, used by the customer's order page, emails and the
 // admin dashboard.
@@ -71,7 +72,7 @@ export async function loadOrderForCustomer(id: string, token: string): Promise<O
 }
 
 export function orderUrl(order: Pick<OrderView, "id" | "accessToken" | "locale">): string {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const base = siteUrl();
   return `${base}/${order.locale}/orders/${order.id}?t=${order.accessToken}`;
 }
 

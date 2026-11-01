@@ -14,7 +14,9 @@ import { CATEGORIES } from "../src/lib/specs/definitions";
 import { saveProduct } from "../src/server/catalog/save-product";
 
 const db = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+  adapter: new PrismaPg({
+    connectionString: process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL,
+  }),
 });
 
 // Addresses, hours, delivery areas and fees are placeholders; the owner sets
