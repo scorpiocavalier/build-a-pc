@@ -79,7 +79,10 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
         {filters.stock && <input type="hidden" name="stock" value={filters.stock} />}
         <Button variant="outline">Filter</Button>
         {Object.values(filters).some(Boolean) && (
-          <Link href="/admin/products" className="px-2 text-sm text-accent hover:underline">
+          <Link
+            href="/admin/products"
+            className="px-2 text-sm text-accent underline underline-offset-2"
+          >
             Clear
           </Link>
         )}

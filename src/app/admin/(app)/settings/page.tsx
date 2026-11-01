@@ -153,6 +153,24 @@ export default async function SettingsPage() {
               />
             </Field>
             <Field
+              label="Customer contact email"
+              htmlFor="contactEmail"
+              hint="Shown in the footer and legal pages."
+            >
+              <Input id="contactEmail" name="contactEmail" defaultValue={settings.contactEmail} />
+            </Field>
+            <Field
+              label="Person responsible for privacy"
+              htmlFor="privacyOfficer"
+              hint="Name and title, e.g. Jane Doe, Owner (required by Quebec Law 25)."
+            >
+              <Input
+                id="privacyOfficer"
+                name="privacyOfficer"
+                defaultValue={settings.privacyOfficer}
+              />
+            </Field>
+            <Field
               label="Low stock at (units per location)"
               htmlFor="lowStockThreshold"
               hint="Shown on the dashboard and inventory page."

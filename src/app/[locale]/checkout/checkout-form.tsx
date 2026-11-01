@@ -5,6 +5,7 @@ import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { Link } from "@/i18n/navigation";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import { SLOTS } from "@/lib/checkout/windows";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,9 @@ export type CheckoutFormProps = {
   // Signed-in customers: contact details and a matching saved address.
   prefill: Record<string, string>;
   signedIn: boolean;
+  // Return policy shown next to the terms box, from settings.
+  returnDays: number;
+  restockingPercent: number;
 };
 
 export function CheckoutForm(props: CheckoutFormProps) {
@@ -184,7 +188,22 @@ export function CheckoutForm(props: CheckoutFormProps) {
             aria-invalid={errors.terms ? true : undefined}
             className="mt-0.5 size-4 shrink-0 accent-[var(--accent)]"
           />
-          {t("terms")}
+          <span>
+            {t.rich("terms", {
+              days: props.returnDays,
+              percent: props.restockingPercent,
+              terms: (chunks) => (
+                <Link href="/terms" target="_blank" className="text-accent underline">
+                  {chunks}
+                </Link>
+              ),
+              returns: (chunks) => (
+                <Link href="/returns" target="_blank" className="text-accent underline">
+                  {chunks}
+                </Link>
+              ),
+            })}
+          </span>
         </label>
         {err("terms") && <p className="text-xs text-red-300">{err("terms")}</p>}
       </div>

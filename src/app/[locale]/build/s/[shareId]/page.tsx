@@ -8,6 +8,7 @@ import { SlotList } from "@/components/builder/slot-list";
 import { Button } from "@/components/ui/button";
 import { localize } from "@/lib/localized";
 import { getAssemblyExtras, getSharedBuild } from "@/server/builder";
+import { localeAlternates } from "@/server/seo";
 
 import { customizeAction } from "../../actions";
 
@@ -23,6 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: build.title ? localize(build.title, locale) : t("sharedTitle"),
     description: build.description ? localize(build.description, locale) : undefined,
+    alternates: await localeAlternates(`/build/s/${build.shareId}`),
     // Only featured builds belong in search results.
     robots: build.featured ? undefined : { index: false },
   };

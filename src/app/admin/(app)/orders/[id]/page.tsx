@@ -80,12 +80,16 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           {order.assemblyCents > 0 && (
             <Link
               href={`/admin/orders/${order.id}/build-sheet`}
-              className="text-accent hover:underline"
+              className="text-accent underline underline-offset-2"
             >
               Build sheet
             </Link>
           )}
-          <a href={orderUrl(order)} target="_blank" className="text-accent hover:underline">
+          <a
+            href={orderUrl(order)}
+            target="_blank"
+            className="text-accent underline underline-offset-2"
+          >
             Customer&apos;s order page ↗
           </a>
         </div>
@@ -128,11 +132,11 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           <h2 className="mb-1 font-semibold">Customer</h2>
           <p>{order.name}</p>
           <p>
-            <a href={`mailto:${order.email}`} className="text-accent hover:underline">
+            <a href={`mailto:${order.email}`} className="text-accent underline underline-offset-2">
               {order.email}
             </a>{" "}
             ·{" "}
-            <a href={`tel:${order.phone}`} className="text-accent hover:underline">
+            <a href={`tel:${order.phone}`} className="text-accent underline underline-offset-2">
               {order.phone}
             </a>
           </p>
@@ -265,7 +269,10 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           <ul className="flex flex-col gap-1">
             {order.returns.map((request) => (
               <li key={request.id}>
-                <Link href="/admin/returns?show=all" className="text-accent hover:underline">
+                <Link
+                  href="/admin/returns?show=all"
+                  className="text-accent underline underline-offset-2"
+                >
                   RMA-{request.number}
                 </Link>{" "}
                 · {request.status.toLowerCase()} · {request.reason.toLowerCase().replace(/_/g, " ")}{" "}

@@ -9,6 +9,7 @@ import { locale as rootLocale } from "next/root-params";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { routing } from "@/i18n/routing";
+import { localeAlternates } from "@/server/seo";
 
 import "../globals.css";
 
@@ -23,9 +24,8 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(siteUrl),
     title: { default: t("title"), template: "%s · Astral Tech Gaming" },
     description: t("description"),
-    alternates: {
-      languages: Object.fromEntries(routing.locales.map((l) => [`${l}-CA`, `/${l}`])),
-    },
+    // Pages set their own canonical URL and language alternates.
+    alternates: await localeAlternates(""),
   };
 }
 

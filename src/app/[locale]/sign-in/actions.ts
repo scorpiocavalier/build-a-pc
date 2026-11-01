@@ -5,8 +5,12 @@ import { z } from "zod";
 
 import { signIn } from "@/auth";
 import { safeNextPath } from "@/lib/account/redirect";
+import { hit, hitByIp } from "@/server/rate-limit";
 
-export type EmailSignInState = { sent?: string; error?: "email" | "staff" | "failed" };
+export type EmailSignInState = {
+  sent?: string;
+  error?: "email" | "staff" | "failed" | "tooMany";
+};
 
 export async function emailSignInAction(
   _prev: EmailSignInState,
@@ -17,6 +21,10 @@ export async function emailSignInAction(
     .trim()
     .toLowerCase();
   if (!z.email().safeParse(email).success) return { error: "email" };
+  // Stops sign-in emails being used to flood an inbox.
+  if (!(await hitByIp("signInIp")) || !(await hit("signInEmail", email))) {
+    return { error: "tooMany" };
+  }
 
   let url: string;
   try {

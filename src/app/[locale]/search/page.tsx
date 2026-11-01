@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { ProductCard } from "@/components/catalog/product-card";
 import { Button } from "@/components/ui/button";
 import { searchProducts } from "@/server/catalog/queries";
+import { hitByIp } from "@/server/rate-limit";
 
 type Props = PageProps<"/[locale]/search">;
 
@@ -39,7 +40,8 @@ async function SearchResults({
     getTranslations("Header"),
   ]);
   const query = (Array.isArray(q) ? q[0] : q)?.trim() ?? "";
-  const results = query ? await searchProducts(query) : [];
+  const allowed = query ? await hitByIp("search") : true;
+  const results = query && allowed ? await searchProducts(query) : [];
 
   return (
     <>
@@ -64,7 +66,11 @@ async function SearchResults({
         <Button>{t("searchButton")}</Button>
       </form>
 
-      {query ? (
+      {!allowed ? (
+        <p role="alert" className="text-amber-300">
+          {t("searchTooMany")}
+        </p>
+      ) : query ? (
         <>
           <p role="status" className="text-muted">
             {t("searchResults", { count: results.length, query })}

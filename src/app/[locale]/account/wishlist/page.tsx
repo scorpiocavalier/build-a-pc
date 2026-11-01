@@ -35,7 +35,7 @@ async function Wishlist() {
     return (
       <p className="rounded-lg border bg-surface p-6 text-muted">
         {t("noWishlist")}{" "}
-        <Link href="/shop" className="text-accent hover:underline">
+        <Link href="/shop" className="text-accent underline underline-offset-2">
           {t("startShopping")}
         </Link>
       </p>

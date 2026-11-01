@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { signOut } from "@/auth";
@@ -14,7 +15,10 @@ import {
   openSavedBuild,
   saveMyBuild,
 } from "@/server/builder";
+import { isAdminEmail } from "@/server/admin-allowlist";
+import { audit } from "@/server/audit";
 import { requireCustomer } from "@/server/customer";
+import { SESSION_COOKIE } from "@/server/dev-session";
 import { db } from "@/server/db";
 
 // Every action re-checks the session; the pages only hide what guests can't use.
@@ -140,4 +144,37 @@ export async function removeWishlistAction(formData: FormData) {
   const customer = await requireCustomer(locale, `/${locale}/account/wishlist`);
   await removeFromWishlist(customer.id, str(formData, "productId"));
   refresh();
+}
+
+// ─── Your data ──────────────────────────────────────────────────────────────
+
+export type DeleteAccountState = { error?: "confirm" | "staff" };
+
+// Deletes the account and everything tied only to it (addresses, wishlist,
+// saved builds, sessions). Orders stay for tax records, without the account.
+export async function deleteAccountAction(
+  _prev: DeleteAccountState,
+  formData: FormData,
+): Promise<DeleteAccountState> {
+  const locale = localeOf(formData);
+  const customer = await requireCustomer(locale, `/${locale}/account`);
+  if (formData.get("confirm") !== "on") return { error: "confirm" };
+  if (isAdminEmail(customer.email)) return { error: "staff" };
+
+  await db.$transaction(async (tx) => {
+    // Builds the store features stay on /prebuilt; the rest go.
+    await tx.build.deleteMany({ where: { userId: customer.id, featured: false } });
+    await tx.order.updateMany({ where: { userId: customer.id }, data: { userId: null } });
+    await tx.user.delete({ where: { id: customer.id } });
+  });
+  await audit({
+    actorId: null,
+    action: "customer.delete",
+    entity: "customer",
+    summary: "A customer deleted their account",
+  });
+
+  const jar = await cookies();
+  for (const name of [SESSION_COOKIE, `__Secure-${SESSION_COOKIE}`, "atg_build"]) jar.delete(name);
+  redirect(`/${locale}`);
 }

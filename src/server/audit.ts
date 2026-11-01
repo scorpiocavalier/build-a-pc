@@ -9,7 +9,8 @@ import { db } from "@/server/db";
 export type AuditEntry = {
   actorId: string | null;
   action: string;
-  entity: "product" | "order" | "return" | "inventory" | "settings" | "build" | "import";
+  entity:
+    "product" | "order" | "return" | "inventory" | "settings" | "build" | "import" | "customer";
   entityId?: string | null;
   summary: string;
   details?: Prisma.InputJsonValue;

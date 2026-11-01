@@ -36,7 +36,7 @@ async function Builds() {
     return (
       <p className="rounded-lg border bg-surface p-6 text-muted">
         {t("noBuilds")}{" "}
-        <Link href="/build" className="text-accent hover:underline">
+        <Link href="/build" className="text-accent underline underline-offset-2">
           {t("openBuilder")}
         </Link>
       </p>
@@ -94,7 +94,7 @@ async function Builds() {
               </form>
               <Link
                 href={`/build/s/${build.shareId}`}
-                className="text-sm text-accent hover:underline"
+                className="text-sm text-accent underline underline-offset-2"
               >
                 {t("shareLink")}
               </Link>

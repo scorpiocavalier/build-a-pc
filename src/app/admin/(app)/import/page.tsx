@@ -66,13 +66,13 @@ export default async function ImportPage() {
               <span className="font-medium">{c.name.en}</span>
               <a
                 href={`/admin/import/csv/${c.slug}`}
-                className="flex items-center gap-1 text-accent hover:underline"
+                className="flex items-center gap-1 text-accent underline underline-offset-2"
               >
                 <Download aria-hidden="true" className="size-3.5" /> Empty template
               </a>
               <a
                 href={`/admin/import/csv/${c.slug}?export=1`}
-                className="flex items-center gap-1 text-accent hover:underline"
+                className="flex items-center gap-1 text-accent underline underline-offset-2"
               >
                 <Download aria-hidden="true" className="size-3.5" /> Current products
               </a>

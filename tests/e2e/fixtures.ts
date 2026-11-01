@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomInt, randomUUID } from "node:crypto";
 
 import { test as base, type Page } from "@playwright/test";
 import pg from "pg";
@@ -17,6 +17,12 @@ type Fixtures = {
 };
 
 export const test = base.extend<Fixtures>({
+  // Each test looks like a different visitor, so the app's per-IP rate limits
+  // (src/server/rate-limit.ts) don't carry over between tests and reruns.
+  extraHTTPHeaders: async ({}, provide) => {
+    const ip = `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}`;
+    await provide({ "x-forwarded-for": ip });
+  },
   // `provide` is Playwright's fixture callback (named to avoid React's `use` lint rule).
   sql: async ({}, provide) => {
     const client = new pg.Client({ connectionString: process.env.DATABASE_URL });

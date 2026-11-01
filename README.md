@@ -3,7 +3,8 @@
 Online store for PC parts and custom-built gaming PCs — **astralgaming.ca**.
 Bilingual (English/French), with pickup and delivery in Toronto and Montreal.
 
-The full product and technical plan is in [`docs/PLAN.md`](docs/PLAN.md).
+The full product and technical plan is in [`docs/PLAN.md`](docs/PLAN.md), and
+what's left before going live is in [`docs/LAUNCH.md`](docs/LAUNCH.md).
 
 ## Stack
 
@@ -118,6 +119,21 @@ npm run dev                   # http://localhost:3000
   placed, tax charged, top products, stock value, deposits with a balance owing.
 - **Audit log**: every admin change, who made it and when.
 - **Settings** also hold the restocking %, return window and low-stock level.
+
+## Security, privacy and SEO
+
+- Security headers and a Content Security Policy are set in `next.config.ts`.
+- Rate limits (`src/server/rate-limit.ts`, counters in Postgres) cover
+  sign-in links, checkout, search and return requests.
+- `/api/health` checks the app and database, for an uptime monitor.
+- Customers can download their data or delete their account from
+  `/account`; orders are kept, unlinked, for tax records.
+- Policy pages (`/returns`, `/warranty`, `/privacy`, `/terms`, `/locations`)
+  take their text from `Legal.*` in the message files and fill in the return
+  window, fee and contact details from settings.
+- `sitemap.xml` and `robots.txt` are generated; pages set canonical URLs and
+  hreflang links, and products and stores have structured data.
+- `tests/e2e/accessibility.spec.ts` runs axe (WCAG 2.2 AA) on the main pages.
 
 ## Catalog design
 

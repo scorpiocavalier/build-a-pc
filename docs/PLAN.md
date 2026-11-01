@@ -485,6 +485,13 @@ financing, stock transfer workflow.
 ### Progress
 
 - **Phase 0: done.**
+- **Phase 6: code done**; the owner's launch steps are in
+  [`docs/LAUNCH.md`](LAUNCH.md). Differences from §9:
+  - The CSP allows inline scripts and styles (Next.js needs them without
+    per-request nonces, which would make every page dynamic).
+  - Rate limits are stored in Postgres rather than a separate service.
+  - Policy pages are drafts written from the decisions in this plan, to be
+    reviewed before launch. No analytics yet, so no consent banner is needed.
 - **Phase 5: done.** Differences from §8:
   - Stock transfers are recorded in one step (when the units leave), not as a
     send/receive pair. Write-offs and count corrections need a reason.

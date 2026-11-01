@@ -7,7 +7,8 @@ import { Link, usePathname } from "@/i18n/navigation";
 const className =
   "rounded-lg px-1 py-2 text-sm text-muted hover:bg-surface-raised hover:text-foreground min-[360px]:px-2 sm:px-3";
 
-// Phones show "FR"/"EN" so the header fits; the aria-label always has the full text.
+// Phones show "FR"/"EN" so the header fits. The accessible name starts with
+// that visible text (WCAG 2.5.3), then says what the link does.
 function Label({ other, text }: { other: string; text: string }) {
   return (
     <>
@@ -20,7 +21,11 @@ function Label({ other, text }: { other: string; text: string }) {
 function useOtherLocale() {
   const t = useTranslations("Header");
   const other = useLocale() === "en" ? "fr" : "en";
-  return { other, text: t("switchLocale"), label: t("switchLocaleLabel") };
+  return {
+    other,
+    text: t("switchLocale"),
+    label: `${other.toUpperCase()} – ${t("switchLocaleLabel")}`,
+  };
 }
 
 export function LocaleSwitcher() {

@@ -195,7 +195,7 @@ async function CartContents() {
         <Button asChild>
           <Link href="/checkout">{t("checkout")}</Link>
         </Button>
-        <Link href="/shop" className="text-center text-sm text-accent hover:underline">
+        <Link href="/shop" className="text-center text-sm text-accent underline underline-offset-2">
           {t("continueShopping")}
         </Link>
       </aside>

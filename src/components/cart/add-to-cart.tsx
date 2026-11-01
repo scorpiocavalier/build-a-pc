@@ -41,7 +41,7 @@ export function AddToCart({ productId, maxQuantity }: { productId: string; maxQu
           <span className="flex items-center gap-1.5">
             <Check aria-hidden="true" className="size-4 text-emerald-400" />
             {t("added", { count: state.added })}{" "}
-            <Link href="/cart" className="text-accent hover:underline">
+            <Link href="/cart" className="text-accent underline underline-offset-2">
               {t("viewCart")}
             </Link>
           </span>

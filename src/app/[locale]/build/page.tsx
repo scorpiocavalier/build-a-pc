@@ -13,12 +13,17 @@ import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { getAssemblyExtras, getMyBuild, type BuildView } from "@/server/builder";
 import { getCustomer } from "@/server/customer";
+import { localeAlternates } from "@/server/seo";
 
 import { clearAction, locationAction } from "./actions";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Builder");
-  return { title: t("title"), description: t("lead") };
+  return {
+    title: t("title"),
+    description: t("lead"),
+    alternates: await localeAlternates("/build"),
+  };
 }
 
 export default async function BuilderPage() {
@@ -106,7 +111,7 @@ async function Builder() {
             <p className="rounded-lg border bg-surface p-4 text-sm text-muted">
               <a
                 href={`/${locale}/sign-in?next=${encodeURIComponent(`/${locale}/build`)}`}
-                className="text-accent hover:underline"
+                className="text-accent underline underline-offset-2"
               >
                 {t("signInToSave")}
               </a>
