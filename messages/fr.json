@@ -706,5 +706,27 @@
       }
     },
     "officerFallback": "Le propriétaire d’Astral Tech Gaming"
+  },
+  "Builder3D": {
+    "viewList": "Liste",
+    "view3d": "3D",
+    "beta": "Bêta",
+    "viewLabel": "Affichage du configurateur",
+    "loading": "Chargement de la vue 3D…",
+    "canvasLabel": "Vue 3D de votre configuration. Utilisez les boutons des pièces ci-dessous pour les consulter et les changer.",
+    "noWebgl": "Votre navigateur ne peut pas afficher la vue 3D.",
+    "useList": "Utiliser plutôt la vue en liste",
+    "hint": "Glissez pour pivoter · pincez ou défilez pour zoomer · touchez une pièce",
+    "explode": "Vue éclatée",
+    "reset": "Réinitialiser la vue",
+    "partsNav": "Pièces de votre configuration",
+    "emptySlot": "vide",
+    "emptyLead": "Aucun choix pour : {slot}.",
+    "chooseSlot": "Choisir : {slot}",
+    "swap": "Changer de pièce",
+    "details": "Détails du produit",
+    "loadingParts": "Chargement des pièces…",
+    "close": "Fermer",
+    "noneCompatible": "Aucune pièce en stock ne convient encore au reste de votre configuration."
   }
 }

@@ -4,7 +4,9 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import type { LocationCode } from "@/generated/prisma/enums";
+import type { CandidateView } from "@/components/builder3d/types";
 import { slotFromParam } from "@/lib/builder/slots";
+import { candidateViews } from "@/server/builder-3d";
 import { addBuildToCart, addToCart } from "@/server/cart";
 import {
   clearBuild,
@@ -70,4 +72,35 @@ export async function addBuildAction(
   }
   refresh();
   return { added: mode };
+}
+
+// ─── 3D builder ─────────────────────────────────────────────────────────────
+// Same changes as the list builder, but they stay on the page (no redirect):
+// the 3D view refreshes in place.
+
+export async function candidatesAction(
+  slotParam: string,
+  locale: string,
+): Promise<CandidateView[]> {
+  const slot = slotFromParam(slotParam);
+  if (!slot) return [];
+  return candidateViews(slot, await getMyBuild(), locale === "fr" ? "fr" : "en");
+}
+
+export async function choosePartAction(
+  slotParam: string,
+  productId: string,
+  quantity: number,
+): Promise<{ ok: boolean }> {
+  const slot = slotFromParam(slotParam);
+  if (!slot) return { ok: false };
+  const ok = await setSlot(slot, productId, Math.max(1, Math.floor(quantity) || 1));
+  refresh();
+  return { ok };
+}
+
+export async function removePartAction(slotParam: string): Promise<void> {
+  const slot = slotFromParam(slotParam);
+  if (slot) await clearSlot(slot);
+  refresh();
 }
