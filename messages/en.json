@@ -69,7 +69,8 @@
     "privacy": "Privacy",
     "terms": "Terms of sale",
     "contact": "Contact: {email}",
-    "nav": "Store information"
+    "nav": "Store information",
+    "warrantyNote": "Parts are covered by their manufacturer's warranty."
   },
   "NotFound": {
     "title": "Page not found",

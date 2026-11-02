@@ -15,7 +15,8 @@ export function ProductCard({ product }: { product: ProductSummary }) {
   const name = localize(product.name, locale);
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-lg border bg-surface transition-colors hover:border-accent/60">
+    // Full width of its grid cell, so every card in a row is the same size.
+    <article className="group relative flex w-full min-w-0 flex-col overflow-hidden rounded-lg border bg-surface transition-colors hover:border-accent/60">
       <div className="flex aspect-square items-center justify-center bg-surface-raised">
         {product.image ? (
           <Image
@@ -35,7 +36,8 @@ export function ProductCard({ product }: { product: ProductSummary }) {
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
         <p className="text-xs font-medium tracking-wide text-muted uppercase">{product.brand}</p>
-        <h3 className="leading-snug font-medium">
+        {/* Two lines tall whatever the name's length, so prices line up. */}
+        <h3 className="line-clamp-2 min-h-[2lh] leading-snug font-medium" title={name}>
           <Link href={`/p/${product.slug}`} className="after:absolute after:inset-0">
             {name}
           </Link>

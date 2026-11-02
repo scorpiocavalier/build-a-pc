@@ -72,3 +72,17 @@ test("unknown products and categories show a not-found page", async ({ page }) =
     await expect(page.locator('meta[name="robots"][content="noindex"]').first()).toBeAttached();
   }
 });
+
+test("product cards in a row are all the same size", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await page.goto("/en/c/cpu");
+  const cards = page.locator("main ul article");
+  await expect(cards.first()).toBeVisible();
+  const sizes = await cards.evaluateAll((els) =>
+    els.map((e) => {
+      const r = e.getBoundingClientRect();
+      return `${Math.round(r.width)}x${Math.round(r.height)}`;
+    }),
+  );
+  expect(new Set(sizes).size).toBe(1);
+});

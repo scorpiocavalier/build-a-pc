@@ -69,7 +69,8 @@
     "privacy": "Confidentialité",
     "terms": "Conditions de vente",
     "contact": "Contact : {email}",
-    "nav": "Renseignements"
+    "nav": "Renseignements",
+    "warrantyNote": "Les composantes sont couvertes par la garantie de leur fabricant."
   },
   "NotFound": {
     "title": "Page introuvable",
