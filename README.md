@@ -14,7 +14,7 @@ next-intl · PostgreSQL + Prisma 7 · Auth.js · Sentry · Vitest · Playwright.
 
 ## Getting started
 
-Requirements: Node.js 22+, Docker (or any local PostgreSQL 16).
+Requirements: Node.js 24, Docker (or any local PostgreSQL 16).
 
 ```bash
 cp .env.example .env          # then set AUTH_SECRET (npx auth secret)
