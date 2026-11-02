@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { signIn } from "@/auth";
 import { safeNextPath } from "@/lib/account/redirect";
+import { isAdminEmail } from "@/server/admin-allowlist";
 import { hit, hitByIp } from "@/server/rate-limit";
 
 export type EmailSignInState = {
@@ -21,6 +22,9 @@ export async function emailSignInAction(
     .trim()
     .toLowerCase();
   if (!z.email().safeParse(email).success) return { error: "email" };
+  // Staff sign in with Google only. Say so straight away, without sending
+  // anything or counting it against the rate limit.
+  if (isAdminEmail(email)) return { error: "staff" };
   // Stops sign-in emails being used to flood an inbox.
   if (!(await hitByIp("signInIp")) || !(await hit("signInEmail", email))) {
     return { error: "tooMany" };
