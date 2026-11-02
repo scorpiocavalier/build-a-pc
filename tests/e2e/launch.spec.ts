@@ -38,6 +38,9 @@ test("pages link to their other-language version", async ({ page }) => {
 
 test("the policy pages are linked from the footer, in both languages", async ({ page }) => {
   await page.goto("/fr");
+  await expect(
+    page.getByRole("contentinfo").getByText("Les composantes sont couvertes par la garantie"),
+  ).toBeVisible();
   await page.getByRole("contentinfo").getByRole("link", { name: "Retours" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Retours et remboursements");
   await expect(page.getByText(/frais de restockage de 30 %/).first()).toBeVisible();

@@ -41,7 +41,7 @@ export async function SiteFooter() {
           </nav>
         </div>
         <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
-          <p>{t("warranty")}</p>
+          <p>{t("warrantyNote")}</p>
           <p>{t("rights", { year })}</p>
         </div>
       </div>
