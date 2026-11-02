@@ -221,7 +221,9 @@
     "deposit": "Deposit due now: {amount} ({percent}%). The rest is due at pickup or delivery.",
     "depositCash": "Pay a deposit of {amount} by Interac e-Transfer to start assembly, then the rest in cash.",
     "depositEtransfer": "Send at least the {amount} deposit to start assembly, or the full amount.",
-    "saveAddress": "Save this address to my account"
+    "saveAddress": "Save this address to my account",
+    "requiredNote": "Fields marked * are required.",
+    "completeToOrder": "Fill in the fields marked * and accept the terms to place your order."
   },
   "Order": {
     "title": "Order {number}",

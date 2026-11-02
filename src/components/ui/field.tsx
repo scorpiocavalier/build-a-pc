@@ -13,6 +13,7 @@ export function Field({
   error,
   hint,
   className,
+  required,
   children,
 }: {
   label: ReactNode;
@@ -20,12 +21,20 @@ export function Field({
   error?: string;
   hint?: ReactNode;
   className?: string;
+  // Shows a "*" after the label. Screen readers get "required" from the
+  // input's own `required` attribute, so the star is hidden from them.
+  required?: boolean;
   children: ReactNode;
 }) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       <label htmlFor={htmlFor} className="text-sm font-medium">
         {label}
+        {required && (
+          <span aria-hidden="true" className="ml-0.5 text-accent">
+            *
+          </span>
+        )}
       </label>
       {children}
       {hint && !error && <p className="text-xs text-muted">{hint}</p>}
