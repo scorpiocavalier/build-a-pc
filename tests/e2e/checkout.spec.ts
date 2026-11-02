@@ -179,3 +179,34 @@ test("the hourly job cancels unpaid orders past their hold", async ({ page, requ
   expect(await orderFor(sql, email)).toMatchObject({ status: "CANCELLED" });
   expect(await stock(sql, product.id, "MTL")).toEqual({ onHand: 20, reserved: 0 });
 });
+
+test("required fields are marked, and Place order waits until they're filled in", async ({
+  page,
+  sql,
+}) => {
+  const product = await createProduct(sql);
+  await addToCart(page, product.slug);
+  await page.goto("/en/checkout?f=pickup&l=TOR");
+
+  await expect(page.getByText("Fields marked * are required.")).toBeVisible();
+  const placeOrder = page.getByRole("button", { name: "Place order" });
+  await expect(placeOrder).toBeDisabled();
+  await expect(placeOrder).toHaveAccessibleDescription(
+    "Fill in the fields marked * and accept the terms to place your order.",
+  );
+
+  await page.locator("#name").fill("Alex Tremblay");
+  await page.locator("#email").fill(uniqueEmail("required"));
+  await page.locator("#phone").fill("123");
+  await page.locator("#date").selectOption({ index: 2 });
+  await page.locator("#slot").selectOption("afternoon");
+  await page.locator('input[name="terms"]').check();
+  // A phone number that can't be right keeps it disabled.
+  await expect(placeOrder).toBeDisabled();
+  await page.locator("#phone").fill("(416) 555-0100");
+  await expect(placeOrder).toBeEnabled();
+
+  // Unticking the terms disables it again.
+  await page.locator('input[name="terms"]').uncheck();
+  await expect(placeOrder).toBeDisabled();
+});

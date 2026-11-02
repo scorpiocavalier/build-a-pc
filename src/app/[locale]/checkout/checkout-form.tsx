@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
@@ -34,6 +34,14 @@ export type CheckoutFormProps = {
 export function CheckoutForm(props: CheckoutFormProps) {
   const t = useTranslations("Checkout");
   const [state, action, pending] = useActionState<CheckoutState, FormData>(placeOrderAction, {});
+  // "Place order" stays disabled until the browser says every required field
+  // is filled in (the `required` and `pattern` attributes below). Unknown
+  // until the page runs JavaScript, so the button works without it too; the
+  // server checks everything again either way.
+  const formRef = useRef<HTMLFormElement>(null);
+  const [complete, setComplete] = useState<boolean | null>(null);
+  const recheck = () => setComplete(formRef.current?.checkValidity() ?? null);
+  useEffect(recheck, [state]);
   const values = state.values ?? props.prefill;
   const errors = state.errors ?? {};
   const err = (key: string) => (errors[key] ? t(`errors.${errors[key]}`) : undefined);
@@ -48,7 +56,14 @@ export function CheckoutForm(props: CheckoutFormProps) {
   const defaultMethod = values.method ?? props.methods[0];
 
   return (
-    <form key={JSON.stringify(values)} action={action} className="flex flex-col gap-8">
+    <form
+      key={JSON.stringify(values)}
+      ref={formRef}
+      action={action}
+      onInput={recheck}
+      onChange={recheck}
+      className="flex flex-col gap-8"
+    >
       <input type="hidden" name="locale" value={props.locale} />
       <input type="hidden" name="fulfilment" value={props.fulfilment} />
       <input type="hidden" name="location" value={props.locationCode} />
@@ -60,17 +75,32 @@ export function CheckoutForm(props: CheckoutFormProps) {
         </p>
       )}
 
+      <p className="text-sm text-muted">{t("requiredNote")}</p>
+
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-3 text-lg font-semibold">{t("contact")}</legend>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={t("name")} htmlFor="name" error={err("name")} className="sm:col-span-2">
+          <Field
+            label={t("name")}
+            htmlFor="name"
+            error={err("name")}
+            className="sm:col-span-2"
+            required
+          >
             <Input {...field("name")} autoComplete="name" required />
           </Field>
-          <Field label={t("email")} htmlFor="email" error={err("email")}>
+          <Field label={t("email")} htmlFor="email" error={err("email")} required>
             <Input {...field("email")} type="email" autoComplete="email" required />
           </Field>
-          <Field label={t("phone")} htmlFor="phone" error={err("phone")}>
-            <Input {...field("phone")} type="tel" autoComplete="tel" required />
+          <Field label={t("phone")} htmlFor="phone" error={err("phone")} required>
+            <Input
+              {...field("phone")}
+              type="tel"
+              autoComplete="tel"
+              required
+              // A 10-digit North American number in any format, as the server accepts.
+              pattern="\D*(1\D*)?[2-9]\D*\d\D*\d\D*[2-9](\D*\d){6}\D*"
+            />
           </Field>
         </div>
       </fieldset>
@@ -84,13 +114,14 @@ export function CheckoutForm(props: CheckoutFormProps) {
               htmlFor="line1"
               error={err("line1")}
               className="sm:col-span-2"
+              required
             >
               <Input {...field("line1")} autoComplete="address-line1" required />
             </Field>
             <Field label={t("line2")} htmlFor="line2">
               <Input {...field("line2")} autoComplete="address-line2" />
             </Field>
-            <Field label={t("city")} htmlFor="city" error={err("city")}>
+            <Field label={t("city")} htmlFor="city" error={err("city")} required>
               <Input {...field("city")} autoComplete="address-level2" required />
             </Field>
             <Field label={t("postalCode")} htmlFor="postal-display">
@@ -117,7 +148,7 @@ export function CheckoutForm(props: CheckoutFormProps) {
         </legend>
         <p className="text-sm text-muted">{t("windowHint")}</p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={t("date")} htmlFor="date" error={err("window")}>
+          <Field label={t("date")} htmlFor="date" error={err("window")} required>
             <Select {...field("date")} required>
               <option value="">—</option>
               {props.dates.map((d) => (
@@ -127,7 +158,7 @@ export function CheckoutForm(props: CheckoutFormProps) {
               ))}
             </Select>
           </Field>
-          <Field label={t("slot")} htmlFor="slot">
+          <Field label={t("slot")} htmlFor="slot" required>
             <Select {...field("slot")} required>
               <option value="">—</option>
               {SLOTS.map((slot) => (
@@ -159,6 +190,7 @@ export function CheckoutForm(props: CheckoutFormProps) {
               name="method"
               value={method}
               defaultChecked={method === defaultMethod}
+              required
               className="mt-1 size-4 accent-[var(--accent)]"
             />
             <span>
@@ -185,10 +217,14 @@ export function CheckoutForm(props: CheckoutFormProps) {
             type="checkbox"
             name="terms"
             defaultChecked={values.terms === "on"}
+            required
             aria-invalid={errors.terms ? true : undefined}
             className="mt-0.5 size-4 shrink-0 accent-[var(--accent)]"
           />
           <span>
+            <span aria-hidden="true" className="mr-0.5 text-accent">
+              *
+            </span>
             {t.rich("terms", {
               days: props.returnDays,
               percent: props.restockingPercent,
@@ -208,9 +244,20 @@ export function CheckoutForm(props: CheckoutFormProps) {
         {err("terms") && <p className="text-xs text-red-300">{err("terms")}</p>}
       </div>
 
-      <Button disabled={pending} className="w-full sm:w-auto sm:self-start">
-        {pending ? t("placing") : t("placeOrder")}
-      </Button>
+      <div className="flex flex-col gap-2">
+        <Button
+          disabled={pending || complete === false}
+          aria-describedby={complete === false ? "place-order-hint" : undefined}
+          className="w-full sm:w-auto sm:self-start"
+        >
+          {pending ? t("placing") : t("placeOrder")}
+        </Button>
+        {complete === false && (
+          <p id="place-order-hint" className="text-sm text-muted">
+            {t("completeToOrder")}
+          </p>
+        )}
+      </div>
     </form>
   );
 }

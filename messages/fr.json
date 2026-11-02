@@ -221,7 +221,9 @@
     "deposit": "Acompte dû maintenant : {amount} ({percent} %). Le solde est payable à la cueillette ou à la livraison.",
     "depositCash": "Payez un acompte de {amount} par virement Interac pour lancer l’assemblage, puis le solde comptant.",
     "depositEtransfer": "Envoyez au moins l’acompte de {amount} pour lancer l’assemblage, ou le montant complet.",
-    "saveAddress": "Enregistrer cette adresse dans mon compte"
+    "saveAddress": "Enregistrer cette adresse dans mon compte",
+    "requiredNote": "Les champs marqués d’un * sont obligatoires.",
+    "completeToOrder": "Remplissez les champs marqués d’un * et acceptez les conditions pour passer votre commande."
   },
   "Order": {
     "title": "Commande {number}",
