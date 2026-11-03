@@ -716,7 +716,7 @@
     "canvasLabel": "Vue 3D de votre configuration. Utilisez les boutons des pièces ci-dessous pour les consulter et les changer.",
     "noWebgl": "Votre navigateur ne peut pas afficher la vue 3D.",
     "useList": "Utiliser plutôt la vue en liste",
-    "hint": "Glissez pour pivoter · pincez ou défilez pour zoomer · touchez une pièce",
+    "hint": "Glissez pour pivoter · pincez ou défilez pour zoomer · touchez une pièce pour l’agrandir, encore pour revenir",
     "explode": "Vue éclatée",
     "reset": "Réinitialiser la vue",
     "partsNav": "Pièces de votre configuration",

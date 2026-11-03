@@ -716,7 +716,7 @@
     "canvasLabel": "3D view of your build. Use the part buttons below to inspect and change parts.",
     "noWebgl": "Your browser can't show the 3D view.",
     "useList": "Use the list view instead",
-    "hint": "Drag to rotate · pinch or scroll to zoom · tap a part",
+    "hint": "Drag to rotate · pinch or scroll to zoom · tap a part to zoom in, again to zoom out",
     "explode": "Exploded view",
     "reset": "Reset the view",
     "partsNav": "Parts in your build",

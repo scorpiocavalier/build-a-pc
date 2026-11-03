@@ -69,6 +69,13 @@ export function Builder3D({ data, listHref }: { data: BuilderData; listHref: str
   const [hovered, setHovered] = useState<Target | null>(null);
   const [exploded, setExploded] = useState(false);
   const [resetSignal, setResetSignal] = useState(0);
+  const [focus, setFocus] = useState<{ slot: Target | null; n: number } | null>(null);
+  // Picking a part zooms in on it; picking it again (or the case) zooms out.
+  const select = (slot: Target) => {
+    const zoomOut = slot === "CASE" || (slot === selected && focus?.slot === slot);
+    setSelected(slot);
+    setFocus((f) => ({ slot: zoomOut ? null : slot, n: (f?.n ?? 0) + 1 }));
+  };
   const labelLayer = useRef<HTMLDivElement>(null);
   const support = useSyncExternalStore(noSubscription, browserSupport, () => null);
 
@@ -117,9 +124,10 @@ export function Builder3D({ data, listHref }: { data: BuilderData; listHref: str
               exploded={exploded}
               reducedMotion={support.reducedMotion}
               resetSignal={resetSignal}
+              focus={focus}
               ghostLabels={ghostLabels}
               labelLayer={labelLayer}
-              onSelect={setSelected}
+              onSelect={select}
               onHover={setHovered}
             />
           </div>
@@ -150,7 +158,10 @@ export function Builder3D({ data, listHref }: { data: BuilderData; listHref: str
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setResetSignal((n) => n + 1)}
+              onClick={() => {
+                setResetSignal((n) => n + 1);
+                setFocus(null);
+              }}
               aria-label={t("reset")}
               className="bg-background/80 backdrop-blur"
             >
@@ -172,7 +183,7 @@ export function Builder3D({ data, listHref }: { data: BuilderData; listHref: str
                 <button
                   type="button"
                   aria-pressed={selected === slot}
-                  onClick={() => setSelected(slot)}
+                  onClick={() => select(slot)}
                   onMouseEnter={() => setHovered(slot)}
                   onMouseLeave={() => setHovered(null)}
                   className={cn(

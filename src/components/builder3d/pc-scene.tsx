@@ -1,18 +1,16 @@
 "use client";
 
 import {
-  Bounds,
   ContactShadows,
   Edges,
   Environment,
   Html,
   Lightformer,
   OrbitControls,
-  useBounds,
 } from "@react-three/drei";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useRef, type RefObject } from "react";
-import type { Group } from "three";
+import { Vector3, type Group, type PerspectiveCamera } from "three";
 
 import type { BuildSlot } from "@/generated/prisma/enums";
 import type { Finish, Scene, SceneShape, ScenePart, Tone } from "@/lib/builder/scene";
@@ -29,6 +27,9 @@ export type PcSceneProps = {
   exploded: boolean;
   reducedMotion: boolean;
   resetSignal: number;
+  // What the camera should frame: a part (zoom in) or null (the whole PC).
+  // `n` changes on every request, so picking the same part again re-applies.
+  focus: { slot: BuildSlot | "CASE" | null; n: number } | null;
   ghostLabels: Partial<Record<BuildSlot | "CASE", string>>;
   // A layer over the canvas, owned by the page, that the "+ Part" labels are
   // drawn into. Inside the canvas's own container they break when the page
@@ -107,15 +108,17 @@ export default function PcScene(props: PcSceneProps) {
         color="#e0f2fe"
       />
 
-      {/* Bounds measures from the centre, so leave room for the near corner
-          of a case seen at an angle. */}
-      <Bounds fit clip observe margin={1.6}>
-        <CaseShell {...props} />
-        {props.scene.parts.map((part) => (
-          <PartMesh key={part.slot} part={part} {...props} />
-        ))}
-        <FitOnReset resetSignal={props.resetSignal} />
-      </Bounds>
+      <CaseShell {...props} />
+      {props.scene.parts.map((part) => (
+        <PartMesh key={part.slot} part={part} {...props} />
+      ))}
+      <CameraRig
+        scene={props.scene}
+        focus={props.focus}
+        exploded={props.exploded}
+        resetSignal={props.resetSignal}
+        reducedMotion={props.reducedMotion}
+      />
 
       <ContactShadows
         key={props.scene.caseSize}
@@ -131,12 +134,113 @@ export default function PcScene(props: PcSceneProps) {
   );
 }
 
-// "Reset view": back to a view that fits the whole PC on screen.
-function FitOnReset({ resetSignal }: { resetSignal: number }) {
-  const bounds = useBounds();
+// Smallest size the camera frames, so tiny parts (an M.2 drive) aren't
+// filled edge to edge.
+const MIN_FOCUS_MM = 150;
+// The angle the PC is shown from at first and after "reset": from the front
+// left, slightly above, looking through the glass.
+const HOME_DIRECTION = new Vector3(-0.45, 0.3, 0.85).normalize();
+
+type Controls = { target: Vector3; update: () => void } & EventTarget & {
+    addEventListener: (type: "start", listener: () => void) => void;
+    removeEventListener: (type: "start", listener: () => void) => void;
+  };
+
+// Moves the camera to frame something: the selected part (zoom in), or the
+// whole PC (at first, on "reset", or when the selected part is picked again).
+// It glides there and stops as soon as the visitor grabs the view.
+function CameraRig({
+  scene,
+  focus,
+  exploded,
+  resetSignal,
+  reducedMotion,
+}: Pick<PcSceneProps, "scene" | "focus" | "exploded" | "resetSignal" | "reducedMotion">) {
+  const camera = useThree((s) => s.camera) as PerspectiveCamera;
+  const controls = useThree((s) => s.controls) as unknown as Controls | null;
+  const width = useThree((s) => s.size.width);
+  const height = useThree((s) => s.size.height);
+  // The canvas only draws on demand; a camera move has to ask for frames.
+  const invalidate = useThree((s) => s.invalidate);
+  const goal = useRef<{ position: Vector3; target: Vector3 } | null>(null);
+  const lastReset = useRef(resetSignal);
+  const framed = useRef(false);
+
   useEffect(() => {
-    if (resetSignal) bounds.refresh().clip().fit();
-  }, [resetSignal, bounds]);
+    if (!controls) return;
+    const reset = resetSignal !== lastReset.current;
+    lastReset.current = resetSignal;
+    const part = focus?.slot ? scene.parts.find((p) => p.slot === focus.slot) : undefined;
+
+    let center: Vector3;
+    let size: Vector3;
+    if (part && !reset) {
+      // Where the part is now, including its exploded-view offset.
+      const offset = exploded ? part.explode : [0, 0, 0];
+      center = new Vector3(...part.center).add(new Vector3(...offset));
+      size = new Vector3(...part.size).max(new Vector3(MIN_FOCUS_MM, MIN_FOCUS_MM, MIN_FOCUS_MM));
+    } else {
+      center = new Vector3(0, 0, exploded ? 60 : 0);
+      size = new Vector3(...scene.caseDims).add(new Vector3(0, 0, exploded ? 170 : 0));
+    }
+
+    // Keep the current viewing angle; the first view and "reset" use the
+    // home angle.
+    const first = !framed.current;
+    framed.current = true;
+    const direction =
+      reset || first
+        ? HOME_DIRECTION.clone()
+        : camera.position.clone().sub(controls.target).normalize();
+
+    // Distance that fits a sphere around the box in the narrower of the
+    // vertical and horizontal fields of view (phones are tall and narrow).
+    const radius = size.length() / 2;
+    const vertical = (camera.fov * Math.PI) / 180;
+    const horizontal = 2 * Math.atan(Math.tan(vertical / 2) * camera.aspect);
+    const distance = (radius / Math.sin(Math.min(vertical, horizontal) / 2)) * 1.02;
+
+    const position = center.clone().add(direction.multiplyScalar(distance));
+    if (first) {
+      // No glide on page load: start framed.
+      camera.position.copy(position);
+      controls.target.copy(center);
+      controls.update();
+    } else {
+      goal.current = { position, target: center };
+    }
+    invalidate();
+    // Re-frame for a new request, a resize, the exploded view or a new
+    // build; not on unrelated re-renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controls, focus, resetSignal, exploded, width, height, scene]);
+
+  // Grabbing the view cancels a move in progress.
+  useEffect(() => {
+    if (!controls) return;
+    const stop = () => {
+      goal.current = null;
+    };
+    controls.addEventListener("start", stop);
+    return () => controls.removeEventListener("start", stop);
+  }, [controls]);
+
+  useFrame((_, delta) => {
+    const g = goal.current;
+    if (!g || !controls) return;
+    // Time-based easing: about 0.6 s on any device, however fast it draws.
+    const k = reducedMotion ? 1 : 1 - Math.exp(-Math.min(delta, 0.1) * 7);
+    camera.position.lerp(g.position, k);
+    controls.target.lerp(g.target, k);
+    controls.update();
+    if (camera.position.distanceTo(g.position) < 1 && controls.target.distanceTo(g.target) < 1) {
+      camera.position.copy(g.position);
+      controls.target.copy(g.target);
+      controls.update();
+      goal.current = null;
+    }
+    invalidate();
+  });
   return null;
 }
 
@@ -146,8 +250,9 @@ function Controls({ distance }: { distance: number; resetSignal: number }) {
       makeDefault
       enableDamping
       enablePan={false}
-      minDistance={distance * 0.45}
-      maxDistance={distance * 1.6}
+      // Close enough to frame a single part.
+      minDistance={120}
+      maxDistance={distance * 2.5}
       maxPolarAngle={Math.PI * 0.82}
     />
   );
