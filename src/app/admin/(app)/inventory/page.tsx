@@ -2,7 +2,9 @@ import Link from "next/link";
 
 import { Field, Input, Select } from "@/components/ui/field";
 import type { LocalizedText } from "@/lib/localized";
-import type { Facet } from "@/lib/catalog/filters";
+import { FilterForm } from "@/components/admin/filter-form";
+import { SpecSelects } from "@/components/admin/spec-selects";
+import { specParams } from "@/lib/catalog/admin-spec-filter";
 import {
   costStatus,
   parseCostFilter,
@@ -10,7 +12,6 @@ import {
   parseStockLevel,
 } from "@/lib/inventory/filter";
 import { formatMoney } from "@/lib/money";
-import { formatOption, formatSpecValue } from "@/lib/specs/format";
 import { cn } from "@/lib/utils";
 import { inventoryFilterOptions, listInventory, listMovements } from "@/server/admin/inventory";
 import { requireAdmin } from "@/server/require-admin";
@@ -18,7 +19,6 @@ import { getSettings } from "@/server/settings";
 
 import { SettingsForm } from "../settings/settings-forms";
 
-import { FilterForm } from "./filter-form";
 import { adjustAction, transferAction } from "./actions";
 
 export const metadata = { title: "Inventory" };
@@ -53,12 +53,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
     // "low=1" is the older link format (e.g. from the Today page).
     stock: one("low") === "1" ? ("low" as const) : parseStockLevel(one("stock")),
     cost: parseCostFilter(one("cost")),
-    // Spec filters arrive as "spec.socket=AM5" and so on.
-    specs: Object.fromEntries(
-      Object.keys(params)
-        .filter((k) => k.startsWith("spec.") && one(k))
-        .map((k) => [k.slice(5), one(k)]),
-    ),
+    specs: specParams(params),
   };
   const [{ rows, specFacets }, options] = await Promise.all([
     listInventory(filters, settings),
@@ -73,14 +68,6 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
     filters.stock !== "all" ||
     filters.cost !== "all" ||
     Object.keys(filters.specs).length > 0;
-  const optionLabel = (facet: Facet, value: string) => {
-    const field = facet.field!;
-    if (field.type === "boolean") return formatSpecValue(field, value === "true", "en");
-    if (field.type === "int" || field.type === "decimal") {
-      return formatSpecValue(field, Number(value), "en");
-    }
-    return formatOption(field, value, "en");
-  };
   // The history narrows to one product when the search is its exact SKU.
   const exactSku = rows.find((r) => r.sku.toLowerCase() === filters.q.trim().toLowerCase())?.sku;
   const movements = await listMovements(exactSku);
@@ -174,7 +161,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
       </div>
 
       <section className="flex flex-col gap-3">
-        <FilterForm>
+        <FilterForm action="/admin/inventory">
           <Input
             name="q"
             defaultValue={filters.q}
@@ -244,25 +231,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             </option>
             <option value="nocost">In stock with no cost</option>
           </Select>
-          {specFacets.map((facet) => {
-            const label = (facet.field!.label as LocalizedText).en;
-            return (
-              <Select
-                key={facet.key}
-                name={`spec.${facet.key}`}
-                defaultValue={facet.options.find((o) => o.selected)?.value ?? ""}
-                aria-label={label}
-                className="w-44"
-              >
-                <option value="">Any {label.toLowerCase()}</option>
-                {facet.options.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {optionLabel(facet, o.value)} ({o.count})
-                  </option>
-                ))}
-              </Select>
-            );
-          })}
+          <SpecSelects facets={specFacets} />
           {filtered && (
             <Link href="/admin/inventory" className="text-sm text-muted hover:text-foreground">
               Clear filters

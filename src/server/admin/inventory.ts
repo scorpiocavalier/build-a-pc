@@ -1,7 +1,7 @@
 import "server-only";
 
 import { Prisma, type LocationCode } from "@/generated/prisma/client";
-import { buildFacets, parseFilters, type Facet } from "@/lib/catalog/filters";
+import { filterBySpecs } from "@/lib/catalog/admin-spec-filter";
 import {
   matchesCost,
   matchesStock,
@@ -12,8 +12,6 @@ import {
 } from "@/lib/inventory/filter";
 import { audit } from "@/server/audit";
 import { db } from "@/server/db";
-import { getCategoryDefinition } from "@/lib/specs/definitions";
-import type { SpecValues } from "@/lib/specs/types";
 import { averageCost, receiveUnits } from "@/server/inventory-cost";
 import { requireAdmin } from "@/server/require-admin";
 
@@ -117,35 +115,8 @@ export async function listInventory(
       matchesCost(r, filters.cost ?? "all", filters.location ?? "all", settings),
   );
 
-  const definition = filters.category ? getCategoryDefinition(filters.category) : undefined;
-  if (!definition) return { rows: stocked, specFacets: [] as Facet[] };
-  // Brand has its own dropdown above, so it's left out here.
-  const active = parseFilters(definition, { ...filters.specs, brand: undefined });
-  const filterable = stocked.map((r) => ({
-    row: r,
-    brand: r.brand.name,
-    name: r.name as { en: string },
-    priceCents: r.priceCents,
-    specs: (r.specs ?? {}) as SpecValues,
-    available: {
-      TOR: r.stock.TOR.onHand - r.stock.TOR.reserved,
-      MTL: r.stock.MTL.onHand - r.stock.MTL.reserved,
-    },
-  }));
-  const specFacets = buildFacets(definition, filterable, active).filter((f) => f.key !== "brand");
-  const matching = new Set(
-    // Keep the inventory's own order (category, then SKU).
-    filterable
-      .filter((p) =>
-        Object.entries(active.values).every(([key, selected]) => {
-          const v = p.specs[key];
-          const values = v === undefined ? [] : Array.isArray(v) ? v : [String(v)];
-          return selected.some((s) => values.includes(s));
-        }),
-      )
-      .map((p) => p.row.id),
-  );
-  return { rows: stocked.filter((r) => matching.has(r.id)), specFacets };
+  const { rows: matching, facets } = filterBySpecs(filters.category, stocked, filters.specs ?? {});
+  return { rows: matching, specFacets: facets };
 }
 
 // Choices for the filter dropdowns.

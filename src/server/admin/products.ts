@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Prisma, ProductStatus } from "@/generated/prisma/client";
 import { LOCATION_CODES, PRODUCT_STATUSES, type LocationCode } from "@/lib/catalog/product-input";
+import { filterBySpecs } from "@/lib/catalog/admin-spec-filter";
 import type { LocalizedText } from "@/lib/localized";
 import type { SpecValues } from "@/lib/specs/types";
 import { db } from "@/server/db";
@@ -32,8 +33,12 @@ export type AdminProductFilters = {
   q?: string;
   category?: string;
   status?: string;
+  brand?: string;
+  // "fr": missing French text; "photos": no photos.
   missing?: string;
   stock?: string;
+  // Spec filters for the chosen category, e.g. { socket: "AM5" }.
+  specs?: Record<string, string>;
 };
 
 export async function listAdminProducts(filters: AdminProductFilters) {
@@ -52,10 +57,12 @@ export async function listAdminProducts(filters: AdminProductFilters) {
     });
   }
   if (filters.category) and.push({ category: { slug: filters.category } });
+  if (filters.brand) and.push({ brand: { slug: filters.brand } });
   if (PRODUCT_STATUSES.includes(filters.status as ProductStatus)) {
     and.push({ status: filters.status as ProductStatus });
   }
   if (filters.missing === "fr") and.push(missingFrench);
+  if (filters.missing === "photos") and.push({ images: { none: {} } });
   if (filters.stock === "out") and.push(outOfStock);
 
   const rows = await db.product.findMany({
@@ -69,6 +76,7 @@ export async function listAdminProducts(filters: AdminProductFilters) {
       description: true,
       status: true,
       priceCents: true,
+      specs: true,
       brand: { select: { name: true } },
       category: { select: { slug: true, name: true } },
       inventory: { select: { onHand: true, location: { select: { code: true } } } },
@@ -76,7 +84,8 @@ export async function listAdminProducts(filters: AdminProductFilters) {
     },
   });
 
-  return rows.map((row) => ({
+  const { rows: matching, facets } = filterBySpecs(filters.category, rows, filters.specs ?? {});
+  const products = matching.map((row) => ({
     id: row.id,
     sku: row.sku,
     name: row.name as LocalizedText,
@@ -93,6 +102,7 @@ export async function listAdminProducts(filters: AdminProductFilters) {
       ]),
     ) as Record<LocationCode, number>,
   }));
+  return { products, specFacets: facets };
 }
 
 export async function getAdminProduct(id: string) {
@@ -155,4 +165,10 @@ export async function listProductsForExport(categorySlug: string) {
       ]),
     ) as Record<LocationCode, number>,
   }));
+}
+
+// Choices for the product list's brand dropdown.
+export async function listBrands() {
+  await requireAdmin();
+  return db.brand.findMany({ orderBy: { name: "asc" }, select: { slug: true, name: true } });
 }

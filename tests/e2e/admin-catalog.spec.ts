@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 
 import { expect, test } from "./fixtures";
+import { createProduct } from "./shop-helpers";
 
 // These tests change data, so they only run in one browser project and use
 // unique SKUs per run.
@@ -97,4 +98,40 @@ test("a signed-in customer who isn't an admin is turned away", async ({ signInAs
 
   const download = await page.request.get("/admin/import/csv/cpu", { maxRedirects: 0 });
   expect(download.status()).toBe(307);
+});
+
+test("products are filtered like the inventory, without a page reload", async ({
+  adminPage: page,
+  sql,
+}) => {
+  // createProduct puts test products in the CPU cooler category, with no photos.
+  const product = await createProduct(sql, { stockTOR: 0, stockMTL: 0 });
+  await page.goto("/admin/products");
+  await page.evaluate(() => ((window as unknown as { kept: boolean }).kept = true));
+  await expect(page.getByRole("button", { name: "Filter" })).toHaveCount(0);
+
+  await page.getByLabel("Part", { exact: true }).selectOption("cooler");
+  await expect(page).toHaveURL(/category=cooler/);
+  // The part's specs get their own dropdowns.
+  await expect(page.locator('select[name^="spec."]').first()).toBeVisible();
+
+  await page.getByLabel("Search products").fill(product.sku);
+  await expect(page).toHaveURL(new RegExp(`q=${product.sku}`));
+  const row = page.getByRole("row", { name: new RegExp(product.sku) });
+  await expect(row).toBeVisible();
+  await page.getByLabel("Content", { exact: true }).selectOption("photos");
+  await expect(page).toHaveURL(/missing=photos/);
+  await page.getByLabel("Stock", { exact: true }).selectOption("out");
+  await expect(page).toHaveURL(/stock=out/);
+  await expect(row).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^1 product/ })).toBeVisible();
+
+  await page.getByLabel("Status", { exact: true }).selectOption("DRAFT");
+  await expect(row).toHaveCount(0);
+
+  await page.getByRole("link", { name: "Clear filters" }).click();
+  await expect(page).toHaveURL(/\/admin\/products$/);
+  await expect(page.getByLabel("Part", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel("Search products")).toHaveValue("");
+  expect(await page.evaluate(() => (window as unknown as { kept?: boolean }).kept)).toBe(true);
 });
