@@ -2,15 +2,11 @@ import Link from "next/link";
 
 import { Field, Input, Select } from "@/components/ui/field";
 import type { LocalizedText } from "@/lib/localized";
+import { CostCell } from "@/components/admin/cost-cell";
 import { FilterForm } from "@/components/admin/filter-form";
 import { SpecSelects } from "@/components/admin/spec-selects";
 import { specParams } from "@/lib/catalog/admin-spec-filter";
-import {
-  costStatus,
-  parseCostFilter,
-  parseLocation,
-  parseStockLevel,
-} from "@/lib/inventory/filter";
+import { parseCostFilter, parseLocation, parseStockLevel } from "@/lib/inventory/filter";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { inventoryFilterOptions, listInventory, listMovements } from "@/server/admin/inventory";
@@ -36,7 +32,6 @@ const REASON: Record<string, string> = {
 };
 
 const money = (cents: number) => formatMoney(Math.round(cents), "en");
-const percent = (value: number) => `${value > 0 ? "+" : ""}${value.toFixed(0)}%`;
 
 export default async function InventoryPage({ searchParams }: PageProps<"/admin/inventory">) {
   await requireAdmin();
@@ -272,7 +267,6 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
                   {(["TOR", "MTL"] as const).map((code) => {
                     const s = row.stock[code];
                     const free = s.onHand - s.reserved;
-                    const cost = costStatus(row, code, settings);
                     return [
                       <td
                         key={`${code}-free`}
@@ -290,24 +284,13 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
                       >
                         {s.onHand} / {s.reserved}
                       </td>,
-                      <td key={`${code}-cost`} className="px-3 py-2 text-right tabular-nums">
-                        {s.avgCostCents === null ? (
-                          <span className="text-muted">no cost</span>
-                        ) : (
-                          <>
-                            {money(s.avgCostCents)}
-                            {" · "}
-                            <span className={cn(cost.lowMargin && "font-semibold text-amber-300")}>
-                              {cost.margin === null ? "—" : `${cost.margin.toFixed(0)}%`}
-                            </span>
-                            {cost.drifted && (
-                              <span className="block text-xs text-amber-300">
-                                last paid {money(s.lastCostCents!)} ({percent(cost.drift!)})
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </td>,
+                      <CostCell
+                        key={`${code}-cost`}
+                        priceCents={row.priceCents}
+                        avgCostCents={s.avgCostCents}
+                        lastCostCents={s.lastCostCents}
+                        rules={settings}
+                      />,
                     ];
                   })}
                 </tr>

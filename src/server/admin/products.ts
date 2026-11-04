@@ -6,6 +6,7 @@ import { filterBySpecs } from "@/lib/catalog/admin-spec-filter";
 import type { LocalizedText } from "@/lib/localized";
 import type { SpecValues } from "@/lib/specs/types";
 import { db } from "@/server/db";
+import { lastPurchaseCosts } from "@/server/inventory-cost";
 import { requireAdmin } from "@/server/require-admin";
 import { publicUrl } from "@/server/storage";
 
@@ -79,12 +80,18 @@ export async function listAdminProducts(filters: AdminProductFilters) {
       specs: true,
       brand: { select: { name: true } },
       category: { select: { slug: true, name: true } },
-      inventory: { select: { onHand: true, location: { select: { code: true } } } },
+      inventory: {
+        select: { onHand: true, avgCostCents: true, location: { select: { code: true } } },
+      },
       _count: { select: { images: true } },
     },
   });
 
   const { rows: matching, facets } = filterBySpecs(filters.category, rows, filters.specs ?? {});
+  const lastCost = await lastPurchaseCosts(
+    db,
+    matching.map((row) => row.id),
+  );
   const products = matching.map((row) => ({
     id: row.id,
     sku: row.sku,
@@ -101,6 +108,16 @@ export async function listAdminProducts(filters: AdminProductFilters) {
         row.inventory.find((i) => i.location.code === code)?.onHand ?? 0,
       ]),
     ) as Record<LocationCode, number>,
+    // Average cost per location and the latest purchase's landed cost.
+    cost: Object.fromEntries(
+      LOCATION_CODES.map((code) => [
+        code,
+        {
+          avgCostCents: row.inventory.find((i) => i.location.code === code)?.avgCostCents ?? null,
+          lastCostCents: lastCost.get(`${row.id}:${code}`) ?? null,
+        },
+      ]),
+    ) as Record<LocationCode, { avgCostCents: number | null; lastCostCents: number | null }>,
   }));
   return { products, specFacets: facets };
 }
