@@ -3,8 +3,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import type { LocalizedText } from "@/lib/localized";
+import { parseLocation, parseStockLevel } from "@/lib/inventory/filter";
 import { cn } from "@/lib/utils";
-import { listInventory, listMovements } from "@/server/admin/inventory";
+import { inventoryFilterOptions, listInventory, listMovements } from "@/server/admin/inventory";
 import { requireAdmin } from "@/server/require-admin";
 import { getSettings } from "@/server/settings";
 
@@ -30,8 +31,27 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
   const params = await searchParams;
   const one = (k: string) => (typeof params[k] === "string" ? (params[k] as string) : "");
   const settings = await getSettings();
-  const filters = { q: one("q"), low: one("low") === "1" };
-  const rows = await listInventory(filters, settings.lowStockThreshold);
+  const status = one("status");
+  const filters = {
+    q: one("q"),
+    category: one("category") || undefined,
+    brand: one("brand") || undefined,
+    status: status === "ACTIVE" || status === "DRAFT" ? (status as "ACTIVE" | "DRAFT") : undefined,
+    location: parseLocation(one("location")),
+    // "low=1" is the older link format (e.g. from the Today page).
+    stock: one("low") === "1" ? ("low" as const) : parseStockLevel(one("stock")),
+  };
+  const [rows, options] = await Promise.all([
+    listInventory(filters, settings.lowStockThreshold),
+    inventoryFilterOptions(),
+  ]);
+  const filtered =
+    !!filters.q ||
+    !!filters.category ||
+    !!filters.brand ||
+    !!filters.status ||
+    filters.location !== "all" ||
+    filters.stock !== "all";
   // The history narrows to one product when the search is its exact SKU.
   const exactSku = rows.find((r) => r.sku.toLowerCase() === filters.q.trim().toLowerCase())?.sku;
   const movements = await listMovements(exactSku);
@@ -133,18 +153,69 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             aria-label="Search stock"
             className="w-64"
           />
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              name="low"
-              value="1"
-              defaultChecked={filters.low}
-              className="size-4 accent-[var(--accent)]"
-            />
-            Low stock only ({settings.lowStockThreshold} or fewer free)
-          </label>
+          <Select
+            name="category"
+            defaultValue={filters.category ?? ""}
+            aria-label="Category"
+            className="w-44"
+          >
+            <option value="">All categories</option>
+            {options.categories.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {(c.name as LocalizedText).en}
+              </option>
+            ))}
+          </Select>
+          <Select
+            name="brand"
+            defaultValue={filters.brand ?? ""}
+            aria-label="Brand"
+            className="w-40"
+          >
+            <option value="">All brands</option>
+            {options.brands.map((b) => (
+              <option key={b.slug} value={b.slug}>
+                {b.name}
+              </option>
+            ))}
+          </Select>
+          <Select
+            name="status"
+            defaultValue={filters.status ?? ""}
+            aria-label="Status"
+            className="w-36"
+          >
+            <option value="">Active and drafts</option>
+            <option value="ACTIVE">Active</option>
+            <option value="DRAFT">Drafts</option>
+          </Select>
+          <Select
+            id="filter-location"
+            name="location"
+            defaultValue={filters.location}
+            aria-label="Location"
+            className="w-36"
+          >
+            <option value="all">Both locations</option>
+            <option value="TOR">Toronto</option>
+            <option value="MTL">Montreal</option>
+          </Select>
+          <Select name="stock" defaultValue={filters.stock} aria-label="Stock" className="w-44">
+            <option value="all">Any stock</option>
+            <option value="in">In stock</option>
+            <option value="low">Low ({settings.lowStockThreshold} or fewer free)</option>
+            <option value="out">Out of stock</option>
+          </Select>
           <Button variant="outline">Filter</Button>
+          {filtered && (
+            <Link href="/admin/inventory" className="text-sm text-muted hover:text-foreground">
+              Clear filters
+            </Link>
+          )}
         </form>
+        <p role="status" className="text-sm text-muted">
+          {rows.length} {rows.length === 1 ? "product" : "products"}
+        </p>
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">
             <thead className="bg-surface text-left text-muted">

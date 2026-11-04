@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { LocationCode, Prisma } from "@/generated/prisma/client";
+import { matchesStock, type LocationFilter, type StockLevel } from "@/lib/inventory/filter";
 import { audit } from "@/server/audit";
 import { db } from "@/server/db";
 import { requireAdmin } from "@/server/require-admin";
@@ -9,14 +10,22 @@ import { requireAdmin } from "@/server/require-admin";
 // Available = on hand − reserved for open orders; nothing here can take a
 // location below what's reserved.
 
-export type InventoryFilters = { q?: string; category?: string; low?: boolean };
+export type InventoryFilters = {
+  q?: string;
+  category?: string;
+  brand?: string;
+  status?: "ACTIVE" | "DRAFT";
+  location?: LocationFilter;
+  stock?: StockLevel;
+};
 
 export async function listInventory(filters: InventoryFilters, lowThreshold: number) {
   await requireAdmin();
   const q = filters.q?.trim();
   const where: Prisma.ProductWhereInput = {
-    status: { not: "ARCHIVED" },
+    status: filters.status ?? { not: "ARCHIVED" },
     ...(filters.category ? { category: { slug: filters.category } } : {}),
+    ...(filters.brand ? { brand: { slug: filters.brand } } : {}),
     ...(q
       ? {
           OR: [
@@ -50,7 +59,19 @@ export async function listInventory(filters: InventoryFilters, lowThreshold: num
     );
     return { ...p, stock, low };
   });
-  return filters.low ? rows.filter((r) => r.low) : rows;
+  return rows.filter((r) =>
+    matchesStock(r, filters.stock ?? "all", filters.location ?? "all", lowThreshold),
+  );
+}
+
+// Choices for the filter dropdowns.
+export async function inventoryFilterOptions() {
+  await requireAdmin();
+  const [categories, brands] = await Promise.all([
+    db.category.findMany({ orderBy: { position: "asc" }, select: { slug: true, name: true } }),
+    db.brand.findMany({ orderBy: { name: "asc" }, select: { slug: true, name: true } }),
+  ]);
+  return { categories, brands };
 }
 
 export async function listMovements(sku?: string) {
