@@ -6,10 +6,10 @@ import { useEffect, useRef, type ReactNode } from "react";
 
 const SEARCH_DELAY_MS = 300;
 
-// Filters without a full page reload or a Filter button: dropdowns apply
+// Admin list filters (inventory, products) without a full page reload or a Filter button: dropdowns apply
 // right away and the search box applies after a short pause in typing.
 // Pressing Enter in the search box still submits (also without JavaScript).
-export function FilterForm({ children }: { children: ReactNode }) {
+export function FilterForm({ action, children }: { action: string; children: ReactNode }) {
   const form = useRef<HTMLFormElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const params = useSearchParams();
@@ -39,7 +39,7 @@ export function FilterForm({ children }: { children: ReactNode }) {
   return (
     <Form
       ref={form}
-      action="/admin/inventory"
+      action={action}
       scroll={false}
       replace
       role="search"
