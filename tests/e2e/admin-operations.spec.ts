@@ -239,6 +239,8 @@ test("inventory can be filtered with dropdowns", async ({ adminPage, sql }) => {
   const product = await createProduct(sql, { stockTOR: 0, stockMTL: 3 });
   const page = adminPage;
   await page.goto(`/admin/inventory?q=${product.sku}`);
+  // Set on the window: a full page reload would wipe it.
+  await page.evaluate(() => ((window as unknown as { kept: boolean }).kept = true));
 
   const row = page.getByRole("row", { name: new RegExp(product.sku) });
   await expect(row).toBeVisible();
@@ -263,14 +265,16 @@ test("inventory can be filtered with dropdowns", async ({ adminPage, sql }) => {
 
   await page.getByRole("link", { name: "Clear filters" }).click();
   await expect(page).toHaveURL(/\/admin\/inventory$/);
+  await expect(page.locator("#filter-location")).toHaveValue("all");
+  expect(await page.evaluate(() => (window as unknown as { kept?: boolean }).kept)).toBe(true);
 });
 
 test("inventory can be filtered by a part's specs", async ({ adminPage: page }) => {
   await page.goto("/admin/inventory");
   await expect(page.getByLabel("Socket", { exact: true })).toHaveCount(0);
 
+  // Changing a dropdown applies it without pressing Filter.
   await page.getByLabel("Part", { exact: true }).selectOption("motherboard");
-  await page.getByRole("button", { name: "Filter" }).click();
   const socket = page.getByLabel("Socket", { exact: true });
   await expect(socket).toBeVisible();
 
