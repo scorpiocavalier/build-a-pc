@@ -34,6 +34,8 @@ export async function saveStoreSettings(
     restockingPercent: Number(str(formData, "restockingPercent")),
     returnWindowDays: Number(str(formData, "returnWindowDays")),
     lowStockThreshold: Number(str(formData, "lowStockThreshold")),
+    targetMarginPercent: Number(str(formData, "targetMarginPercent")),
+    costDriftPercent: Number(str(formData, "costDriftPercent")),
     contactEmail: str(formData, "contactEmail"),
     privacyOfficer: str(formData, "privacyOfficer"),
   });

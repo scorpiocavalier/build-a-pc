@@ -3,7 +3,13 @@ import Link from "next/link";
 import { Field, Input, Select } from "@/components/ui/field";
 import type { LocalizedText } from "@/lib/localized";
 import type { Facet } from "@/lib/catalog/filters";
-import { parseLocation, parseStockLevel } from "@/lib/inventory/filter";
+import {
+  costStatus,
+  parseCostFilter,
+  parseLocation,
+  parseStockLevel,
+} from "@/lib/inventory/filter";
+import { formatMoney } from "@/lib/money";
 import { formatOption, formatSpecValue } from "@/lib/specs/format";
 import { cn } from "@/lib/utils";
 import { inventoryFilterOptions, listInventory, listMovements } from "@/server/admin/inventory";
@@ -26,7 +32,11 @@ const REASON: Record<string, string> = {
   SALE: "sale",
   RETURN: "return",
   WRITE_OFF: "write-off",
+  PURCHASE: "purchase",
 };
+
+const money = (cents: number) => formatMoney(Math.round(cents), "en");
+const percent = (value: number) => `${value > 0 ? "+" : ""}${value.toFixed(0)}%`;
 
 export default async function InventoryPage({ searchParams }: PageProps<"/admin/inventory">) {
   await requireAdmin();
@@ -42,6 +52,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
     location: parseLocation(one("location")),
     // "low=1" is the older link format (e.g. from the Today page).
     stock: one("low") === "1" ? ("low" as const) : parseStockLevel(one("stock")),
+    cost: parseCostFilter(one("cost")),
     // Spec filters arrive as "spec.socket=AM5" and so on.
     specs: Object.fromEntries(
       Object.keys(params)
@@ -50,7 +61,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
     ),
   };
   const [{ rows, specFacets }, options] = await Promise.all([
-    listInventory(filters, settings.lowStockThreshold),
+    listInventory(filters, settings),
     inventoryFilterOptions(),
   ]);
   const filtered =
@@ -60,6 +71,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
     !!filters.status ||
     filters.location !== "all" ||
     filters.stock !== "all" ||
+    filters.cost !== "all" ||
     Object.keys(filters.specs).length > 0;
   const optionLabel = (facet: Facet, value: string) => {
     const field = facet.field!;
@@ -224,6 +236,14 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             <option value="low">Low ({settings.lowStockThreshold} or fewer free)</option>
             <option value="out">Out of stock</option>
           </Select>
+          <Select name="cost" defaultValue={filters.cost} aria-label="Cost" className="w-52">
+            <option value="all">Any cost</option>
+            <option value="review">
+              Needs a price review (under {settings.targetMarginPercent}% margin or cost moved{" "}
+              {settings.costDriftPercent}%+)
+            </option>
+            <option value="nocost">In stock with no cost</option>
+          </Select>
           {specFacets.map((facet) => {
             const label = (facet.field!.label as LocalizedText).en;
             return (
@@ -258,10 +278,13 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             <thead className="bg-surface text-left text-muted">
               <tr>
                 <th className="px-3 py-2 font-medium">Product</th>
+                <th className="px-3 py-2 text-right font-medium">Price</th>
                 <th className="px-3 py-2 text-right font-medium">Toronto free</th>
                 <th className="px-3 py-2 text-right font-medium">on hand / reserved</th>
+                <th className="px-3 py-2 text-right font-medium">Toronto cost · margin</th>
                 <th className="px-3 py-2 text-right font-medium">Montreal free</th>
                 <th className="px-3 py-2 text-right font-medium">on hand / reserved</th>
+                <th className="px-3 py-2 text-right font-medium">Montreal cost · margin</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -276,9 +299,11 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
                       {row.status === "DRAFT" && " · draft"}
                     </span>
                   </td>
+                  <td className="px-3 py-2 text-right tabular-nums">{money(row.priceCents)}</td>
                   {(["TOR", "MTL"] as const).map((code) => {
                     const s = row.stock[code];
                     const free = s.onHand - s.reserved;
+                    const cost = costStatus(row, code, settings);
                     return [
                       <td
                         key={`${code}-free`}
@@ -295,6 +320,24 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
                         className="px-3 py-2 text-right text-muted tabular-nums"
                       >
                         {s.onHand} / {s.reserved}
+                      </td>,
+                      <td key={`${code}-cost`} className="px-3 py-2 text-right tabular-nums">
+                        {s.avgCostCents === null ? (
+                          <span className="text-muted">no cost</span>
+                        ) : (
+                          <>
+                            {money(s.avgCostCents)}
+                            {" · "}
+                            <span className={cn(cost.lowMargin && "font-semibold text-amber-300")}>
+                              {cost.margin === null ? "—" : `${cost.margin.toFixed(0)}%`}
+                            </span>
+                            {cost.drifted && (
+                              <span className="block text-xs text-amber-300">
+                                last paid {money(s.lastCostCents!)} ({percent(cost.drift!)})
+                              </span>
+                            )}
+                          </>
+                        )}
                       </td>,
                     ];
                   })}
@@ -326,6 +369,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
               <span>{m.location.code}</span>
               <span className="text-muted">
                 {REASON[m.reason]}
+                {m.unitCostCents !== null ? ` · ${money(m.unitCostCents)} each` : ""}
                 {m.note ? ` · ${m.note}` : ""}
                 {m.actor ? ` · ${m.actor.email}` : ""}
               </span>

@@ -1,12 +1,20 @@
 import "server-only";
 
-import type { LocationCode, Prisma } from "@/generated/prisma/client";
+import { Prisma, type LocationCode } from "@/generated/prisma/client";
 import { buildFacets, parseFilters, type Facet } from "@/lib/catalog/filters";
-import { matchesStock, type LocationFilter, type StockLevel } from "@/lib/inventory/filter";
+import {
+  matchesCost,
+  matchesStock,
+  type CostFilter,
+  type CostRules,
+  type LocationFilter,
+  type StockLevel,
+} from "@/lib/inventory/filter";
 import { audit } from "@/server/audit";
 import { db } from "@/server/db";
 import { getCategoryDefinition } from "@/lib/specs/definitions";
 import type { SpecValues } from "@/lib/specs/types";
+import { averageCost, receiveUnits } from "@/server/inventory-cost";
 import { requireAdmin } from "@/server/require-admin";
 
 // Stock per location, manual adjustments and transfers between the stores.
@@ -20,12 +28,17 @@ export type InventoryFilters = {
   status?: "ACTIVE" | "DRAFT";
   location?: LocationFilter;
   stock?: StockLevel;
+  cost?: CostFilter;
   // Spec filters (socket, memory type…), keyed by spec field. Only used
   // with a category, like the storefront's category pages.
   specs?: Record<string, string>;
 };
 
-export async function listInventory(filters: InventoryFilters, lowThreshold: number) {
+export async function listInventory(
+  filters: InventoryFilters,
+  settings: CostRules & { lowStockThreshold: number },
+) {
+  const lowThreshold = settings.lowStockThreshold;
   await requireAdmin();
   const q = filters.q?.trim();
   const where: Prisma.ProductWhereInput = {
@@ -54,20 +67,54 @@ export async function listInventory(filters: InventoryFilters, lowThreshold: num
       specs: true,
       category: { select: { slug: true } },
       brand: { select: { name: true } },
-      inventory: { select: { onHand: true, reserved: true, location: { select: { code: true } } } },
+      inventory: {
+        select: {
+          onHand: true,
+          reserved: true,
+          avgCostCents: true,
+          location: { select: { code: true } },
+        },
+      },
     },
   });
+  // Landed cost of each product's latest purchase per location.
+  const ids = products.map((p) => p.id);
+  const last = ids.length
+    ? await db.$queryRaw<{ productId: string; code: LocationCode; cost: number }[]>`
+        SELECT DISTINCT ON (m."productId", m."locationId")
+               m."productId", l.code, m."unitCostCents" AS cost
+        FROM "InventoryMovement" m
+        JOIN "Location" l ON l.id = m."locationId"
+        WHERE m.reason = 'PURCHASE' AND m."unitCostCents" IS NOT NULL
+          AND m."productId" IN (${Prisma.join(ids)})
+        ORDER BY m."productId", m."locationId", m."createdAt" DESC`
+    : [];
+  const lastCost = new Map(last.map((r) => [`${r.productId}:${r.code}`, r.cost]));
   const rows = products.map((p) => {
-    const stock = { TOR: { onHand: 0, reserved: 0 }, MTL: { onHand: 0, reserved: 0 } };
-    for (const i of p.inventory)
-      stock[i.location.code] = { onHand: i.onHand, reserved: i.reserved };
+    const empty = (code: LocationCode) => ({
+      onHand: 0,
+      reserved: 0,
+      avgCostCents: null as number | null,
+      lastCostCents: lastCost.get(`${p.id}:${code}`) ?? null,
+    });
+    const stock = { TOR: empty("TOR"), MTL: empty("MTL") };
+    for (const i of p.inventory) {
+      stock[i.location.code] = {
+        ...stock[i.location.code],
+        onHand: i.onHand,
+        reserved: i.reserved,
+        avgCostCents: i.avgCostCents,
+      };
+    }
     const low = (["TOR", "MTL"] as const).some(
       (code) => stock[code].onHand - stock[code].reserved <= lowThreshold,
     );
     return { ...p, stock, low };
   });
-  const stocked = rows.filter((r) =>
-    matchesStock(r, filters.stock ?? "all", filters.location ?? "all", lowThreshold),
+  const stocked = rows.filter(
+    (r) =>
+      matchesStock(r, filters.stock ?? "all", filters.location ?? "all", lowThreshold) &&
+      matchesCost(r, filters.cost ?? "all", filters.location ?? "all", settings),
   );
 
   const definition = filters.category ? getCategoryDefinition(filters.category) : undefined;
@@ -162,10 +209,13 @@ export async function transferStock(input: {
     if (moved === 0) {
       return { ok: false as const, error: `Not enough free stock in ${input.from} to move.` };
     }
-    await tx.inventory.upsert({
-      where: { productId_locationId: { productId: product.id, locationId: to.id } },
-      create: { productId: product.id, locationId: to.id, onHand: input.quantity },
-      update: { onHand: { increment: input.quantity } },
+    // The units carry the sending store's average cost with them.
+    const unitCostCents = await averageCost(tx, product.id, from.id);
+    await receiveUnits(tx, {
+      productId: product.id,
+      locationId: to.id,
+      quantity: input.quantity,
+      unitCostCents,
     });
     const note = input.note || null;
     await tx.inventoryMovement.createMany({
@@ -175,6 +225,7 @@ export async function transferStock(input: {
           locationId: from.id,
           delta: -input.quantity,
           reason: "TRANSFER",
+          unitCostCents,
           note: `To ${input.to}${note ? `: ${note}` : ""}`,
           actorId: input.actorId,
         },
@@ -183,6 +234,7 @@ export async function transferStock(input: {
           locationId: to.id,
           delta: input.quantity,
           reason: "TRANSFER",
+          unitCostCents,
           note: `From ${input.from}${note ? `: ${note}` : ""}`,
           actorId: input.actorId,
         },
@@ -240,6 +292,8 @@ export async function adjustStock(input: {
         ...key,
         delta: input.delta,
         reason: input.reason,
+        // Counted at the average; corrections don't change it.
+        unitCostCents: await averageCost(tx, product.id, location.id),
         note: input.note,
         actorId: input.actorId,
       },

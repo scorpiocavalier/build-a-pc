@@ -8,7 +8,16 @@ import { requireAdmin } from "@/server/require-admin";
 export const metadata = { title: "Audit log" };
 export const instant = false;
 
-const ENTITIES = ["order", "return", "product", "inventory", "settings", "build", "import"];
+const ENTITIES = [
+  "order",
+  "return",
+  "product",
+  "inventory",
+  "settings",
+  "build",
+  "import",
+  "purchase",
+];
 
 // Where each kind of record is managed.
 function hrefFor(entity: string, id: string | null): string | null {

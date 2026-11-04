@@ -30,6 +30,10 @@ export const settingsSchema = z.object({
   returnWindowDays: z.number().int().min(0).max(365),
   // Products at or below this many units at a location show as low stock.
   lowStockThreshold: z.number().int().min(0).max(1000),
+  // Inventory flags a product whose margin at a location is below this.
+  targetMarginPercent: z.number().int().min(0).max(100),
+  // …or whose last purchase cost is this far from the average, either way.
+  costDriftPercent: z.number().int().min(1).max(100),
   // Shown on the privacy policy and contact details (Quebec Law 25 requires
   // naming the person responsible for personal information).
   contactEmail: z.email(),
@@ -54,6 +58,8 @@ export const DEFAULT_SETTINGS: Settings = {
   restockingPercent: 30,
   returnWindowDays: 30,
   lowStockThreshold: 2,
+  targetMarginPercent: 15,
+  costDriftPercent: 10,
   contactEmail: "hello@astralgaming.ca",
   privacyOfficer: "",
 };

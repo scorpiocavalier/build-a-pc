@@ -37,6 +37,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   movements     InventoryMovement[]
+  purchases     Purchase[]
   orders        Order[]
   addresses     Address[]
   wishlist      WishlistItem[]
@@ -106,6 +107,7 @@ model Location {
   deliveryFeeCents       Int                 @default(0)
   inventory              Inventory[]
   movements              InventoryMovement[]
+  purchases              Purchase[]
   orders                 Order[]
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
@@ -159,15 +161,16 @@ model Product {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  brand        Brand               @relation(fields: [brandId], references: [id])
-  category     Category            @relation(fields: [categoryId], references: [id])
-  images       ProductImage[]
-  inventory    Inventory[]
-  movements    InventoryMovement[]
-  cartLines    CartLine[]
-  orderLines   OrderLine[]
-  buildItems   BuildItem[]
-  wishlistedBy WishlistItem[]
+  brand         Brand               @relation(fields: [brandId], references: [id])
+  category      Category            @relation(fields: [categoryId], references: [id])
+  images        ProductImage[]
+  inventory     Inventory[]
+  movements     InventoryMovement[]
+  purchaseLines PurchaseLine[]
+  cartLines     CartLine[]
+  orderLines    OrderLine[]
+  buildItems    BuildItem[]
+  wishlistedBy  WishlistItem[]
 
   @@index([categoryId, status])
 }
@@ -197,6 +200,9 @@ model Inventory {
   // Held by unpaid orders (Phase 2). Available = onHand - reserved.
   reserved     Int    @default(0)
   reorderPoint Int    @default(0)
+  // Moving weighted average cost per unit at this location, in cents
+  // (fractional, so repeated averaging doesn't drift). Null until known.
+  avgCostCents Float?
 
   product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   location Location @relation(fields: [locationId], references: [id])
@@ -212,23 +218,71 @@ enum MovementReason {
   SALE
   RETURN
   WRITE_OFF
+  PURCHASE
 }
 
 model InventoryMovement {
-  id         String         @id @default(cuid())
-  productId  String
-  locationId String
-  delta      Int
-  reason     MovementReason
-  note       String?
-  actorId    String?
-  createdAt  DateTime       @default(now())
+  id            String         @id @default(cuid())
+  productId     String
+  locationId    String
+  delta         Int
+  reason        MovementReason
+  // Cost per unit of the units moved, when known (landed cost for purchases).
+  unitCostCents Float?
+  note          String?
+  actorId       String?
+  createdAt     DateTime       @default(now())
 
   product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   location Location @relation(fields: [locationId], references: [id])
   actor    User?    @relation(fields: [actorId], references: [id])
 
   @@index([productId, createdAt])
+}
+
+enum CostSplit {
+  VALUE
+  UNITS
+}
+
+// Stock bought from a supplier. Shipping, duties and other fees are spread
+// over the lines (by value or by units) into each line's landed unit cost.
+model Purchase {
+  id            String         @id @default(cuid())
+  number        Int            @unique @default(autoincrement())
+  locationId    String
+  supplier      String
+  reference     String?
+  purchasedAt   DateTime
+  shippingCents Int            @default(0)
+  dutiesCents   Int            @default(0)
+  otherCents    Int            @default(0)
+  split         CostSplit      @default(VALUE)
+  note          String?
+  actorId       String?
+  createdAt     DateTime       @default(now())
+  lines         PurchaseLine[]
+
+  location Location @relation(fields: [locationId], references: [id])
+  actor    User?    @relation(fields: [actorId], references: [id])
+
+  @@index([purchasedAt])
+}
+
+model PurchaseLine {
+  id                  String @id @default(cuid())
+  purchaseId          String
+  productId           String
+  quantity            Int
+  // What the supplier charged per unit, before shipping and duties.
+  unitCostCents       Int
+  // Unit cost plus this line's share of shipping, duties and fees.
+  landedUnitCostCents Float
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id])
+
+  @@index([productId])
 }
 
 // ─── Settings & tax ──────────────────────────────────────────────────────────
@@ -381,6 +435,8 @@ model OrderLine {
   buildGroup     String?
   // Which builder slot the part filled, for the build sheet.
   slot           BuildSlot?
+  // Average cost at the store when the order was handed over (for profit).
+  unitCostCents  Float?
 
   order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product     Product      @relation(fields: [productId], references: [id])

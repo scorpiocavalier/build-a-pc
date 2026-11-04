@@ -182,6 +182,30 @@ export default async function SettingsPage() {
                 inputMode="numeric"
               />
             </Field>
+            <Field
+              label="Target margin (%)"
+              htmlFor="targetMarginPercent"
+              hint="Inventory flags products whose margin falls below this."
+            >
+              <Input
+                id="targetMarginPercent"
+                name="targetMarginPercent"
+                defaultValue={settings.targetMarginPercent}
+                inputMode="numeric"
+              />
+            </Field>
+            <Field
+              label="Cost change alert (%)"
+              htmlFor="costDriftPercent"
+              hint="Flags products whose last purchase cost is this far from the average."
+            >
+              <Input
+                id="costDriftPercent"
+                name="costDriftPercent"
+                defaultValue={settings.costDriftPercent}
+                inputMode="numeric"
+              />
+            </Field>
           </div>
         </SettingsForm>
       </Section>

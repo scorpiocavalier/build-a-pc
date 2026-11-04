@@ -17,6 +17,12 @@ test("an admin takes a cash order from confirmation to pickup", async ({
 }) => {
   const product = await createProduct(sql, { priceCents: 5000 });
   const email = uniqueEmail("admin-cash");
+  // Montreal's average cost, recorded on the sale for profit reports.
+  await sql.query(
+    `UPDATE "Inventory" SET "avgCostCents" = 3000 WHERE "productId" = $1
+       AND "locationId" = (SELECT id FROM "Location" WHERE code = 'MTL')`,
+    [product.id],
+  );
 
   // A customer in a separate browser places a cash order.
   const customer = await browser.newPage();
@@ -60,6 +66,10 @@ test("an admin takes a cash order from confirmation to pickup", async ({
     [product.id],
   );
   expect(movements.rows).toEqual([{ delta: -3, reason: "SALE" }]);
+  const lines = await sql.query(`SELECT "unitCostCents" FROM "OrderLine" WHERE "orderId" = $1`, [
+    order.id,
+  ]);
+  expect(lines.rows).toEqual([{ unitCostCents: 3000 }]);
 
   await customer.goto(`/en/orders/${order.id}?t=${order.accessToken}`);
   await expect(customer.getByText("Completed", { exact: true })).toBeVisible();

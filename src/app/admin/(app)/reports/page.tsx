@@ -128,7 +128,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
 
         <Panel title="Top products">
           <Table
-            head={["Product", "Units", "Sales"]}
+            head={["Product", "Units", "Sales", "Profit", "Margin"]}
             rows={report.topProducts.map((p) => [
               <span key="n">
                 {(p.name as LocalizedText | null)?.en ?? p.sku}{" "}
@@ -136,15 +136,52 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
               </span>,
               String(p.units),
               money(p.cents),
+              p.profitCents === null ? "—" : money(Math.round(p.profitCents)),
+              p.profitCents === null || p.costedCents === 0
+                ? "—"
+                : `${((p.profitCents / p.costedCents) * 100).toFixed(0)}%`,
             ])}
             empty="No sales in this period."
           />
         </Panel>
 
-        <Panel title="Stock on hand now (at selling price)">
+        <Panel title="Gross profit (orders handed over in this period)">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+            <dt className="text-muted">Sales (before tax)</dt>
+            <dd className="text-right tabular-nums">{money(report.profit.salesCents)}</dd>
+            <dt className="text-muted">Cost of goods</dt>
+            <dd className="text-right tabular-nums">
+              {money(Math.round(report.profit.costCents))}
+            </dd>
+            <dt className="text-muted">Gross profit</dt>
+            <dd className="text-right font-semibold tabular-nums">
+              {money(Math.round(report.profit.profitCents))}
+            </dd>
+            <dt className="text-muted">Margin</dt>
+            <dd className="text-right tabular-nums">
+              {report.profit.salesCents
+                ? `${((report.profit.profitCents / report.profit.salesCents) * 100).toFixed(1)}%`
+                : "—"}
+            </dd>
+          </dl>
+          {report.profit.uncostedLines > 0 && (
+            <p className="mt-2 text-xs text-muted">
+              Leaves out {report.profit.uncostedLines} order line
+              {report.profit.uncostedLines === 1 ? "" : "s"} sold with no known cost. Assembly fees
+              and shipping charged to customers aren&apos;t counted.
+            </p>
+          )}
+        </Panel>
+
+        <Panel title="Stock on hand now">
           <Table
-            head={["Location", "Units", "Value"]}
-            rows={report.stockValue.map((r) => [r.code, String(r.units), money(r.cents)])}
+            head={["Location", "Units", "At selling price", "At cost"]}
+            rows={report.stockValue.map((r) => [
+              r.code,
+              String(r.units),
+              money(r.cents),
+              `${money(Math.round(r.costCents))}${r.uncosted ? ` (${r.uncosted} units with no cost)` : ""}`,
+            ])}
             empty="No stock."
           />
         </Panel>
