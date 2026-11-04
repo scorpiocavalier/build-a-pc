@@ -3,7 +3,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import type { LocalizedText } from "@/lib/localized";
+import type { Facet } from "@/lib/catalog/filters";
 import { parseLocation, parseStockLevel } from "@/lib/inventory/filter";
+import { formatOption, formatSpecValue } from "@/lib/specs/format";
 import { cn } from "@/lib/utils";
 import { inventoryFilterOptions, listInventory, listMovements } from "@/server/admin/inventory";
 import { requireAdmin } from "@/server/require-admin";
@@ -40,8 +42,14 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
     location: parseLocation(one("location")),
     // "low=1" is the older link format (e.g. from the Today page).
     stock: one("low") === "1" ? ("low" as const) : parseStockLevel(one("stock")),
+    // Spec filters arrive as "spec.socket=AM5" and so on.
+    specs: Object.fromEntries(
+      Object.keys(params)
+        .filter((k) => k.startsWith("spec.") && one(k))
+        .map((k) => [k.slice(5), one(k)]),
+    ),
   };
-  const [rows, options] = await Promise.all([
+  const [{ rows, specFacets }, options] = await Promise.all([
     listInventory(filters, settings.lowStockThreshold),
     inventoryFilterOptions(),
   ]);
@@ -51,7 +59,16 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
     !!filters.brand ||
     !!filters.status ||
     filters.location !== "all" ||
-    filters.stock !== "all";
+    filters.stock !== "all" ||
+    Object.keys(filters.specs).length > 0;
+  const optionLabel = (facet: Facet, value: string) => {
+    const field = facet.field!;
+    if (field.type === "boolean") return formatSpecValue(field, value === "true", "en");
+    if (field.type === "int" || field.type === "decimal") {
+      return formatSpecValue(field, Number(value), "en");
+    }
+    return formatOption(field, value, "en");
+  };
   // The history narrows to one product when the search is its exact SKU.
   const exactSku = rows.find((r) => r.sku.toLowerCase() === filters.q.trim().toLowerCase())?.sku;
   const movements = await listMovements(exactSku);
@@ -156,10 +173,10 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
           <Select
             name="category"
             defaultValue={filters.category ?? ""}
-            aria-label="Category"
+            aria-label="Part"
             className="w-44"
           >
-            <option value="">All categories</option>
+            <option value="">All parts</option>
             {options.categories.map((c) => (
               <option key={c.slug} value={c.slug}>
                 {(c.name as LocalizedText).en}
@@ -206,6 +223,25 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             <option value="low">Low ({settings.lowStockThreshold} or fewer free)</option>
             <option value="out">Out of stock</option>
           </Select>
+          {specFacets.map((facet) => {
+            const label = (facet.field!.label as LocalizedText).en;
+            return (
+              <Select
+                key={facet.key}
+                name={`spec.${facet.key}`}
+                defaultValue={facet.options.find((o) => o.selected)?.value ?? ""}
+                aria-label={label}
+                className="w-44"
+              >
+                <option value="">Any {label.toLowerCase()}</option>
+                {facet.options.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {optionLabel(facet, o.value)} ({o.count})
+                  </option>
+                ))}
+              </Select>
+            );
+          })}
           <Button variant="outline">Filter</Button>
           {filtered && (
             <Link href="/admin/inventory" className="text-sm text-muted hover:text-foreground">
@@ -215,6 +251,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
         </form>
         <p role="status" className="text-sm text-muted">
           {rows.length} {rows.length === 1 ? "product" : "products"}
+          {!filters.category && " · pick a part and press Filter to filter by its specs"}
         </p>
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">

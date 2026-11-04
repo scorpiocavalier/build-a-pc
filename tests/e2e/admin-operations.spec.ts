@@ -243,7 +243,7 @@ test("inventory can be filtered with dropdowns", async ({ adminPage, sql }) => {
   const row = page.getByRole("row", { name: new RegExp(product.sku) });
   await expect(row).toBeVisible();
 
-  await page.getByLabel("Category").selectOption("cooler");
+  await page.getByLabel("Part", { exact: true }).selectOption("cooler");
   await page.locator("#filter-location").selectOption("TOR");
   await page.getByLabel("Stock", { exact: true }).selectOption("out");
   await page.getByRole("button", { name: "Filter" }).click();
@@ -263,4 +263,24 @@ test("inventory can be filtered with dropdowns", async ({ adminPage, sql }) => {
 
   await page.getByRole("link", { name: "Clear filters" }).click();
   await expect(page).toHaveURL(/\/admin\/inventory$/);
+});
+
+test("inventory can be filtered by a part's specs", async ({ adminPage: page }) => {
+  await page.goto("/admin/inventory");
+  await expect(page.getByLabel("Socket", { exact: true })).toHaveCount(0);
+
+  await page.getByLabel("Part", { exact: true }).selectOption("motherboard");
+  await page.getByRole("button", { name: "Filter" }).click();
+  const socket = page.getByLabel("Socket", { exact: true });
+  await expect(socket).toBeVisible();
+
+  const option = socket.locator("option").nth(1);
+  const value = (await option.getAttribute("value"))!;
+  const count = Number((await option.textContent())!.match(/\((\d+)\)$/)![1]);
+  await socket.selectOption(value);
+  await page.getByRole("button", { name: "Filter" }).click();
+  await expect(page).toHaveURL(new RegExp(`spec\\.socket=${value}`));
+  await expect(
+    page.getByRole("status").filter({ hasText: new RegExp(`^${count} products?`) }),
+  ).toBeVisible();
 });
