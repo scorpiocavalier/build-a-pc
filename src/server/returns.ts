@@ -13,6 +13,7 @@ import { allocateRefund, computeReturnRefund } from "@/lib/returns/refund";
 import { audit } from "@/server/audit";
 import { CATALOG_TAG } from "@/server/catalog/queries";
 import { db } from "@/server/db";
+import { receiveUnits } from "@/server/inventory-cost";
 import { refundPaymentIntent } from "@/server/payments/stripe";
 import { getSettings } from "@/server/settings";
 import { sendReturnEmail, notifyAdminsOfReturn } from "@/server/email/return-emails";
@@ -273,16 +274,18 @@ export async function completeReturn(
       if (condition === "RESTOCK") {
         const orderLine = order.lines.find((l) => l.id === line.orderLineId)!;
         const key = { productId: orderLine.productId, locationId: order.locationId };
-        await tx.inventory.upsert({
-          where: { productId_locationId: key },
-          create: { ...key, onHand: line.quantity },
-          update: { onHand: { increment: line.quantity } },
+        // Back on the shelf at what it cost when it was sold.
+        await receiveUnits(tx, {
+          ...key,
+          quantity: line.quantity,
+          unitCostCents: orderLine.unitCostCents,
         });
         await tx.inventoryMovement.create({
           data: {
             ...key,
             delta: line.quantity,
             reason: "RETURN",
+            unitCostCents: orderLine.unitCostCents,
             note: `RMA-${request.number}`,
             actorId: input.actorId,
           },

@@ -20,6 +20,7 @@ import {
   createCheckoutSession,
   refundPaymentIntent,
 } from "@/server/payments/stripe";
+import { averageCost } from "@/server/inventory-cost";
 import { getSettings, stripeEnabled } from "@/server/settings";
 
 import { loadOrder, type OrderView } from "./view";
@@ -379,6 +380,9 @@ export async function changeStatus(
     if (to === "COMPLETED") {
       // The goods have left: turn the reservation into a real stock deduction.
       for (const line of order.lines) {
+        // Record what the units cost, for profit reporting.
+        const unitCostCents = await averageCost(tx, line.productId, order.locationId);
+        await tx.orderLine.update({ where: { id: line.id }, data: { unitCostCents } });
         await tx.$executeRaw`
           UPDATE "Inventory"
           SET "onHand" = "onHand" - ${line.quantity}, reserved = GREATEST(reserved - ${line.quantity}, 0)
@@ -389,6 +393,7 @@ export async function changeStatus(
             locationId: order.locationId,
             delta: -line.quantity,
             reason: "SALE",
+            unitCostCents,
             note: `Order ${order.number}`,
             actorId: actorId ?? null,
           },

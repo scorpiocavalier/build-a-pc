@@ -10,7 +10,15 @@ export type AuditEntry = {
   actorId: string | null;
   action: string;
   entity:
-    "product" | "order" | "return" | "inventory" | "settings" | "build" | "import" | "customer";
+    | "product"
+    | "order"
+    | "return"
+    | "inventory"
+    | "settings"
+    | "build"
+    | "import"
+    | "customer"
+    | "purchase";
   entityId?: string | null;
   summary: string;
   details?: Prisma.InputJsonValue;

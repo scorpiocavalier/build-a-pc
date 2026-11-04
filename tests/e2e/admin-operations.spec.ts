@@ -222,7 +222,8 @@ test("reports and the audit log load for a period", async ({ adminPage }) => {
     "Received by payment method",
     "Orders placed (not cancelled)",
     "Top products",
-    "Stock on hand now (at selling price)",
+    "Stock on hand now",
+    "Gross profit (orders handed over in this period)",
     "Deposits paid, balance owing",
   ]) {
     await expect(adminPage.getByRole("region", { name: panel })).toBeVisible();
@@ -291,4 +292,74 @@ test("inventory can be filtered by a part's specs", async ({ adminPage: page }) 
   await expect(
     page.getByRole("status").filter({ hasText: new RegExp(`^${count} products?`) }),
   ).toBeVisible();
+});
+
+test("purchases keep a weighted average cost per location", async ({ adminPage, sql }) => {
+  const product = await createProduct(sql, { stockTOR: 2, stockMTL: 0, priceCents: 1500 });
+  const page = adminPage;
+  const avg = async (code: "TOR" | "MTL") => {
+    const { rows } = await sql.query<{ avgCostCents: number | null }>(
+      `SELECT i."avgCostCents" FROM "Inventory" i JOIN "Location" l ON l.id = i."locationId"
+       WHERE i."productId" = $1 AND l.code = $2`,
+      [product.id, code],
+    );
+    return rows[0]?.avgCostCents ?? null;
+  };
+
+  // The 2 units already in Toronto cost $10.
+  await page.goto("/admin/purchases");
+  const setCost = page.getByRole("region", { name: "Set average cost" });
+  await setCost.getByLabel("SKU").fill(product.sku);
+  await setCost.getByLabel("Cost per unit").fill("10.00");
+  await setCost.getByRole("button", { name: "Set cost" }).click();
+  await expect(setCost.getByText("Saved.")).toBeVisible();
+  expect(await avg("TOR")).toBe(1000);
+
+  // 10 more at $12 into Toronto: (2 × 10 + 10 × 12) / 12 = $11.67.
+  const receive = page.getByRole("region", { name: "Receive stock" });
+  await receive.getByLabel("Supplier").fill("Test Distributor");
+  await receive.getByLabel("SKU, line 1").fill(product.sku);
+  await receive.getByLabel("Units, line 1").fill("10");
+  await receive.getByLabel("Unit cost, line 1").fill("12.00");
+  await receive.getByRole("button", { name: "Receive stock" }).click();
+  await expect(receive.getByText(/Received as PO-\d+\./)).toBeVisible();
+  expect(await avg("TOR")).toBeCloseTo(1166.67, 2);
+  expect(await stock(sql, product.id, "TOR")).toEqual({ onHand: 12, reserved: 0 });
+  const firstPo = (await receive.getByRole("status").textContent())!;
+
+  // Montreal: 4 at $20 plus $8 shipping = $22 landed, its own average.
+  await receive.getByLabel("Received at").selectOption("MTL");
+  await receive.getByLabel("Supplier").fill("Test Distributor");
+  await receive.getByLabel("SKU, line 1").fill(product.sku);
+  await receive.getByLabel("Units, line 1").fill("4");
+  await receive.getByLabel("Unit cost, line 1").fill("20.00");
+  await receive.getByLabel("Shipping").fill("8.00");
+  await expect(receive.getByLabel("Landed cost per unit, line 1")).toHaveText("$22.00");
+  await receive.getByRole("button", { name: "Receive stock" }).click();
+  await expect(receive.getByRole("status")).toHaveText(/Received as PO-\d+\./);
+  await expect(receive.getByRole("status")).not.toHaveText(firstPo);
+  expect(await avg("MTL")).toBeCloseTo(2200, 2);
+  expect(await avg("TOR")).toBeCloseTo(1166.67, 2);
+  await expect(page.getByText("Test Distributor").first()).toBeVisible();
+
+  // The inventory shows each store's cost and margin. Montreal's $22 cost on
+  // a $15 price is a negative margin, so it needs a price review.
+  await page.goto(`/admin/inventory?q=${product.sku}&cost=review`);
+  const row = page.getByRole("row", { name: new RegExp(product.sku) });
+  await expect(row).toContainText("$11.67 · 22%");
+  await expect(row).toContainText("$22.00 · -47%");
+  await page.locator("#filter-location").selectOption("TOR");
+  await expect(row).toHaveCount(0);
+
+  // Moved units carry the sending store's cost: (12 × 11.67 + 2 × 22) / 14.
+  await page.goto("/admin/inventory");
+  const move = page.getByRole("region", { name: "Move stock" });
+  await move.getByLabel("SKU").fill(product.sku);
+  await move.getByLabel("Units").fill("2");
+  await move.getByLabel("From").selectOption("MTL");
+  await move.getByLabel("To").selectOption("TOR");
+  await move.getByRole("button", { name: "Move stock" }).click();
+  await expect(move.getByText("Saved.")).toBeVisible();
+  expect(await avg("TOR")).toBeCloseTo(1314.29, 2);
+  expect(await avg("MTL")).toBeCloseTo(2200, 2);
 });

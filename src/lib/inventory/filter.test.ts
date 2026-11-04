@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { matchesStock, parseLocation, parseStockLevel } from "./filter";
+import { matchesCost, matchesStock, parseLocation, parseStockLevel, type CostRow } from "./filter";
 
 const row = (tor: number, mtl: number, reserved = 0) => ({
   stock: { TOR: { onHand: tor, reserved }, MTL: { onHand: mtl, reserved: 0 } },
@@ -31,5 +31,38 @@ describe("parsers", () => {
     expect(parseStockLevel("nope")).toBe("all");
     expect(parseLocation("MTL")).toBe("MTL");
     expect(parseLocation(undefined)).toBe("all");
+  });
+});
+
+describe("matchesCost", () => {
+  const rules = { targetMarginPercent: 15, costDriftPercent: 10 };
+  const row = (
+    tor: Partial<CostRow["stock"]["TOR"]>,
+    mtl: Partial<CostRow["stock"]["MTL"]> = {},
+  ) => ({
+    priceCents: 10_000,
+    stock: {
+      TOR: { onHand: 1, avgCostCents: 7_000, lastCostCents: 7_000, ...tor },
+      MTL: { onHand: 1, avgCostCents: 7_000, lastCostCents: 7_000, ...mtl },
+    },
+  });
+  it("flags a margin under the target", () => {
+    expect(
+      matchesCost(row({ avgCostCents: 9_000, lastCostCents: 9_000 }), "review", "all", rules),
+    ).toBe(true);
+    expect(matchesCost(row({}), "review", "all", rules)).toBe(false);
+  });
+  it("flags a last purchase far from the average", () => {
+    expect(matchesCost(row({ lastCostCents: 8_000 }), "review", "all", rules)).toBe(true);
+    expect(matchesCost(row({ lastCostCents: 7_500 }), "review", "all", rules)).toBe(false);
+  });
+  it("looks only at the chosen location", () => {
+    const r = row({}, { avgCostCents: 9_500 });
+    expect(matchesCost(r, "review", "TOR", rules)).toBe(false);
+    expect(matchesCost(r, "review", "MTL", rules)).toBe(true);
+  });
+  it("finds stock with no cost", () => {
+    expect(matchesCost(row({ avgCostCents: null }), "nocost", "all", rules)).toBe(true);
+    expect(matchesCost(row({ avgCostCents: null, onHand: 0 }), "nocost", "all", rules)).toBe(false);
   });
 });
