@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import type { LocalizedText } from "@/lib/localized";
 import type { Facet } from "@/lib/catalog/filters";
@@ -163,13 +162,13 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
       </div>
 
       <section className="flex flex-col gap-3">
-        {/* Keyed by the query so "Clear filters" and back/forward reset the fields. */}
-        <FilterForm key={JSON.stringify(params)}>
+        <FilterForm>
           <Input
             name="q"
             defaultValue={filters.q}
             placeholder="SKU, name or brand"
             aria-label="Search stock"
+            type="search"
             className="w-64"
           />
           <Select
@@ -244,7 +243,6 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
               </Select>
             );
           })}
-          <Button variant="outline">Filter</Button>
           {filtered && (
             <Link href="/admin/inventory" className="text-sm text-muted hover:text-foreground">
               Clear filters
@@ -253,7 +251,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
         </FilterForm>
         <p role="status" className="text-sm text-muted">
           {rows.length} {rows.length === 1 ? "product" : "products"}
-          {!filters.category && " · pick a part and press Filter to filter by its specs"}
+          {!filters.category && " · pick a part to filter by its specs"}
         </p>
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">

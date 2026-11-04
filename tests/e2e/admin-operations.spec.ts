@@ -234,38 +234,44 @@ test("reports and the audit log load for a period", async ({ adminPage }) => {
   await expect(adminPage.getByRole("heading", { name: "Audit log" })).toBeVisible();
 });
 
-test("inventory can be filtered with dropdowns", async ({ adminPage, sql }) => {
+test("inventory filters apply as you type and pick", async ({ adminPage, sql }) => {
   // createProduct puts test products in the CPU cooler category.
   const product = await createProduct(sql, { stockTOR: 0, stockMTL: 3 });
   const page = adminPage;
-  await page.goto(`/admin/inventory?q=${product.sku}`);
+  await page.goto("/admin/inventory");
   // Set on the window: a full page reload would wipe it.
   await page.evaluate(() => ((window as unknown as { kept: boolean }).kept = true));
+  await expect(page.getByRole("button", { name: "Filter" })).toHaveCount(0);
 
+  // The search applies after a pause in typing; no button or Enter needed.
+  await page.getByLabel("Search stock").fill(product.sku);
+  await expect(page).toHaveURL(new RegExp(`q=${product.sku}`));
   const row = page.getByRole("row", { name: new RegExp(product.sku) });
   await expect(row).toBeVisible();
+  await expect(page.getByLabel("Search stock")).toHaveValue(product.sku);
 
   await page.getByLabel("Part", { exact: true }).selectOption("cooler");
-  await page.locator("#filter-location").selectOption("TOR");
-  await page.getByLabel("Stock", { exact: true }).selectOption("out");
-  await page.getByRole("button", { name: "Filter" }).click();
   await expect(page).toHaveURL(/category=cooler/);
+  await page.locator("#filter-location").selectOption("TOR");
+  await expect(page).toHaveURL(/location=TOR/);
+  await page.getByLabel("Stock", { exact: true }).selectOption("out");
+  await expect(page).toHaveURL(/stock=out/);
   await expect(row).toBeVisible();
 
   // In stock in Toronto: it has none there.
   await page.getByLabel("Stock", { exact: true }).selectOption("in");
-  await page.getByRole("button", { name: "Filter" }).click();
   await expect(row).toHaveCount(0);
 
   // Montreal has 3.
   await page.locator("#filter-location").selectOption("MTL");
-  await page.getByRole("button", { name: "Filter" }).click();
   await expect(row).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: /^1 product$/ })).toBeVisible();
 
   await page.getByRole("link", { name: "Clear filters" }).click();
   await expect(page).toHaveURL(/\/admin\/inventory$/);
   await expect(page.locator("#filter-location")).toHaveValue("all");
+  await expect(page.getByLabel("Part", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel("Search stock")).toHaveValue("");
   expect(await page.evaluate(() => (window as unknown as { kept?: boolean }).kept)).toBe(true);
 });
 
@@ -273,7 +279,6 @@ test("inventory can be filtered by a part's specs", async ({ adminPage: page }) 
   await page.goto("/admin/inventory");
   await expect(page.getByLabel("Socket", { exact: true })).toHaveCount(0);
 
-  // Changing a dropdown applies it without pressing Filter.
   await page.getByLabel("Part", { exact: true }).selectOption("motherboard");
   const socket = page.getByLabel("Socket", { exact: true });
   await expect(socket).toBeVisible();
@@ -282,7 +287,6 @@ test("inventory can be filtered by a part's specs", async ({ adminPage: page }) 
   const value = (await option.getAttribute("value"))!;
   const count = Number((await option.textContent())!.match(/\((\d+)\)$/)![1]);
   await socket.selectOption(value);
-  await page.getByRole("button", { name: "Filter" }).click();
   await expect(page).toHaveURL(new RegExp(`spec\\.socket=${value}`));
   await expect(
     page.getByRole("status").filter({ hasText: new RegExp(`^${count} products?`) }),
