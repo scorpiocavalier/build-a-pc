@@ -233,3 +233,54 @@ test("reports and the audit log load for a period", async ({ adminPage }) => {
   await adminPage.getByRole("link", { name: "Audit log" }).click();
   await expect(adminPage.getByRole("heading", { name: "Audit log" })).toBeVisible();
 });
+
+test("inventory can be filtered with dropdowns", async ({ adminPage, sql }) => {
+  // createProduct puts test products in the CPU cooler category.
+  const product = await createProduct(sql, { stockTOR: 0, stockMTL: 3 });
+  const page = adminPage;
+  await page.goto(`/admin/inventory?q=${product.sku}`);
+
+  const row = page.getByRole("row", { name: new RegExp(product.sku) });
+  await expect(row).toBeVisible();
+
+  await page.getByLabel("Part", { exact: true }).selectOption("cooler");
+  await page.locator("#filter-location").selectOption("TOR");
+  await page.getByLabel("Stock", { exact: true }).selectOption("out");
+  await page.getByRole("button", { name: "Filter" }).click();
+  await expect(page).toHaveURL(/category=cooler/);
+  await expect(row).toBeVisible();
+
+  // In stock in Toronto: it has none there.
+  await page.getByLabel("Stock", { exact: true }).selectOption("in");
+  await page.getByRole("button", { name: "Filter" }).click();
+  await expect(row).toHaveCount(0);
+
+  // Montreal has 3.
+  await page.locator("#filter-location").selectOption("MTL");
+  await page.getByRole("button", { name: "Filter" }).click();
+  await expect(row).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^1 product$/ })).toBeVisible();
+
+  await page.getByRole("link", { name: "Clear filters" }).click();
+  await expect(page).toHaveURL(/\/admin\/inventory$/);
+});
+
+test("inventory can be filtered by a part's specs", async ({ adminPage: page }) => {
+  await page.goto("/admin/inventory");
+  await expect(page.getByLabel("Socket", { exact: true })).toHaveCount(0);
+
+  await page.getByLabel("Part", { exact: true }).selectOption("motherboard");
+  await page.getByRole("button", { name: "Filter" }).click();
+  const socket = page.getByLabel("Socket", { exact: true });
+  await expect(socket).toBeVisible();
+
+  const option = socket.locator("option").nth(1);
+  const value = (await option.getAttribute("value"))!;
+  const count = Number((await option.textContent())!.match(/\((\d+)\)$/)![1]);
+  await socket.selectOption(value);
+  await page.getByRole("button", { name: "Filter" }).click();
+  await expect(page).toHaveURL(new RegExp(`spec\\.socket=${value}`));
+  await expect(
+    page.getByRole("status").filter({ hasText: new RegExp(`^${count} products?`) }),
+  ).toBeVisible();
+});
