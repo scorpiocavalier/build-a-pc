@@ -13,6 +13,7 @@ import { getSettings } from "@/server/settings";
 
 import { SettingsForm } from "../settings/settings-forms";
 
+import { FilterForm } from "./filter-form";
 import { adjustAction, transferAction } from "./actions";
 
 export const metadata = { title: "Inventory" };
@@ -162,7 +163,8 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
       </div>
 
       <section className="flex flex-col gap-3">
-        <form className="flex flex-wrap items-end gap-2" role="search">
+        {/* Keyed by the query so "Clear filters" and back/forward reset the fields. */}
+        <FilterForm key={JSON.stringify(params)}>
           <Input
             name="q"
             defaultValue={filters.q}
@@ -248,7 +250,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
               Clear filters
             </Link>
           )}
-        </form>
+        </FilterForm>
         <p role="status" className="text-sm text-muted">
           {rows.length} {rows.length === 1 ? "product" : "products"}
           {!filters.category && " · pick a part and press Filter to filter by its specs"}
