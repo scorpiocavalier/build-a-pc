@@ -1,6 +1,8 @@
-import { Field, Input, Select } from "@/components/ui/field";
+import { LocationField } from "@/components/admin/location-options";
+import { Field, Input } from "@/components/ui/field";
 import type { LocalizedText } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
+import { LOCATION_NAMES, SINGLE_STORE } from "@/lib/store-config";
 import { listPurchases } from "@/server/admin/purchases";
 import { db } from "@/server/db";
 import { requireAdmin } from "@/server/require-admin";
@@ -63,12 +65,7 @@ export default async function PurchasesPage() {
             <Field label="SKU" htmlFor="cost-sku">
               <Input id="cost-sku" name="sku" list="skus" required />
             </Field>
-            <Field label="Location" htmlFor="cost-location">
-              <Select id="cost-location" name="location" defaultValue="TOR">
-                <option value="TOR">Toronto</option>
-                <option value="MTL">Montreal</option>
-              </Select>
-            </Field>
+            <LocationField id="cost-location" />
             <Field label="Cost per unit" htmlFor="cost-cost">
               <Input id="cost-cost" name="cost" inputMode="decimal" placeholder="0.00" required />
             </Field>
@@ -93,7 +90,7 @@ export default async function PurchasesPage() {
                   <span>{date.format(p.purchasedAt)}</span>
                   <span>{p.supplier}</span>
                   {p.reference && <span className="text-muted">#{p.reference}</span>}
-                  <span>{p.location.code === "TOR" ? "Toronto" : "Montreal"}</span>
+                  {!SINGLE_STORE && <span>{LOCATION_NAMES[p.location.code]}</span>}
                   <span className="ml-auto font-semibold tabular-nums">{money(total)}</span>
                 </div>
                 <table className="w-full">

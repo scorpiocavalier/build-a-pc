@@ -1,3 +1,4 @@
+import { locationOrDefault } from "@/lib/store-config";
 import "server-only";
 
 import type { BuildSlot } from "@/generated/prisma/enums";
@@ -38,7 +39,7 @@ export function builderData(build: BuildView | null, locale: string): BuilderDat
     parts[item.slot] = view;
   }
   return {
-    location: build?.location ?? "TOR",
+    location: locationOrDefault(build?.location),
     parts,
     issues: build?.issues ?? [],
     missing: build?.missing ?? [],

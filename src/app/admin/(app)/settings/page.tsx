@@ -4,6 +4,8 @@ import { db } from "@/server/db";
 import { requireAdmin } from "@/server/require-admin";
 import { getSettings, stripeEnabled } from "@/server/settings";
 
+import { LOCATION_CODES } from "@/lib/store-config";
+
 import { saveLocation, saveStoreSettings, saveTaxRate } from "./actions";
 import { SettingsForm } from "./settings-forms";
 
@@ -18,7 +20,10 @@ export default async function SettingsPage() {
   await requireAdmin();
   const [settings, locations, taxRates] = await Promise.all([
     getSettings(),
-    db.location.findMany({ orderBy: { code: "desc" } }),
+    db.location.findMany({
+      where: { code: { in: [...LOCATION_CODES] } },
+      orderBy: { code: "desc" },
+    }),
     db.taxRate.findMany({ orderBy: { province: "asc" } }),
   ]);
 

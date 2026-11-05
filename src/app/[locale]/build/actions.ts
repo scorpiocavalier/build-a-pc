@@ -1,5 +1,6 @@
 "use server";
 
+import { isLocationCode } from "@/lib/store-config";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -40,7 +41,7 @@ export async function clearAction() {
 
 export async function locationAction(formData: FormData) {
   const location = String(formData.get("location")) as LocationCode;
-  if (location === "TOR" || location === "MTL") await setBuildLocation(location);
+  if (isLocationCode(location)) await setBuildLocation(location);
   refresh();
 }
 

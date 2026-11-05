@@ -1,3 +1,4 @@
+import { locationOrDefault } from "@/lib/store-config";
 import { X } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import Image from "next/image";
@@ -27,7 +28,7 @@ export async function SlotList({
     getTranslations("Catalog"),
     getLocale(),
   ]);
-  const location = build?.location ?? "TOR";
+  const location = locationOrDefault(build?.location);
   const locationName = catalog(`locations.${location}`);
   const errorSlots = new Set(
     (build?.issues ?? []).filter((i) => i.severity === "error").flatMap((i) => i.slots),

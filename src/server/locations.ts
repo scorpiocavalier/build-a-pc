@@ -3,6 +3,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 
 import type { LocalizedText } from "@/lib/localized";
+import { LOCATION_CODES } from "@/lib/store-config";
 import { db } from "@/server/db";
 
 // The stores, for the locations page, structured data and the footer.
@@ -22,7 +23,11 @@ export async function getLocations(): Promise<StoreLocation[]> {
   "use cache";
   cacheLife("hours");
   cacheTag(LOCATIONS_TAG);
-  const rows = await db.location.findMany({ where: { active: true }, orderBy: { code: "desc" } });
+  // Only this deployment's store(s); see src/lib/store-config.ts.
+  const rows = await db.location.findMany({
+    where: { active: true, code: { in: [...LOCATION_CODES] } },
+    orderBy: { code: "desc" },
+  });
   return rows.map((row) => ({
     code: row.code,
     name: row.name as LocalizedText,

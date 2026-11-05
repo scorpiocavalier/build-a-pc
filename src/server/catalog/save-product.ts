@@ -76,6 +76,7 @@ export async function saveProduct(
 
   const reason = options.stockReason ?? (existing ? "ADJUSTMENT" : "INITIAL");
   for (const [code, onHand] of Object.entries(input.stock)) {
+    if (onHand === undefined) continue;
     const location = await client.location.findUniqueOrThrow({
       where: { code: code as "TOR" | "MTL" },
     });

@@ -6,11 +6,12 @@ import { parseDollars } from "@/lib/money";
 import { receivePurchase, setAverageCost } from "@/server/admin/purchases";
 import { CATALOG_TAG } from "@/server/catalog/queries";
 import { requireAdmin } from "@/server/require-admin";
+import { locationOrDefault } from "@/lib/store-config";
 
 export type PurchaseState = { error?: string; saved?: string };
 
 const str = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
-const location = (value: string) => (value === "MTL" ? "MTL" : "TOR");
+const location = locationOrDefault;
 // Empty means zero for the optional fees; anything unreadable is rejected.
 const optionalCents = (value: string) => (value ? (parseDollars(value) ?? NaN) : 0);
 

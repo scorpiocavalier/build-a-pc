@@ -7,6 +7,11 @@ The full product and technical plan is in [`docs/PLAN.md`](docs/PLAN.md), and
 what's left before going live is in [`docs/LAUNCH.md`](docs/LAUNCH.md). To put
 a first version online on Vercel, follow [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
+Toronto and Montreal are separate businesses: the same code is deployed twice,
+once per store, chosen by `NEXT_PUBLIC_STORE_LOCATION`. See
+[`docs/TWO-STORES.md`](docs/TWO-STORES.md), including the rule for code that
+lists stores.
+
 ## Stack
 
 Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind CSS 4 ·

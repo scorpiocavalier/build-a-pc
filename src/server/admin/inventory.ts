@@ -2,6 +2,7 @@ import "server-only";
 
 import { Prisma, type LocationCode } from "@/generated/prisma/client";
 import { filterBySpecs } from "@/lib/catalog/admin-spec-filter";
+import { LOCATION_CODES } from "@/lib/store-config";
 import {
   matchesCost,
   matchesStock,
@@ -95,7 +96,7 @@ export async function listInventory(
         avgCostCents: i.avgCostCents,
       };
     }
-    const low = (["TOR", "MTL"] as const).some(
+    const low = LOCATION_CODES.some(
       (code) => stock[code].onHand - stock[code].reserved <= lowThreshold,
     );
     return { ...p, stock, low };

@@ -9,6 +9,7 @@ import { Input, Select } from "@/components/ui/field";
 import { specParams } from "@/lib/catalog/admin-spec-filter";
 import { PRODUCT_STATUSES } from "@/lib/catalog/product-input";
 import { formatMoney } from "@/lib/money";
+import { LOCATION_CODES, LOCATION_NAMES } from "@/lib/store-config";
 import { CATEGORIES } from "@/lib/specs/definitions";
 import { cn } from "@/lib/utils";
 import { listAdminProducts, listBrands } from "@/server/admin/products";
@@ -135,10 +136,14 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
               <th className="px-3 py-2 font-medium">SKU</th>
               <th className="px-3 py-2 font-medium">Category</th>
               <th className="px-3 py-2 text-right font-medium">Price</th>
-              <th className="px-3 py-2 text-right font-medium">Toronto</th>
-              <th className="px-3 py-2 text-right font-medium">Toronto cost · margin</th>
-              <th className="px-3 py-2 text-right font-medium">Montreal</th>
-              <th className="px-3 py-2 text-right font-medium">Montreal cost · margin</th>
+              {LOCATION_CODES.map((code) => [
+                <th key={code} className="px-3 py-2 text-right font-medium">
+                  {LOCATION_NAMES[code]}
+                </th>,
+                <th key={`${code}-cost`} className="px-3 py-2 text-right font-medium">
+                  {LOCATION_NAMES[code]} cost · margin
+                </th>,
+              ])}
               <th className="px-3 py-2 font-medium">Status</th>
             </tr>
           </thead>
@@ -163,18 +168,23 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
                 <td className="px-3 py-2 text-right tabular-nums">
                   {formatMoney(p.priceCents, "en")}
                 </td>
-                <td
-                  className={cn("px-3 py-2 text-right tabular-nums", !p.stock.TOR && "text-muted")}
-                >
-                  {p.stock.TOR}
-                </td>
-                <CostCell priceCents={p.priceCents} {...p.cost.TOR} rules={settings} />
-                <td
-                  className={cn("px-3 py-2 text-right tabular-nums", !p.stock.MTL && "text-muted")}
-                >
-                  {p.stock.MTL}
-                </td>
-                <CostCell priceCents={p.priceCents} {...p.cost.MTL} rules={settings} />
+                {LOCATION_CODES.map((code) => [
+                  <td
+                    key={code}
+                    className={cn(
+                      "px-3 py-2 text-right tabular-nums",
+                      !p.stock[code] && "text-muted",
+                    )}
+                  >
+                    {p.stock[code]}
+                  </td>,
+                  <CostCell
+                    key={`${code}-cost`}
+                    priceCents={p.priceCents}
+                    {...p.cost[code]}
+                    rules={settings}
+                  />,
+                ])}
                 <td className="px-3 py-2">
                   <span
                     className={cn(

@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
 import { formatOrderNumber } from "@/lib/checkout/order-number";
 import { formatMoney } from "@/lib/money";
+import { SINGLE_STORE } from "@/lib/store-config";
+import { LocationOptions } from "@/components/admin/location-options";
 import { cn } from "@/lib/utils";
 import { listAdminOrders } from "@/server/admin/orders";
 
@@ -52,16 +54,17 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
           <option value="CANCELLED">Cancelled</option>
           <option value="all">All</option>
         </Select>
-        <Select
-          name="location"
-          defaultValue={filters.location}
-          aria-label="Location"
-          className="w-40"
-        >
-          <option value="">Both locations</option>
-          <option value="TOR">Toronto</option>
-          <option value="MTL">Montreal</option>
-        </Select>
+        {!SINGLE_STORE && (
+          <Select
+            name="location"
+            defaultValue={filters.location}
+            aria-label="Location"
+            className="w-40"
+          >
+            <option value="">Both locations</option>
+            <LocationOptions />
+          </Select>
+        )}
         <Button variant="outline">Filter</Button>
       </form>
 

@@ -1,0 +1,32 @@
+{
+  "Metadata": {
+    "description": "Des PC de jeu sur mesure assemblés à la main à Montréal, et toutes les composantes pour monter le vôtre."
+  },
+  "Home": {
+    "eyebrow": "Montréal",
+    "locationsTitle": "Point de cueillette",
+    "steps": {
+      "handoff": {
+        "body": "Récupérez-le à Montréal, ou nous vous le livrons en personne."
+      }
+    }
+  },
+  "Catalog": {
+    "shopLead": "Tout ce que nous avons en stock pour votre prochain montage, à notre magasin de Montréal."
+  },
+  "Checkout": {
+    "deliveryHint": "Nous livrons en personne dans la région de Montréal."
+  },
+  "Legal": {
+    "locations": {
+      "description": "Cueillette et livraison locale à Montréal."
+    },
+    "terms": {
+      "sections": {
+        "fulfilment": {
+          "body": "La cueillette est offerte à notre magasin de Montréal. La livraison locale est offerte dans les secteurs indiqués sur notre page des magasins. Nous confirmons l’heure exacte avec vous; veuillez apporter une pièce d’identité avec photo à la cueillette."
+        }
+      }
+    }
+  }
+}

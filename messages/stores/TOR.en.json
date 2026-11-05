@@ -1,0 +1,32 @@
+{
+  "Metadata": {
+    "description": "Custom gaming PCs built by hand in Toronto, plus the parts to build your own."
+  },
+  "Home": {
+    "eyebrow": "Toronto",
+    "locationsTitle": "Pickup location",
+    "steps": {
+      "handoff": {
+        "body": "Collect it in Toronto, or we deliver it to you in person."
+      }
+    }
+  },
+  "Catalog": {
+    "shopLead": "Everything we stock for your next build, at our Toronto store."
+  },
+  "Checkout": {
+    "deliveryHint": "We deliver in person around Toronto."
+  },
+  "Legal": {
+    "locations": {
+      "description": "Pickup and local delivery in Toronto."
+    },
+    "terms": {
+      "sections": {
+        "fulfilment": {
+          "body": "Pickup is available at our Toronto store. Local delivery is available in the areas listed on our locations page. We confirm the exact time with you; please bring photo ID when picking up."
+        }
+      }
+    }
+  }
+}

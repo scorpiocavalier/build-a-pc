@@ -2,6 +2,7 @@
 
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 
+import { LocationField } from "@/components/admin/location-options";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { landedUnitCosts, type CostSplit } from "@/lib/inventory/cost";
@@ -64,12 +65,7 @@ export function PurchaseForm({ today }: { today: string }) {
       className="flex flex-col gap-5"
     >
       <div className="grid gap-3 sm:grid-cols-4">
-        <Field label="Received at" htmlFor="purchase-location">
-          <Select id="purchase-location" name="location" defaultValue="TOR">
-            <option value="TOR">Toronto</option>
-            <option value="MTL">Montreal</option>
-          </Select>
-        </Field>
+        <LocationField id="purchase-location" label="Received at" />
         <Field label="Supplier" htmlFor="purchase-supplier">
           <Input id="purchase-supplier" name="supplier" required />
         </Field>

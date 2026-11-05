@@ -1,3 +1,4 @@
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import { Share2 } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -65,7 +66,7 @@ async function Builder({ searchParams }: Pick<Props, "searchParams">) {
   const empty: BuildView = {
     id: "",
     shareId: "",
-    location: "TOR",
+    location: DEFAULT_LOCATION,
     featured: false,
     position: 0,
     name: null,

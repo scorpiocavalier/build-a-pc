@@ -3,11 +3,13 @@ import Link from "next/link";
 import { Field, Input, Select } from "@/components/ui/field";
 import type { LocalizedText } from "@/lib/localized";
 import { CostCell } from "@/components/admin/cost-cell";
+import { LocationField, LocationOptions } from "@/components/admin/location-options";
 import { FilterForm } from "@/components/admin/filter-form";
 import { SpecSelects } from "@/components/admin/spec-selects";
 import { specParams } from "@/lib/catalog/admin-spec-filter";
 import { parseCostFilter, parseLocation, parseStockLevel } from "@/lib/inventory/filter";
 import { formatMoney } from "@/lib/money";
+import { LOCATION_CODES, LOCATION_NAMES, SINGLE_STORE } from "@/lib/store-config";
 import { cn } from "@/lib/utils";
 import { inventoryFilterOptions, listInventory, listMovements } from "@/server/admin/inventory";
 import { requireAdmin } from "@/server/require-admin";
@@ -90,37 +92,38 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
       </datalist>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section aria-label="Move stock" className="rounded-lg border bg-surface/60 p-5">
-          <h2 className="mb-1 font-semibold">Move stock between locations</h2>
-          <p className="mb-4 text-sm text-muted">
-            Record it when the units physically leave. Reserved units can&apos;t be moved.
-          </p>
-          <SettingsForm action={transferAction} label="Move stock" keepValues>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="SKU" htmlFor="transfer-sku">
-                <Input id="transfer-sku" name="sku" list="skus" required />
-              </Field>
-              <Field label="Units" htmlFor="transfer-quantity">
-                <Input id="transfer-quantity" name="quantity" inputMode="numeric" required />
-              </Field>
-              <Field label="From" htmlFor="transfer-from">
-                <Select id="transfer-from" name="from" defaultValue="TOR">
-                  <option value="TOR">Toronto</option>
-                  <option value="MTL">Montreal</option>
-                </Select>
-              </Field>
-              <Field label="To" htmlFor="transfer-to">
-                <Select id="transfer-to" name="to" defaultValue="MTL">
-                  <option value="TOR">Toronto</option>
-                  <option value="MTL">Montreal</option>
-                </Select>
-              </Field>
-              <Field label="Note (optional)" htmlFor="transfer-note" className="sm:col-span-2">
-                <Input id="transfer-note" name="note" placeholder="e.g. for order ATG-10042" />
-              </Field>
-            </div>
-          </SettingsForm>
-        </section>
+        {/* Moving stock between stores only applies when one site runs both. */}
+        {!SINGLE_STORE && (
+          <section aria-label="Move stock" className="rounded-lg border bg-surface/60 p-5">
+            <h2 className="mb-1 font-semibold">Move stock between locations</h2>
+            <p className="mb-4 text-sm text-muted">
+              Record it when the units physically leave. Reserved units can&apos;t be moved.
+            </p>
+            <SettingsForm action={transferAction} label="Move stock" keepValues>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="SKU" htmlFor="transfer-sku">
+                  <Input id="transfer-sku" name="sku" list="skus" required />
+                </Field>
+                <Field label="Units" htmlFor="transfer-quantity">
+                  <Input id="transfer-quantity" name="quantity" inputMode="numeric" required />
+                </Field>
+                <Field label="From" htmlFor="transfer-from">
+                  <Select id="transfer-from" name="from" defaultValue="TOR">
+                    <LocationOptions />
+                  </Select>
+                </Field>
+                <Field label="To" htmlFor="transfer-to">
+                  <Select id="transfer-to" name="to" defaultValue="MTL">
+                    <LocationOptions />
+                  </Select>
+                </Field>
+                <Field label="Note (optional)" htmlFor="transfer-note" className="sm:col-span-2">
+                  <Input id="transfer-note" name="note" placeholder="e.g. for order ATG-10042" />
+                </Field>
+              </div>
+            </SettingsForm>
+          </section>
+        )}
 
         <section aria-label="Adjust stock" className="rounded-lg border bg-surface/60 p-5">
           <h2 className="mb-1 font-semibold">Adjust stock</h2>
@@ -135,12 +138,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
               <Field label="Change" htmlFor="adjust-delta" hint="e.g. 3 or -1">
                 <Input id="adjust-delta" name="delta" inputMode="numeric" required />
               </Field>
-              <Field label="Location" htmlFor="adjust-location">
-                <Select id="adjust-location" name="location" defaultValue="TOR">
-                  <option value="TOR">Toronto</option>
-                  <option value="MTL">Montreal</option>
-                </Select>
-              </Field>
+              <LocationField id="adjust-location" />
               <Field label="Type" htmlFor="adjust-reason">
                 <Select id="adjust-reason" name="reason" defaultValue="ADJUSTMENT">
                   <option value="ADJUSTMENT">Count correction</option>
@@ -201,17 +199,18 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             <option value="ACTIVE">Active</option>
             <option value="DRAFT">Drafts</option>
           </Select>
-          <Select
-            id="filter-location"
-            name="location"
-            defaultValue={filters.location}
-            aria-label="Location"
-            className="w-36"
-          >
-            <option value="all">Both locations</option>
-            <option value="TOR">Toronto</option>
-            <option value="MTL">Montreal</option>
-          </Select>
+          {!SINGLE_STORE && (
+            <Select
+              id="filter-location"
+              name="location"
+              defaultValue={filters.location}
+              aria-label="Location"
+              className="w-36"
+            >
+              <option value="all">Both locations</option>
+              <LocationOptions />
+            </Select>
+          )}
           <Select name="stock" defaultValue={filters.stock} aria-label="Stock" className="w-44">
             <option value="all">Any stock</option>
             <option value="in">In stock</option>
@@ -243,12 +242,17 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
               <tr>
                 <th className="px-3 py-2 font-medium">Product</th>
                 <th className="px-3 py-2 text-right font-medium">Price</th>
-                <th className="px-3 py-2 text-right font-medium">Toronto free</th>
-                <th className="px-3 py-2 text-right font-medium">on hand / reserved</th>
-                <th className="px-3 py-2 text-right font-medium">Toronto cost · margin</th>
-                <th className="px-3 py-2 text-right font-medium">Montreal free</th>
-                <th className="px-3 py-2 text-right font-medium">on hand / reserved</th>
-                <th className="px-3 py-2 text-right font-medium">Montreal cost · margin</th>
+                {LOCATION_CODES.map((code) => [
+                  <th key={`${code}-free`} className="px-3 py-2 text-right font-medium">
+                    {LOCATION_NAMES[code]} free
+                  </th>,
+                  <th key={`${code}-detail`} className="px-3 py-2 text-right font-medium">
+                    on hand / reserved
+                  </th>,
+                  <th key={`${code}-cost`} className="px-3 py-2 text-right font-medium">
+                    {LOCATION_NAMES[code]} cost · margin
+                  </th>,
+                ])}
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -264,7 +268,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
                     </span>
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">{money(row.priceCents)}</td>
-                  {(["TOR", "MTL"] as const).map((code) => {
+                  {LOCATION_CODES.map((code) => {
                     const s = row.stock[code];
                     const free = s.onHand - s.reserved;
                     return [
