@@ -1,3 +1,4 @@
+import { locationOrDefault } from "@/lib/store-config";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -99,7 +100,7 @@ async function CandidateList({
   locale: string;
 }) {
   const [t, catalog] = await Promise.all([getTranslations("Builder"), getTranslations("Catalog")]);
-  const location = build?.location ?? "TOR";
+  const location = locationOrDefault(build?.location);
   const definition = getCategoryDefinition(SLOT_CATEGORY[slot])!;
   const keyFields = definition.fields.filter((f) => f.filter).slice(0, 3);
   const current = build?.items[slot];

@@ -6,6 +6,8 @@ import { Field, Input, Select } from "@/components/ui/field";
 import { formatOrderNumber } from "@/lib/checkout/order-number";
 import type { LocalizedText } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
+import { LOCATION_NAMES, SINGLE_STORE, storeFilter } from "@/lib/store-config";
+import { LocationOptions } from "@/components/admin/location-options";
 import { parseRange, presets } from "@/lib/reports/range";
 import { getReport } from "@/server/admin/reports";
 import { requireAdmin } from "@/server/require-admin";
@@ -21,7 +23,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
   const params = await searchParams;
   const now = new Date();
   const range = parseRange(params.from, params.to, now);
-  const location = params.location === "TOR" || params.location === "MTL" ? params.location : null;
+  const location = storeFilter(params.location);
   const report = await getReport(range, location);
   const quick = presets(now);
   const link = (r: { from: string; to: string }) =>
@@ -33,7 +35,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
         <h1 className="text-2xl font-semibold">Reports</h1>
         <p className="mt-1 text-muted">
           {range.from === range.to ? range.from : `${range.from} to ${range.to}`}
-          {location ? ` · ${location === "TOR" ? "Toronto" : "Montreal"}` : " · both locations"}
+          {SINGLE_STORE ? "" : location ? ` · ${LOCATION_NAMES[location]}` : " · both locations"}
         </p>
       </div>
 
@@ -45,13 +47,14 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
           <Field label="To" htmlFor="to">
             <Input id="to" name="to" type="date" defaultValue={range.to} className="w-40" />
           </Field>
-          <Field label="Location" htmlFor="location">
-            <Select id="location" name="location" defaultValue={location ?? ""} className="w-40">
-              <option value="">Both</option>
-              <option value="TOR">Toronto</option>
-              <option value="MTL">Montreal</option>
-            </Select>
-          </Field>
+          {!SINGLE_STORE && (
+            <Field label="Location" htmlFor="location">
+              <Select id="location" name="location" defaultValue={location ?? ""} className="w-40">
+                <option value="">Both</option>
+                <LocationOptions />
+              </Select>
+            </Field>
+          )}
           <Button variant="outline">Show</Button>
         </form>
         <nav aria-label="Quick periods" className="flex gap-1 text-sm">

@@ -6,11 +6,12 @@ import { refresh } from "next/cache";
 import { adjustStock, transferStock } from "@/server/admin/inventory";
 import { CATALOG_TAG } from "@/server/catalog/queries";
 import { requireAdmin } from "@/server/require-admin";
+import { locationOrDefault } from "@/lib/store-config";
 
 import type { SettingsState } from "../settings/actions";
 
 const str = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
-const location = (value: string) => (value === "MTL" ? "MTL" : "TOR");
+const location = locationOrDefault;
 
 export async function transferAction(
   _prev: SettingsState,

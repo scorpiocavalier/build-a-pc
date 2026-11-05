@@ -11,8 +11,10 @@ import type { LocalizedText } from "@/lib/localized";
 //   price, compare_at_price, status, warranty_months, mpn, upc,
 //   stock_TOR, stock_MTL, spec.<key> ...
 
-export const LOCATION_CODES = ["TOR", "MTL"] as const;
-export type LocationCode = (typeof LOCATION_CODES)[number];
+// The stores this deployment runs (see src/lib/store-config.ts).
+import { LOCATION_CODES, type LocationCode } from "@/lib/store-config";
+
+export { LOCATION_CODES, type LocationCode };
 
 export const PRODUCT_STATUSES = ["DRAFT", "ACTIVE", "ARCHIVED"] as const;
 export type ProductStatus = (typeof PRODUCT_STATUSES)[number];

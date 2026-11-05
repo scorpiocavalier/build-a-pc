@@ -1,6 +1,8 @@
 # Launch checklist — astralgaming.ca
 
-Everything the code needs is built (Phases 0–6). What's left is accounts,
+Everything the code needs is built (Phases 0–6). Toronto and Montreal run as
+two separate sites from this code: see [`TWO-STORES.md`](TWO-STORES.md), and
+do the steps below for each store. What's left is accounts,
 keys, content and a few decisions only the owner can make. Work top to bottom;
 each step says who does it and how to check it.
 

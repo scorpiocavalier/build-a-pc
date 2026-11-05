@@ -1,3 +1,5 @@
+import { LOCATION_CODES } from "@/lib/store-config";
+
 import { driftPercent, marginPercent } from "./cost";
 
 // Inventory page filters that depend on stock numbers, applied after the
@@ -27,7 +29,7 @@ export function matchesStock(
   lowThreshold: number,
 ): boolean {
   if (level === "all") return true;
-  const codes = location === "all" ? (["TOR", "MTL"] as const) : [location];
+  const codes = location === "all" ? LOCATION_CODES : [location];
   const free = codes.map((code) => row.stock[code].onHand - row.stock[code].reserved);
   if (level === "out") return free.every((f) => f <= 0);
   if (level === "in") return free.some((f) => f > 0);
@@ -73,7 +75,7 @@ export function matchesCost(
   rules: CostRules,
 ): boolean {
   if (filter === "all") return true;
-  const codes = location === "all" ? (["TOR", "MTL"] as const) : [location];
+  const codes = location === "all" ? LOCATION_CODES : [location];
   if (filter === "nocost") {
     return codes.some(
       (code) => row.stock[code].onHand > 0 && row.stock[code].avgCostCents === null,

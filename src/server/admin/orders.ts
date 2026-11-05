@@ -5,6 +5,7 @@ import { parseOrderNumber } from "@/lib/checkout/order-number";
 import { db } from "@/server/db";
 import { loadOrder } from "@/server/orders/view";
 import { requireAdmin } from "@/server/require-admin";
+import { storeFilter } from "@/lib/store-config";
 
 const STATUSES: OrderStatus[] = [
   "PLACED",
@@ -24,8 +25,8 @@ export async function listAdminOrders(filters: AdminOrderFilters) {
   if (filters.status === "open") where.status = { notIn: ["COMPLETED", "CANCELLED"] };
   else if (STATUSES.includes(filters.status as OrderStatus))
     where.status = filters.status as OrderStatus;
-  if (filters.location === "TOR" || filters.location === "MTL")
-    where.location = { code: filters.location };
+  const location = storeFilter(filters.location);
+  if (location) where.location = { code: location };
   const q = filters.q?.trim();
   if (q) {
     const number = parseOrderNumber(q);

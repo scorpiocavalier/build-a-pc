@@ -5,6 +5,7 @@ import { formatOrderNumber } from "@/lib/checkout/order-number";
 import type { RequestedWindow } from "@/lib/checkout/windows";
 import type { LocalizedText } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
+import { LOCATION_CODES, LOCATION_NAMES, SINGLE_STORE, storeFilter } from "@/lib/store-config";
 import { cn } from "@/lib/utils";
 import { getAdminDashboard } from "@/server/admin/products";
 import { getToday, type TodayOrder } from "@/server/admin/today";
@@ -24,7 +25,7 @@ const money = (cents: number) => formatMoney(cents, "en");
 
 export default async function TodayPage({ searchParams }: PageProps<"/admin">) {
   const { location: raw } = await searchParams;
-  const location = raw === "TOR" || raw === "MTL" ? raw : null;
+  const location = storeFilter(raw);
   const [user, today, stats] = await Promise.all([
     requireAdmin(),
     getToday(location),
@@ -55,28 +56,29 @@ export default async function TodayPage({ searchParams }: PageProps<"/admin">) {
           <h1 className="text-2xl font-semibold">Today</h1>
           <p className="text-muted">
             Hi {user.name ?? user.email}. Here&apos;s what needs attention
-            {location ? ` in ${location === "TOR" ? "Toronto" : "Montreal"}` : ""}.
+            {location && !SINGLE_STORE ? ` in ${LOCATION_NAMES[location]}` : ""}.
           </p>
         </div>
-        <nav aria-label="Location" className="flex gap-1 text-sm">
-          {[
-            { code: null, label: "Both" },
-            { code: "TOR", label: "Toronto" },
-            { code: "MTL", label: "Montreal" },
-          ].map((l) => (
-            <Link
-              key={l.label}
-              href={l.code ? `/admin?location=${l.code}` : "/admin"}
-              aria-current={location === l.code ? "page" : undefined}
-              className={cn(
-                "rounded-lg px-3 py-1.5",
-                location === l.code ? "bg-surface-raised" : "text-muted hover:text-foreground",
-              )}
-            >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
+        {!SINGLE_STORE && (
+          <nav aria-label="Location" className="flex gap-1 text-sm">
+            {[
+              { code: null, label: "Both" },
+              ...LOCATION_CODES.map((code) => ({ code, label: LOCATION_NAMES[code] })),
+            ].map((l) => (
+              <Link
+                key={l.label}
+                href={l.code ? `/admin?location=${l.code}` : "/admin"}
+                aria-current={location === l.code ? "page" : undefined}
+                className={cn(
+                  "rounded-lg px-3 py-1.5",
+                  location === l.code ? "bg-surface-raised" : "text-muted hover:text-foreground",
+                )}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+        )}
       </div>
 
       <ul className="grid gap-3 sm:grid-cols-3">

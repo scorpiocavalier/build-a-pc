@@ -1,0 +1,32 @@
+{
+  "Metadata": {
+    "description": "Custom gaming PCs built by hand in Montreal, plus the parts to build your own."
+  },
+  "Home": {
+    "eyebrow": "Montreal",
+    "locationsTitle": "Pickup location",
+    "steps": {
+      "handoff": {
+        "body": "Collect it in Montreal, or we deliver it to you in person."
+      }
+    }
+  },
+  "Catalog": {
+    "shopLead": "Everything we stock for your next build, at our Montreal store."
+  },
+  "Checkout": {
+    "deliveryHint": "We deliver in person around Montreal."
+  },
+  "Legal": {
+    "locations": {
+      "description": "Pickup and local delivery in Montreal."
+    },
+    "terms": {
+      "sections": {
+        "fulfilment": {
+          "body": "Pickup is available at our Montreal store. Local delivery is available in the areas listed on our locations page. We confirm the exact time with you; please bring photo ID when picking up."
+        }
+      }
+    }
+  }
+}

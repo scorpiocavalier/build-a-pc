@@ -21,6 +21,7 @@ import {
   refundPaymentIntent,
 } from "@/server/payments/stripe";
 import { averageCost } from "@/server/inventory-cost";
+import { LOCATION_CODES } from "@/lib/store-config";
 import { getSettings, stripeEnabled } from "@/server/settings";
 
 import { loadOrder, type OrderView } from "./view";
@@ -72,7 +73,10 @@ export type FulfilmentChoice =
   { kind: "PICKUP"; locationCode: LocationCode } | { kind: "DELIVERY"; postalCode: string };
 
 export async function listLocations() {
-  return db.location.findMany({ where: { active: true }, orderBy: { code: "desc" } });
+  return db.location.findMany({
+    where: { active: true, code: { in: [...LOCATION_CODES] } },
+    orderBy: { code: "desc" },
+  });
 }
 
 // Everything in the cart: loose parts plus assembled builds.

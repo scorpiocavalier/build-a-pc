@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { LocationCode } from "@/generated/prisma/client";
+import { LOCATION_CODES } from "@/lib/store-config";
 import { landedUnitCosts, type CostSplit } from "@/lib/inventory/cost";
 import { audit } from "@/server/audit";
 import { db } from "@/server/db";
@@ -182,6 +183,7 @@ export async function setAverageCost(input: {
 export async function listPurchases(take = 30) {
   await requireAdmin();
   return db.purchase.findMany({
+    where: { location: { code: { in: [...LOCATION_CODES] } } },
     orderBy: [{ purchasedAt: "desc" }, { number: "desc" }],
     take,
     include: {
