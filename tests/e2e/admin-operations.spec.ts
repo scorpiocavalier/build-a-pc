@@ -351,6 +351,12 @@ test("purchases keep a weighted average cost per location", async ({ adminPage, 
   await page.locator("#filter-location").selectOption("TOR");
   await expect(row).toHaveCount(0);
 
+  // The products list shows the same cost and margin per store.
+  await page.goto(`/admin/products?q=${product.sku}`);
+  const productRow = page.getByRole("row", { name: new RegExp(product.sku) });
+  await expect(productRow).toContainText("$11.67 · 22%");
+  await expect(productRow).toContainText("$22.00 · -47%");
+
   // Moved units carry the sending store's cost: (12 × 11.67 + 2 × 22) / 14.
   await page.goto("/admin/inventory");
   const move = page.getByRole("region", { name: "Move stock" });

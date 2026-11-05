@@ -12,7 +12,7 @@ import {
 } from "@/lib/inventory/filter";
 import { audit } from "@/server/audit";
 import { db } from "@/server/db";
-import { averageCost, receiveUnits } from "@/server/inventory-cost";
+import { averageCost, lastPurchaseCosts, receiveUnits } from "@/server/inventory-cost";
 import { requireAdmin } from "@/server/require-admin";
 
 // Stock per location, manual adjustments and transfers between the stores.
@@ -75,19 +75,10 @@ export async function listInventory(
       },
     },
   });
-  // Landed cost of each product's latest purchase per location.
-  const ids = products.map((p) => p.id);
-  const last = ids.length
-    ? await db.$queryRaw<{ productId: string; code: LocationCode; cost: number }[]>`
-        SELECT DISTINCT ON (m."productId", m."locationId")
-               m."productId", l.code, m."unitCostCents" AS cost
-        FROM "InventoryMovement" m
-        JOIN "Location" l ON l.id = m."locationId"
-        WHERE m.reason = 'PURCHASE' AND m."unitCostCents" IS NOT NULL
-          AND m."productId" IN (${Prisma.join(ids)})
-        ORDER BY m."productId", m."locationId", m."createdAt" DESC`
-    : [];
-  const lastCost = new Map(last.map((r) => [`${r.productId}:${r.code}`, r.cost]));
+  const lastCost = await lastPurchaseCosts(
+    db,
+    products.map((p) => p.id),
+  );
   const rows = products.map((p) => {
     const empty = (code: LocationCode) => ({
       onHand: 0,

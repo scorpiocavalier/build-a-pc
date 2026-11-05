@@ -1,6 +1,7 @@
 import { ImageOff, Plus } from "lucide-react";
 import Link from "next/link";
 
+import { CostCell } from "@/components/admin/cost-cell";
 import { FilterForm } from "@/components/admin/filter-form";
 import { SpecSelects } from "@/components/admin/spec-selects";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { formatMoney } from "@/lib/money";
 import { CATEGORIES } from "@/lib/specs/definitions";
 import { cn } from "@/lib/utils";
 import { listAdminProducts, listBrands } from "@/server/admin/products";
+import { getSettings } from "@/server/settings";
 
 export const metadata = { title: "Products" };
 // Internal pages always wait for fresh data; instant navigation isn't a goal.
@@ -37,9 +39,10 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
     stock: one("stock"),
     specs: specParams(params),
   };
-  const [{ products, specFacets }, brands] = await Promise.all([
+  const [{ products, specFacets }, brands, settings] = await Promise.all([
     listAdminProducts(filters),
     listBrands(),
+    getSettings(),
   ]);
   const filtered =
     Object.entries(filters).some(([key, value]) => key !== "specs" && value) ||
@@ -133,7 +136,9 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
               <th className="px-3 py-2 font-medium">Category</th>
               <th className="px-3 py-2 text-right font-medium">Price</th>
               <th className="px-3 py-2 text-right font-medium">Toronto</th>
+              <th className="px-3 py-2 text-right font-medium">Toronto cost · margin</th>
               <th className="px-3 py-2 text-right font-medium">Montreal</th>
+              <th className="px-3 py-2 text-right font-medium">Montreal cost · margin</th>
               <th className="px-3 py-2 font-medium">Status</th>
             </tr>
           </thead>
@@ -163,11 +168,13 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
                 >
                   {p.stock.TOR}
                 </td>
+                <CostCell priceCents={p.priceCents} {...p.cost.TOR} rules={settings} />
                 <td
                   className={cn("px-3 py-2 text-right tabular-nums", !p.stock.MTL && "text-muted")}
                 >
                   {p.stock.MTL}
                 </td>
+                <CostCell priceCents={p.priceCents} {...p.cost.MTL} rules={settings} />
                 <td className="px-3 py-2">
                   <span
                     className={cn(
