@@ -55,7 +55,7 @@ test.describe("signing in", () => {
   }) => {
     await page.goto("/fr");
     // On phones the account link is in the menu.
-    if (isMobile) await page.getByRole("button", { name: "Menu" }).click();
+    if (isMobile) await page.getByRole("button", { name: "Menu", exact: true }).click();
     await page.getByRole("link", { name: "Mon compte" }).click();
     await expect(page).toHaveURL(/\/fr\/sign-in/);
     await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();

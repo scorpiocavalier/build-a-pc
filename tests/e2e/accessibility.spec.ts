@@ -50,7 +50,7 @@ test("no accessibility violations in the open mobile menu", async ({ page, isMob
   test.skip(!isMobile, "the menu is only shown on phones");
   for (const path of ["/en", "/fr/build"]) {
     await expectNoViolations(page, path, async () => {
-      await page.getByRole("button", { name: "Menu" }).click();
+      await page.getByRole("button", { name: "Menu", exact: true }).click();
       // Let the sheet finish sliding in before checking contrast.
       const menu = page.getByRole("dialog", { name: "Menu" });
       await expect(menu).toBeVisible();

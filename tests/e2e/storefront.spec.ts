@@ -20,7 +20,7 @@ test("sends French browsers to the French home page", async ({ browser }) => {
 
 // On phones the language switch is in the menu.
 async function openMenuOnMobile(page: Page, isMobile: boolean) {
-  if (isMobile) await page.getByRole("button", { name: "Menu" }).click();
+  if (isMobile) await page.getByRole("button", { name: "Menu", exact: true }).click();
 }
 
 test("switches between English and French", async ({ page, isMobile }) => {
@@ -90,7 +90,8 @@ test.describe("mobile menu", () => {
       page,
     }) => {
       await page.goto(`/${locale}`);
-      const button = page.getByRole("button", { name: "Menu" });
+      // The open dialog hides the rest of the page from assistive tech.
+      const button = page.getByRole("button", { name: "Menu", exact: true, includeHidden: true });
       await expect(button).toHaveAttribute("aria-expanded", "false");
       await button.click();
       await expect(button).toHaveAttribute("aria-expanded", "true");
@@ -110,7 +111,7 @@ test.describe("mobile menu", () => {
 
   test("following a link closes the menu and marks the current page", async ({ page }) => {
     await page.goto("/en");
-    const button = page.getByRole("button", { name: "Menu" });
+    const button = page.getByRole("button", { name: "Menu", exact: true });
     await button.click();
     await page.getByRole("dialog").getByRole("link", { name: "PC builder" }).click();
     await expect(page).toHaveURL(/\/en\/build$/);
@@ -130,7 +131,7 @@ test.describe("mobile menu", () => {
 
   test("searches from the menu", async ({ page }) => {
     await page.goto("/en");
-    await page.getByRole("button", { name: "Menu" }).click();
+    await page.getByRole("button", { name: "Menu", exact: true }).click();
     const search = page.getByRole("dialog").getByRole("searchbox", { name: "Search products" });
     await search.fill("ryzen");
     await search.press("Enter");
@@ -139,7 +140,7 @@ test.describe("mobile menu", () => {
 
   test("Escape closes the menu and returns focus to the button", async ({ page }) => {
     await page.goto("/en");
-    const button = page.getByRole("button", { name: "Menu" });
+    const button = page.getByRole("button", { name: "Menu", exact: true });
     await button.click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");
@@ -150,7 +151,7 @@ test.describe("mobile menu", () => {
 
   test("the close button and a tap outside close the menu", async ({ page }) => {
     await page.goto("/fr");
-    const button = page.getByRole("button", { name: "Menu" });
+    const button = page.getByRole("button", { name: "Menu", exact: true });
     await button.click();
     await page.getByRole("button", { name: "Fermer le menu" }).click();
     await expect(page.getByRole("dialog")).toBeHidden();
@@ -172,5 +173,5 @@ test("desktop keeps the links in the header, without a menu button", async ({ pa
     await expect(header.getByRole("link", { name })).toBeVisible();
   }
   await expect(header.getByRole("searchbox", { name: "Search products" })).toBeVisible();
-  await expect(header.getByRole("button", { name: "Menu" })).toBeHidden();
+  await expect(header.getByRole("button", { name: "Menu", exact: true })).toBeHidden();
 });
