@@ -60,7 +60,7 @@ export const DEFAULT_SETTINGS: Settings = {
   lowStockThreshold: 2,
   targetMarginPercent: 15,
   costDriftPercent: 10,
-  contactEmail: "hello@astralgaming.ca",
+  contactEmail: "support@astralgaming.ca",
   privacyOfficer: "",
 };
 
