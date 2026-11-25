@@ -5,10 +5,12 @@ import { notFound } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { productToRaw } from "@/lib/catalog/product-input";
+import { removalConfirmation } from "@/lib/catalog/product-removal";
 import { getCategoryDefinition } from "@/lib/specs/definitions";
-import { getAdminProduct, listBrandNames } from "@/server/admin/products";
+import { getAdminProduct, getProductUsage, listBrandNames } from "@/server/admin/products";
 
 import { deleteProductImage, makePrimaryImage } from "../actions";
+import { DeleteProduct } from "../delete-product";
 import { ImageUpload } from "../image-upload";
 import { ProductForm } from "../product-form";
 
@@ -20,8 +22,12 @@ export default async function EditProductPage({
   params,
   searchParams,
 }: PageProps<"/admin/products/[id]">) {
-  const [{ id }, { saved }] = await Promise.all([params, searchParams]);
-  const [product, brands] = await Promise.all([getAdminProduct(id), listBrandNames()]);
+  const [{ id }, { saved, archived }] = await Promise.all([params, searchParams]);
+  const [product, brands, usage] = await Promise.all([
+    getAdminProduct(id),
+    listBrandNames(),
+    getProductUsage(id),
+  ]);
   if (!product) notFound();
   const definition = getCategoryDefinition(product.category.slug);
   if (!definition) notFound();
@@ -31,6 +37,9 @@ export default async function EditProductPage({
     categorySlug: product.category.slug,
     brandName: product.brand.name,
   });
+  const confirmation = removalConfirmation({ name: product.name.en, sku: product.sku }, usage);
+  // An archived product that was sold or bought can't go any further.
+  const canRemove = !(product.status === "ARCHIVED" && confirmation.outcome === "archived");
 
   return (
     <div className="flex flex-col gap-6">
@@ -42,7 +51,12 @@ export default async function EditProductPage({
           <h1 className="mt-2 text-2xl font-semibold">
             {product.brand.name} {product.name.en}
           </h1>
-          <p className="text-sm text-muted">{definition.name.en}</p>
+          <p className="text-sm text-muted">
+            {definition.name.en}
+            {product.status === "ARCHIVED" && (
+              <span className="ml-2 rounded-full border px-2 py-0.5 text-xs">Archived</span>
+            )}
+          </p>
         </div>
         {product.status === "ACTIVE" && (
           <Link
@@ -61,6 +75,15 @@ export default async function EditProductPage({
           className="rounded-lg border border-emerald-400/40 bg-emerald-400/10 p-3 text-sm"
         >
           Saved.
+        </p>
+      )}
+      {archived && (
+        <p
+          role="status"
+          className="rounded-lg border border-emerald-400/40 bg-emerald-400/10 p-3 text-sm"
+        >
+          Archived instead of deleted, because it was sold or purchased before. It no longer shows
+          on the store or in the builder.
         </p>
       )}
 
@@ -124,6 +147,30 @@ export default async function EditProductPage({
         initial={initial}
         brands={brands}
       />
+
+      <section
+        aria-labelledby="danger-zone"
+        className="flex flex-col items-start gap-3 rounded-lg border border-red-400/40 p-5"
+      >
+        <h2 id="danger-zone" className="font-semibold">
+          Danger zone
+        </h2>
+        {canRemove ? (
+          <>
+            <p className="text-sm text-muted">
+              {confirmation.outcome === "deleted"
+                ? "Deletes the product, its photos and its stock records for good."
+                : "This product was sold or purchased before, so it will be archived instead of deleted."}
+            </p>
+            <DeleteProduct productId={product.id} confirmation={confirmation} />
+          </>
+        ) : (
+          <p className="text-sm text-muted">
+            This product is archived. It can&apos;t be deleted because past orders or purchases
+            include it.
+          </p>
+        )}
+      </section>
     </div>
   );
 }
