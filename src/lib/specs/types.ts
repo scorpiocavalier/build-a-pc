@@ -13,7 +13,7 @@ type BaseField = {
   required?: boolean;
   // Required only when another field has a given value.
   requiredWhen?: { key: string; equals: string };
-  // Show as a filter on the category page.
+  // Offer as a spec filter on the admin inventory and product lists.
   filter?: boolean;
 };
 

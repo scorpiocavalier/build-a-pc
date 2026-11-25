@@ -29,7 +29,7 @@ export type InventoryFilters = {
   stock?: StockLevel;
   cost?: CostFilter;
   // Spec filters (socket, memory type…), keyed by spec field. Only used
-  // with a category, like the storefront's category pages.
+  // with a category.
   specs?: Record<string, string>;
 };
 

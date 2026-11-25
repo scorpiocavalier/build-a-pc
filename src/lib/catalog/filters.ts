@@ -1,8 +1,9 @@
 import type { CategoryDefinition, SpecField, SpecValues } from "@/lib/specs/types";
 import { LOCATION_CODES, type LocationCode } from "./product-input";
 
-// Category-page filtering, done in memory over a category's cached product
-// list. Within one filter values are OR-ed; across filters they are AND-ed.
+// Spec filtering, done in memory over a category's product list (the admin
+// lists use it through admin-spec-filter.ts). Within one filter values are
+// OR-ed; across filters they are AND-ed.
 
 export type FilterableProduct = {
   brand: string;
@@ -133,18 +134,4 @@ export function buildFacets(
     if (options.length > 1 || selected.length) facets.push({ key, field, options });
   }
   return facets;
-}
-
-// Builds the query string for a link that toggles one filter value.
-export function toggleHref(params: SearchParams, key: string, value: string): string {
-  const next = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) for (const item of list(v)) next.append(k, item);
-  const current = next.getAll(key);
-  next.delete(key);
-  const updated = current.includes(value)
-    ? current.filter((v) => v !== value)
-    : [...current, value];
-  for (const v of updated) next.append(key, v);
-  const qs = next.toString();
-  return qs ? `?${qs}` : "";
 }

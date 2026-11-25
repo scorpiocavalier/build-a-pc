@@ -26,8 +26,6 @@ async function expectNoViolations(page: Page, path: string) {
 const PUBLIC_PAGES = [
   "/en",
   "/fr",
-  "/en/shop",
-  "/en/c/cpu",
   "/en/p/amd-ryzen-7-9800x3d",
   "/en/search?q=ryzen",
   "/en/build",

@@ -2,13 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { getCategoryDefinition } from "@/lib/specs/definitions";
 
-import {
-  applyFilters,
-  buildFacets,
-  parseFilters,
-  toggleHref,
-  type FilterableProduct,
-} from "./filters";
+import { applyFilters, buildFacets, parseFilters, type FilterableProduct } from "./filters";
 
 const cpu = getCategoryDefinition("cpu")!;
 
@@ -98,15 +92,5 @@ describe("buildFacets", () => {
     ]);
     // Every product has integrated graphics, so that filter is useless.
     expect(facets.find((f) => f.key === "integratedGraphics")).toBeUndefined();
-  });
-});
-
-describe("toggleHref", () => {
-  it("adds and removes a value while keeping other params", () => {
-    expect(toggleHref({ socket: "AM5", sort: "name" }, "socket", "AM4")).toBe(
-      "?sort=name&socket=AM5&socket=AM4",
-    );
-    expect(toggleHref({ socket: ["AM5", "AM4"] }, "socket", "AM5")).toBe("?socket=AM4");
-    expect(toggleHref({ socket: "AM5" }, "socket", "AM5")).toBe("");
   });
 });

@@ -1,7 +1,7 @@
 import type { CategoryDefinition, SpecOption } from "./types";
 
 // Spec definitions for every catalog category. These drive validation, the
-// admin product form, CSV import columns and storefront filters.
+// admin product form, CSV import columns and admin spec filters.
 //
 // Values are stored language-neutral (e.g. "AM5", "ATX"); only labels are
 // translated. Fields marked required are the ones the PC builder's

@@ -70,14 +70,7 @@ async function ProductContent({ params }: Pick<Props, "params">) {
   return (
     <>
       <ProductJsonLd product={product} name={name} description={description} inStock={inStock} />
-      <Breadcrumbs
-        items={[
-          { label: t("home"), href: "/" },
-          { label: t("shop"), href: "/shop" },
-          { label: localize(product.categoryName, locale), href: `/c/${product.categorySlug}` },
-          { label: name },
-        ]}
-      />
+      <Breadcrumbs items={[{ label: t("home"), href: "/" }, { label: name }]} />
 
       <div className="grid gap-8 md:grid-cols-2">
         <div className="flex flex-col gap-3">

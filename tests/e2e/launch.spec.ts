@@ -23,7 +23,11 @@ test("the sitemap lists pages in both languages, and robots points to it", async
     'hreflang="fr-CA" href="http://localhost:3000/fr/p/amd-ryzen-7-9800x3d"',
   );
   expect(sitemap).toContain("/fr/returns</loc>");
+  expect(sitemap).toContain("/fr/prebuilt</loc>");
   expect(sitemap).not.toContain("/admin");
+  // The parts shop was removed (#34).
+  expect(sitemap).not.toContain("/shop");
+  expect(sitemap).not.toContain("/c/");
 
   const robots = await (await request.get("/robots.txt")).text();
   expect(robots).toContain("Disallow: /admin");
@@ -31,9 +35,9 @@ test("the sitemap lists pages in both languages, and robots points to it", async
 });
 
 test("pages link to their other-language version", async ({ page }) => {
-  await page.goto("/fr/shop");
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/fr\/shop$/);
-  await expect(page.locator('link[hreflang="en-CA"]')).toHaveAttribute("href", /\/en\/shop$/);
+  await page.goto("/fr/prebuilt");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/fr\/prebuilt$/);
+  await expect(page.locator('link[hreflang="en-CA"]')).toHaveAttribute("href", /\/en\/prebuilt$/);
 });
 
 test("the policy pages are linked from the footer, in both languages", async ({ page }) => {
