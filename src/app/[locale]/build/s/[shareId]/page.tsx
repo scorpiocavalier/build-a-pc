@@ -7,7 +7,7 @@ import { BuildSummary } from "@/components/builder/build-summary";
 import { SlotList } from "@/components/builder/slot-list";
 import { Button } from "@/components/ui/button";
 import { localize } from "@/lib/localized";
-import { getAssemblyExtras, getSharedBuild } from "@/server/builder";
+import { getSharedBuild } from "@/server/builder";
 import { localeAlternates } from "@/server/seo";
 
 import { customizeAction } from "../../actions";
@@ -44,9 +44,8 @@ export default function SharedBuildPage({ params }: Props) {
 
 async function SharedBuild({ params }: Pick<Props, "params">) {
   const { shareId } = await params;
-  const [build, extras, t, locale] = await Promise.all([
+  const [build, t, locale] = await Promise.all([
     getSharedBuild(shareId),
-    getAssemblyExtras(),
     getTranslations("Builder"),
     getLocale(),
   ]);
@@ -64,7 +63,7 @@ async function SharedBuild({ params }: Pick<Props, "params">) {
       </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <SlotList build={build} editable={false} />
-        <BuildSummary build={build} extras={extras}>
+        <BuildSummary build={build}>
           <form action={customizeAction}>
             <input type="hidden" name="shareId" value={build.shareId} />
             <input type="hidden" name="locale" value={locale} />

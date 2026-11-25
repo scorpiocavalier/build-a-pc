@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { SLOTS } from "@/lib/builder/slots";
 import { formatOrderNumber } from "@/lib/checkout/order-number";
+import { isAssembled } from "@/lib/checkout/order-status";
 import { formatDate } from "@/lib/checkout/windows";
 import { getAdminOrder } from "@/server/admin/orders";
 
@@ -28,7 +29,7 @@ const CHECKLIST = [
   "Parts match this sheet; serial numbers noted on the order",
   "BIOS updated to the latest stable version",
   "Memory runs at its rated speed (EXPO/XMP enabled)",
-  "Windows installed, updated and activated",
+  "Windows 11 Pro installed, updated and activated",
   "Chipset and graphics drivers installed",
   "Stress test passed (CPU and GPU, 15 minutes); temperatures normal",
   "Fans and lighting configured; cables tidy",
@@ -41,7 +42,7 @@ export default async function BuildSheetPage({
 }: PageProps<"/admin/orders/[id]/build-sheet">) {
   const { id } = await params;
   const order = await getAdminOrder(id);
-  if (!order || order.assemblyCents === 0) notFound();
+  if (!order || !isAssembled(order)) notFound();
 
   const groups = [...new Set(order.lines.flatMap((l) => (l.buildGroup ? [l.buildGroup] : [])))];
 

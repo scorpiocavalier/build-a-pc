@@ -76,21 +76,6 @@ export default async function SettingsPage() {
                 inputMode="numeric"
               />
             </Field>
-            <Field label="Assembly fee per PC ($)" htmlFor="assemblyFee">
-              <Input
-                id="assemblyFee"
-                name="assemblyFee"
-                defaultValue={dollars(settings.assemblyFeeCents)}
-                inputMode="decimal"
-              />
-            </Field>
-            <Field
-              label="Windows licence included (SKU)"
-              htmlFor="windowsSku"
-              hint="Added to every assembled PC and taken from stock."
-            >
-              <Input id="windowsSku" name="windowsSku" defaultValue={settings.windowsSku} />
-            </Field>
             <Field label="Assembly time shown to customers (business days)" htmlFor="assemblyDays">
               <Input
                 id="assemblyDays"

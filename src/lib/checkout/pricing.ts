@@ -15,6 +15,8 @@ export type TaxLine = { name: "GST" | "PST" | "HST" | "QST"; rate: number; cents
 export type Quote = {
   subtotalCents: number;
   deliveryCents: number;
+  // Always 0 now: assembly is included in a build's price. Orders placed
+  // before that keep the fee they were charged.
   assemblyCents: number;
   taxes: TaxLine[];
   taxCents: number;
@@ -32,11 +34,10 @@ export function computeQuote(
   lines: QuoteLine[],
   deliveryCents: number,
   rate: TaxRateInput | null,
-  assemblyCents = 0,
 ): Quote {
   const subtotalCents = lines.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0);
-  // Delivery and assembly are taxed like the goods (docs/PLAN.md §6).
-  const taxable = subtotalCents + deliveryCents + assemblyCents;
+  // Delivery is taxed like the goods (docs/PLAN.md §6).
+  const taxable = subtotalCents + deliveryCents;
   const taxes: TaxLine[] = [];
   if (rate?.collect) {
     for (const name of ["HST", "GST", "PST", "QST"] as const) {
@@ -48,7 +49,7 @@ export function computeQuote(
   return {
     subtotalCents,
     deliveryCents,
-    assemblyCents,
+    assemblyCents: 0,
     taxes,
     taxCents,
     totalCents: taxable + taxCents,

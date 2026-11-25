@@ -54,18 +54,9 @@ type Row = Omit<RawProductInput, "category" | "status"> & { price: string };
 const desc = (en: string, fr: string) => ({ description_en: en, description_fr: fr });
 
 const PRODUCTS: Record<string, Row[]> = {
+  // Assembled PCs come with Windows 11 Pro at no charge, so there's no
+  // licence product for them; this one is sold on its own.
   software: [
-    {
-      sku: "WIN11-HOME",
-      brand: "Microsoft",
-      name_en: "Windows 11 Home (OEM licence)",
-      name_fr: "Windows 11 Famille (licence OEM)",
-      ...desc("Included with every PC we assemble.", "Inclus avec chaque PC que nous assemblons."),
-      price: "159.99",
-      stock_TOR: "10",
-      stock_MTL: "10",
-      "spec.edition": "windows-11-home",
-    },
     {
       sku: "WIN11-PRO",
       brand: "Microsoft",

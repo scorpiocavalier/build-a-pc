@@ -35,9 +35,9 @@ describe("computeQuote", () => {
     expect(quote.totalCents).toBe(11498);
   });
 
-  it("taxes the assembly fee like the goods", () => {
-    const quote = computeQuote([{ unitPriceCents: 100000, quantity: 1 }], 0, ON, 15000);
-    expect(quote).toMatchObject({ assemblyCents: 15000, taxCents: 14950, totalCents: 129950 });
+  it("adds no assembly fee: a build costs its parts", () => {
+    const quote = computeQuote([{ unitPriceCents: 100000, quantity: 1 }], 0, ON);
+    expect(quote).toMatchObject({ assemblyCents: 0, taxCents: 13000, totalCents: 113000 });
   });
 
   it("charges no tax while collection is switched off", () => {

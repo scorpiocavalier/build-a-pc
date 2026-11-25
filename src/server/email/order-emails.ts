@@ -3,6 +3,7 @@ import "server-only";
 import { createTranslator } from "next-intl";
 
 import { formatOrderNumber } from "@/lib/checkout/order-number";
+import { includesWindowsPro } from "@/lib/checkout/order-status";
 import { formatDate } from "@/lib/checkout/windows";
 import { formatRate } from "@/lib/checkout/pricing";
 import { localize } from "@/lib/localized";
@@ -43,6 +44,8 @@ export async function buildOrderEmail(
             money(line.unitPriceCents * line.quantity),
           ] as [string, string],
       ),
+      // Shown at no charge; older orders list the fee and licence they paid for.
+      ...(includesWindowsPro(order) ? [[t("Cart.assembledIncludes"), ""] as [string, string]] : []),
       [t("Checkout.subtotal"), money(order.subtotalCents)],
       ...(order.assemblyCents > 0
         ? [[t("Checkout.assembly"), money(order.assemblyCents)] as [string, string]]

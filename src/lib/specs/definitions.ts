@@ -479,7 +479,8 @@ export const CATEGORIES: CategoryDefinition[] = [
     ],
   },
   {
-    // Windows licences: sold on their own and included with every assembled build.
+    // Windows licences sold on their own. Assembled PCs include Windows 11 Pro
+    // at no charge, without a licence line.
     slug: "software",
     name: { en: "Software", fr: "Logiciels" },
     fields: [

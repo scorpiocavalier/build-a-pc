@@ -2,9 +2,9 @@ import { Zap } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 
-import { localize } from "@/lib/localized";
+import { WindowsIncluded } from "@/components/cart/windows-included";
 import { formatMoney } from "@/lib/money";
-import type { AssemblyExtras, BuildView } from "@/server/builder";
+import type { BuildView } from "@/server/builder";
 
 import { IssueList } from "./issue-list";
 
@@ -12,16 +12,13 @@ import { IssueList } from "./issue-list";
 // shared and prebuilt build pages.
 export async function BuildSummary({
   build,
-  extras,
   children,
 }: {
   build: BuildView;
-  extras: AssemblyExtras;
   children?: ReactNode;
 }) {
   const [t, locale] = await Promise.all([getTranslations("Builder"), getLocale()]);
   const money = (cents: number) => formatMoney(cents, locale);
-  const assembledTotal = build.partsCents + extras.feeCents + (extras.windows?.priceCents ?? 0);
   const hasParts = Object.keys(build.items).length > 0;
 
   return (
@@ -32,18 +29,12 @@ export async function BuildSummary({
       <h2 className="font-semibold">{t("summary")}</h2>
       <dl className="flex flex-col gap-1 text-sm">
         <Row label={t("parts")} value={money(build.partsCents)} />
-        <Row label={t("assembly")} value={money(extras.feeCents)} />
-        {extras.windows && (
-          <Row
-            label={localize(extras.windows.name, locale)}
-            value={money(extras.windows.priceCents)}
-          />
-        )}
         <div className="mt-1 flex justify-between border-t pt-2 text-base font-semibold">
           <dt>{t("estimatedTotal")}</dt>
-          <dd className="tabular-nums">{money(assembledTotal)}</dd>
+          <dd className="tabular-nums">{money(build.partsCents)}</dd>
         </div>
       </dl>
+      <WindowsIncluded />
       <p className="text-xs text-muted">{t("taxNote")}</p>
       {hasParts && (
         <p className="flex items-center gap-2 text-sm">

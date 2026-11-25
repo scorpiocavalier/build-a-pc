@@ -84,14 +84,13 @@ export type CheckoutCart = { lines: CartLineView[]; builds: CartBuildView[] };
 
 type OrderLineDraft = CartLineView & { buildGroup: string | null };
 
-// Every product the order contains, with build parts and the Windows licence
-// tagged with their build. Null when an assembled build can't get Windows.
-function orderLines(cart: CheckoutCart): OrderLineDraft[] | null {
+// Every product the order contains, with build parts tagged with their build.
+// Assembly and Windows 11 Pro are included with a build at no charge, so they
+// add no lines.
+function orderLines(cart: CheckoutCart): OrderLineDraft[] {
   const lines: OrderLineDraft[] = cart.lines.map((line) => ({ ...line, buildGroup: null }));
   for (const build of cart.builds) {
-    if (!build.windows) return null;
-    for (const part of [...build.parts, build.windows])
-      lines.push({ ...part, buildGroup: build.id });
+    for (const part of build.parts) lines.push({ ...part, buildGroup: build.id });
   }
   return lines;
 }
@@ -119,7 +118,7 @@ export type CheckoutQuote = {
 export async function quoteCheckout(
   cart: CheckoutCart,
   choice: FulfilmentChoice,
-): Promise<CheckoutQuote | { error: "noDelivery" | "windows" }> {
+): Promise<CheckoutQuote | { error: "noDelivery" }> {
   const locations = await listLocations();
   const location =
     choice.kind === "PICKUP"
@@ -127,18 +126,17 @@ export async function quoteCheckout(
       : matchDeliveryLocation(choice.postalCode, locations);
   if (!location) return { error: "noDelivery" };
   const lines = orderLines(cart);
-  if (!lines) return { error: "windows" };
 
   const [rate, settings] = await Promise.all([
     db.taxRate.findUnique({ where: { province: location.province } }),
     getSettings(),
   ]);
   // Deliveries are local, so the location's province is where goods change hands.
+  // A build's price is its parts: there's no assembly fee on new orders.
   const quote = computeQuote(
     lines,
     choice.kind === "DELIVERY" ? location.deliveryFeeCents : 0,
     rate,
-    cart.builds.length * settings.assemblyFeeCents,
   );
   const methods = allowedPaymentMethods(quote.totalCents, {
     ...settings,
@@ -175,12 +173,10 @@ export async function placeOrder(
       ? { kind: "PICKUP", locationCode: input.locationCode! }
       : { kind: "DELIVERY", postalCode: input.address!.postalCode },
   );
-  if ("error" in quoted) {
-    return { ok: false, error: quoted.error === "windows" ? "stock" : "noDelivery" };
-  }
+  if ("error" in quoted) return { ok: false, error: quoted.error };
   const { location, quote, methods, depositCents } = quoted;
   if (!methods.includes(input.method)) return { ok: false, error: "method" };
-  const lines = orderLines(cart)!;
+  const lines = orderLines(cart);
 
   const settings = await getSettings();
   // Cash orders for an assembled PC still need an e-Transfer deposit first,

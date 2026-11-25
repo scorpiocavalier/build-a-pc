@@ -341,24 +341,8 @@ export async function listCandidates(slot: BuildSlot, build: BuildView | null) {
 
 export { SLOTS };
 
-export type AssemblyExtras = {
-  feeCents: number;
-  days: number;
-  windows: { name: LocalizedText; priceCents: number } | null;
-};
-
-// What "Have us build it" adds on top of the parts.
-export async function getAssemblyExtras(): Promise<AssemblyExtras> {
-  const settings = await getSettings();
-  const windows = await db.product.findFirst({
-    where: { sku: settings.windowsSku, status: "ACTIVE" },
-    select: { name: true, priceCents: true },
-  });
-  return {
-    feeCents: settings.assemblyFeeCents,
-    days: settings.assemblyDays,
-    windows: windows
-      ? { name: windows.name as LocalizedText, priceCents: windows.priceCents }
-      : null,
-  };
+// How long "Have us build it" takes. It costs nothing on top of the parts:
+// assembly, testing and Windows 11 Pro are included.
+export async function getAssemblyDays(): Promise<number> {
+  return (await getSettings()).assemblyDays;
 }

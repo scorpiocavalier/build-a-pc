@@ -30,6 +30,17 @@ describe("computeReturnRefund", () => {
     );
   });
 
+  it("keeps the tax share right on older orders charged an assembly fee", () => {
+    // $300 of parts + $149.99 assembly, 13% HST on $449.99 = $58.50.
+    const assembled = { ...order, deliveryCents: 0, assemblyCents: 14_999, taxCents: 5_850 };
+    expect(computeReturnRefund(assembled, [{ orderLineId: "a", quantity: 1 }], 0)).toEqual({
+      itemsCents: 10_000,
+      taxCents: 1_300,
+      feeCents: 0,
+      refundCents: 11_300,
+    });
+  });
+
   it("handles orders without tax", () => {
     expect(
       computeReturnRefund({ ...order, taxCents: 0 }, [{ orderLineId: "b", quantity: 1 }], 0),

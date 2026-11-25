@@ -4,10 +4,11 @@ import { getLocale, getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { Suspense } from "react";
 
+import { WindowsIncluded } from "@/components/cart/windows-included";
 import { Link } from "@/i18n/navigation";
 import { localize } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
-import { getAssemblyExtras, listFeaturedBuilds } from "@/server/builder";
+import { listFeaturedBuilds } from "@/server/builder";
 import { localeAlternates } from "@/server/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -40,9 +41,8 @@ export default async function PrebuiltPage() {
 }
 
 async function FeaturedBuilds() {
-  const [builds, extras, t, locale] = await Promise.all([
+  const [builds, t, locale] = await Promise.all([
     listFeaturedBuilds(),
-    getAssemblyExtras(),
     getTranslations("Builder"),
     getLocale(),
   ]);
@@ -50,7 +50,6 @@ async function FeaturedBuilds() {
   return (
     <ul className="grid gap-4 md:grid-cols-2">
       {builds.map((build, i) => {
-        const total = build.partsCents + extras.feeCents + (extras.windows?.priceCents ?? 0);
         const title = build.title ? localize(build.title, locale) : t("sharedTitle");
         return (
           <li key={build.id}>
@@ -85,9 +84,12 @@ async function FeaturedBuilds() {
                     </li>
                   )}
                 </ul>
-                <p className="mt-auto pt-3 text-lg font-semibold">
-                  {t("fromPrice", { price: formatMoney(total, locale) })}
-                </p>
+                <div className="mt-auto flex flex-col gap-1 pt-3">
+                  <p className="text-lg font-semibold">
+                    {t("fromPrice", { price: formatMoney(build.partsCents, locale) })}
+                  </p>
+                  <WindowsIncluded />
+                </div>
               </div>
             </Link>
           </li>
