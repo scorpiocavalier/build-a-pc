@@ -7,7 +7,6 @@ import { SpecSelects } from "@/components/admin/spec-selects";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
 import { specParams } from "@/lib/catalog/admin-spec-filter";
-import { PRODUCT_STATUSES } from "@/lib/catalog/product-input";
 import { formatMoney } from "@/lib/money";
 import { LOCATION_CODES, LOCATION_NAMES } from "@/lib/store-config";
 import { CATEGORIES } from "@/lib/specs/definitions";
@@ -45,6 +44,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
     listBrands(),
     getSettings(),
   ]);
+  const deleted = one("deleted");
   const filtered =
     Object.entries(filters).some(([key, value]) => key !== "specs" && value) ||
     Object.keys(filters.specs).length > 0;
@@ -60,6 +60,15 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
           </Link>
         </Button>
       </div>
+
+      {deleted && (
+        <p
+          role="status"
+          className="rounded-lg border border-emerald-400/40 bg-emerald-400/10 p-3 text-sm"
+        >
+          Deleted {deleted}.
+        </p>
+      )}
 
       <section className="flex flex-col gap-3">
         <FilterForm action="/admin/products">
@@ -92,13 +101,12 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
               </option>
             ))}
           </Select>
-          <Select name="status" defaultValue={filters.status} aria-label="Status" className="w-36">
-            <option value="">Any status</option>
-            {PRODUCT_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s.charAt(0) + s.slice(1).toLowerCase()}
-              </option>
-            ))}
+          <Select name="status" defaultValue={filters.status} aria-label="Status" className="w-44">
+            {/* Archived products are hidden unless asked for. */}
+            <option value="">Active and drafts</option>
+            <option value="ACTIVE">Active</option>
+            <option value="DRAFT">Draft</option>
+            <option value="ARCHIVED">Archived</option>
           </Select>
           <Select
             name="missing"

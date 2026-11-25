@@ -1,9 +1,9 @@
 import "server-only";
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectsCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 // Product images live in Cloudflare R2 in production. Without R2 settings
 // (local development) they are written to .uploads/ and served by
@@ -51,6 +51,24 @@ export async function putObject(key: string, body: Buffer, contentType: string) 
   const file = localPath(key);
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, body);
+}
+
+// Deletes stored files. Keys that don't exist are ignored.
+export async function deleteObjects(keys: string[]) {
+  if (keys.length === 0) return;
+  if (r2) {
+    // R2 accepts up to 1,000 keys per request.
+    for (let i = 0; i < keys.length; i += 1000) {
+      await r2.client.send(
+        new DeleteObjectsCommand({
+          Bucket: r2.bucket,
+          Delete: { Objects: keys.slice(i, i + 1000).map((Key) => ({ Key })), Quiet: true },
+        }),
+      );
+    }
+    return;
+  }
+  await Promise.all(keys.map((key) => rm(localPath(key), { force: true })));
 }
 
 export async function readLocalObject(key: string): Promise<Buffer | null> {

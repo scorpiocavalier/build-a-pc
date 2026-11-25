@@ -8,12 +8,13 @@ import sharp from "sharp";
 
 import { Prisma } from "@/generated/prisma/client";
 import { parseProductInput, type RawProductInput } from "@/lib/catalog/product-input";
+import { deleteProduct } from "@/server/admin/products";
 import { audit } from "@/server/audit";
 import { saveProduct } from "@/server/catalog/save-product";
 import { CATALOG_TAG } from "@/server/catalog/queries";
 import { db } from "@/server/db";
 import { requireAdmin } from "@/server/require-admin";
-import { putObject } from "@/server/storage";
+import { deleteObjects, putObject } from "@/server/storage";
 
 export type ProductFormState = {
   errors?: Record<string, string>;
@@ -157,4 +158,24 @@ export async function makePrimaryImage(imageId: string) {
     ),
   );
   updateTag(CATALOG_TAG);
+}
+
+// "Delete product" in the edit page's danger zone: deletes the product, or
+// archives it if it was ever sold or bought (src/server/admin/products.ts).
+export async function deleteProductAction(productId: string) {
+  const user = await requireAdmin();
+  const result = await deleteProduct(productId, user.id);
+  if (!result) redirect("/admin/products");
+
+  if (result.imageKeys.length > 0) {
+    // The product is already gone; a storage hiccup only leaves orphaned files.
+    await deleteObjects(result.imageKeys).catch((error) =>
+      console.error("[products] could not delete image files", result.imageKeys, error),
+    );
+  }
+  updateTag(CATALOG_TAG);
+  if (result.outcome === "deleted") {
+    redirect(`/admin/products?deleted=${encodeURIComponent(result.sku)}`);
+  }
+  redirect(`/admin/products/${productId}?archived=1`);
 }
