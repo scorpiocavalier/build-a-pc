@@ -10,9 +10,6 @@
       }
     }
   },
-  "Catalog": {
-    "shopLead": "Everything we stock for your next build, at our Montreal store."
-  },
   "Checkout": {
     "deliveryHint": "We deliver in person around Montreal."
   },

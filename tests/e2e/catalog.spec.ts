@@ -2,34 +2,6 @@ import { expect, test } from "@playwright/test";
 
 // Runs against the seeded placeholder catalog (npm run db:seed).
 
-test("shop page lists the eight categories", async ({ page }) => {
-  await page.goto("/en/shop");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Shop PC parts");
-  for (const name of ["Processors (CPU)", "Graphics cards", "Power supplies", "CPU coolers"]) {
-    await expect(
-      page.getByRole("link", { name: new RegExp(name.replace(/[()]/g, "\\$&")) }),
-    ).toBeVisible();
-  }
-});
-
-test("category filters narrow the product list and can be cleared", async ({ page, isMobile }) => {
-  await page.goto("/en/c/cpu");
-  await expect(page.getByRole("status").first()).toHaveText("3 products");
-
-  if (isMobile) await page.getByText("Filters", { exact: true }).click();
-  const filters = isMobile
-    ? page.locator("details")
-    : page.getByRole("complementary", { name: "Filters" });
-  await filters.getByRole("link", { name: /^LGA1851/ }).click();
-
-  await expect(page).toHaveURL(/socket=LGA1851/);
-  await expect(page.getByRole("status").first()).toHaveText("1 product");
-  await expect(page.getByRole("heading", { name: "Core Ultra 7 265K" })).toBeVisible();
-
-  await filters.getByRole("link", { name: "Clear filters" }).click();
-  await expect(page.getByRole("status").first()).toHaveText("3 products");
-});
-
 test("product page shows French specs, stock per location and structured data", async ({
   page,
 }) => {
@@ -37,6 +9,9 @@ test("product page shows French specs, stock per location and structured data", 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("GeForce RTX 5080 Aero OC 16G");
   await expect(page.getByText("1 599,99 $")).toBeVisible();
   await expect(page.getByText("Montréal : 1 en stock")).toBeVisible();
+  // The parts shop is gone (#34), so the breadcrumb is just Accueil › product.
+  const crumbs = page.getByRole("navigation", { name: "Fil d’Ariane" }).getByRole("listitem");
+  await expect(crumbs).toHaveText(["Accueil", /GeForce RTX 5080 Aero OC 16G$/]);
 
   const specs = page.locator("dl");
   await expect(specs).toContainText("Mémoire vidéo");
@@ -65,19 +40,18 @@ test("search in French matches French names", async ({ page }) => {
 
 // The page shell streams before the product lookup finishes, so the HTTP
 // status is 200; Next.js marks the result noindex so search engines skip it.
-test("unknown products and categories show a not-found page", async ({ page }) => {
-  for (const url of ["/en/p/not-a-product", "/en/c/toasters"]) {
-    await page.goto(url);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Page not found");
-    await expect(page.locator('meta[name="robots"][content="noindex"]').first()).toBeAttached();
-  }
+test("unknown products show a not-found page", async ({ page }) => {
+  await page.goto("/en/p/not-a-product");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Page not found");
+  await expect(page.locator('meta[name="robots"][content="noindex"]').first()).toBeAttached();
 });
 
 test("product cards in a row are all the same size", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 1000 });
-  await page.goto("/en/c/cpu");
+  // Two Ryzen CPUs in the seed: one row of search results.
+  await page.goto("/en/search?q=ryzen");
   const cards = page.locator("main ul article");
-  await expect(cards.first()).toBeVisible();
+  await expect(cards).toHaveCount(2);
   const sizes = await cards.evaluateAll((els) =>
     els.map((e) => {
       const r = e.getBoundingClientRect();

@@ -3,8 +3,7 @@ import { getCategoryDefinition } from "@/lib/specs/definitions";
 import type { SpecValues } from "@/lib/specs/types";
 
 // Spec dropdowns for admin lists (inventory, products): once a part is
-// picked, the same spec filters as the storefront's category page, one
-// value per spec. URL keys are prefixed, e.g. "spec.socket=AM5".
+// picked, its category's spec filters, one value per spec. URL keys are prefixed, e.g. "spec.socket=AM5".
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -30,7 +29,7 @@ export function filterBySpecs<T extends Row>(
   const active = parseFilters(definition, { ...specs, brand: undefined });
   const products = rows.map((row) => ({
     row,
-    // Brand and name only matter for the storefront's brand facet and sorting.
+    // Brand and name only matter for the brand facet and sorting.
     brand: "",
     name: { en: "" },
     priceCents: row.priceCents,

@@ -6,12 +6,11 @@ import { CATALOG_TAG } from "@/server/catalog/queries";
 import { db } from "@/server/db";
 import { siteUrl } from "@/server/seo";
 
-// Every public page in both languages, with hreflang alternates. Product and
-// category lists come from the catalog.
+// Every public page in both languages, with hreflang alternates. Products and
+// featured builds come from the database.
 
 const STATIC_PATHS = [
   "",
-  "/shop",
   "/build",
   "/prebuilt",
   "/locations",
@@ -26,7 +25,6 @@ async function catalogPaths() {
   cacheLife("hours");
   cacheTag(CATALOG_TAG);
   return Promise.all([
-    db.category.findMany({ select: { slug: true } }),
     db.product.findMany({
       where: { status: "ACTIVE" },
       select: { slug: true, updatedAt: true },
@@ -36,7 +34,7 @@ async function catalogPaths() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [categories, products, builds] = await catalogPaths();
+  const [products, builds] = await catalogPaths();
   const base = siteUrl();
   const entry = (path: string, lastModified?: Date) =>
     routing.locales.map((locale) => ({
@@ -51,7 +49,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...STATIC_PATHS.flatMap((path) => entry(path)),
-    ...categories.flatMap((c) => entry(`/c/${c.slug}`)),
     ...products.flatMap((p) => entry(`/p/${p.slug}`, p.updatedAt)),
     ...builds.flatMap((b) => entry(`/build/s/${b.shareId}`, b.updatedAt)),
   ];

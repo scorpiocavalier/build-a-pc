@@ -48,7 +48,7 @@ async function CartContents() {
       <div className="flex flex-col items-start gap-4 rounded-lg border bg-surface p-8">
         <p className="text-muted">{t("empty")}</p>
         <Button asChild>
-          <Link href="/shop">{t("continueShopping")}</Link>
+          <Link href="/prebuilt">{t("continueShopping")}</Link>
         </Button>
       </div>
     );
@@ -177,7 +177,10 @@ async function CartContents() {
         <Button asChild>
           <Link href="/checkout">{t("checkout")}</Link>
         </Button>
-        <Link href="/shop" className="text-center text-sm text-accent underline underline-offset-2">
+        <Link
+          href="/prebuilt"
+          className="text-center text-sm text-accent underline underline-offset-2"
+        >
           {t("continueShopping")}
         </Link>
       </aside>

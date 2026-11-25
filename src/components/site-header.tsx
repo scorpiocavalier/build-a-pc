@@ -1,4 +1,4 @@
-import { Search, Store, UserRound } from "lucide-react";
+import { Search, UserRound } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Suspense } from "react";
 
@@ -21,11 +21,6 @@ export function SiteHeader() {
           <Logo className="text-sm min-[400px]:text-base sm:text-lg" />
         </Link>
         <nav className="flex items-center gap-1">
-          <Link href="/shop" className={navLink}>
-            {/* Icon only on phones so the header fits. */}
-            <Store aria-hidden="true" className="size-5 sm:hidden" />
-            <span className="max-sm:sr-only">{t("nav.shop")}</span>
-          </Link>
           <Link href="/build" className={`${navLink} hidden md:block`}>
             {t("nav.builder")}
           </Link>

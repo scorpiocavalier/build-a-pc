@@ -41,7 +41,6 @@ export type ProductDetail = ProductSummary & {
   description: LocalizedText;
   mpn: string | null;
   warrantyMonths: number | null;
-  categoryName: LocalizedText;
   images: ProductImageView[];
 };
 
@@ -93,28 +92,6 @@ export function toSummary(row: SummaryRow): ProductSummary {
   };
 }
 
-export type CategorySummary = { slug: string; name: LocalizedText; productCount: number };
-
-export async function getCategories(): Promise<CategorySummary[]> {
-  "use cache";
-  cacheLife("hours");
-  cacheTag(CATALOG_TAG);
-
-  const categories = await db.category.findMany({
-    orderBy: { position: "asc" },
-    select: {
-      slug: true,
-      name: true,
-      _count: { select: { products: { where: { status: "ACTIVE" } } } },
-    },
-  });
-  return categories.map((c) => ({
-    slug: c.slug,
-    name: c.name as LocalizedText,
-    productCount: c._count.products,
-  }));
-}
-
 export async function getCategoryProducts(slug: string) {
   "use cache";
   cacheLife("hours");
@@ -152,7 +129,6 @@ export async function getProduct(slug: string): Promise<ProductDetail | null> {
     description: row.description as LocalizedText,
     mpn: row.mpn,
     warrantyMonths: row.warrantyMonths,
-    categoryName: row.category.name as LocalizedText,
     images: row.images.map(toImage),
   };
 }

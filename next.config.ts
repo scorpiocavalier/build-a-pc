@@ -38,6 +38,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // The parts shop (/shop and /c/<category>) was removed (#34): old links and
+  // search results land on the prebuilt PCs instead. Unprefixed paths go to
+  // /prebuilt, and the i18n proxy then picks the visitor's locale as usual.
+  async redirects() {
+    return [
+      { source: "/:locale(en|fr)/shop", destination: "/:locale/prebuilt", permanent: true },
+      { source: "/:locale(en|fr)/c/:path+", destination: "/:locale/prebuilt", permanent: true },
+      { source: "/shop", destination: "/prebuilt", permanent: true },
+      { source: "/c/:path+", destination: "/prebuilt", permanent: true },
+    ];
+  },
   images: {
     remotePatterns: imageHost
       ? [
