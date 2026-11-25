@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import type { Locator } from "@playwright/test";
 import type pg from "pg";
 
 import { expect, test } from "./fixtures";
@@ -172,6 +173,14 @@ async function addToBuilds(sql: pg.Client, productId: string, title: string) {
   return ids;
 }
 
+// Clicks until the dialog opens: a click before the page hydrates does nothing.
+async function openDialog(button: Locator, dialog: Locator) {
+  await expect(async () => {
+    await button.click();
+    await expect(dialog).toBeVisible({ timeout: 1000 });
+  }).toPass();
+}
+
 async function auditFor(sql: pg.Client, productId: string) {
   const { rows } = await sql.query<{ action: string; actorId: string | null; details: unknown }>(
     `SELECT action, "actorId", details FROM "AuditLog"
@@ -189,25 +198,24 @@ test("a product that was never sold is deleted for good after confirming", async
   const buildTitle = `E2E Prebuilt ${product.sku}`;
   const builds = await addToBuilds(sql, product.id, buildTitle);
 
-  await page.goto(`/admin/products/${product.id}`);
-  await page.locator('input[type="file"]').setInputFiles({
-    name: "fan.png",
-    mimeType: "image/png",
-    buffer: PIXEL_PNG,
-  });
-  await expect(page.getByText("Main", { exact: true })).toBeVisible();
-  const { rows: images } = await sql.query<{ key: string }>(
-    `SELECT key FROM "ProductImage" WHERE "productId" = $1`,
-    [product.id],
+  // A photo, stored the way uploads are without R2 (src/server/storage.ts).
+  const key = `products/${product.id}/${randomUUID()}.png`;
+  const imageFile = path.resolve(".uploads", key);
+  await mkdir(path.dirname(imageFile), { recursive: true });
+  await writeFile(imageFile, PIXEL_PNG);
+  await sql.query(
+    `INSERT INTO "ProductImage" (id, "productId", key, alt, width, height)
+     VALUES ($1, $2, $3, '{"en":"","fr":""}', 1, 1)`,
+    [randomUUID(), product.id, key],
   );
-  const imageFile = path.resolve(".uploads", images[0].key);
-  expect(existsSync(imageFile)).toBe(true);
+
+  await page.goto(`/admin/products/${product.id}`);
+  await expect(page.getByText("Main", { exact: true })).toBeVisible();
 
   // The confirmation lists the prebuilt PC first. Escape cancels it.
   const danger = page.getByRole("region", { name: "Danger zone" });
-  await danger.getByRole("button", { name: "Delete product" }).click();
   const dialog = page.getByRole("dialog", { name: `Delete ${product.name} (${product.sku})?` });
-  await expect(dialog).toBeVisible();
+  await openDialog(danger.getByRole("button", { name: "Delete product" }), dialog);
   await expect(dialog.locator("p").first()).toHaveText(
     `It's part of this prebuilt PC: “${buildTitle}”. It will be removed from it, so pick a replacement part.`,
   );
@@ -272,8 +280,8 @@ test("a product that was sold or bought is archived instead, and past orders kee
   await addToBuilds(sql, product.id, buildTitle);
 
   await page.goto(`/admin/products/${product.id}`);
-  await page.getByRole("button", { name: "Delete product" }).click();
   const dialog = page.getByRole("dialog", { name: `Archive ${product.name} (${product.sku})?` });
+  await openDialog(page.getByRole("button", { name: "Delete product" }), dialog);
   await expect(dialog.locator("p").first()).toContainText(buildTitle);
   await expect(dialog).toContainText(
     "This product appears in 1 order and 1 purchase, so it will be archived instead of deleted. " +

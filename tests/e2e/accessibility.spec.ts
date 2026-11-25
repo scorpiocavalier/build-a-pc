@@ -85,8 +85,11 @@ test("no accessibility violations on a product's edit page and its delete dialog
   test.skip(isMobile, "the admin is used on desktop");
   const product = await createProduct(sql);
   await expectNoViolations(adminPage, `/admin/products/${product.id}`);
-  await adminPage.getByRole("button", { name: "Delete product" }).click();
-  await expect(adminPage.getByRole("dialog")).toBeVisible();
+  // A click before the page hydrates does nothing, so retry until it opens.
+  await expect(async () => {
+    await adminPage.getByRole("button", { name: "Delete product" }).click();
+    await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 1000 });
+  }).toPass();
   const { violations } = await new AxeBuilder({ page: adminPage }).withTags(TAGS).analyze();
   expect(violations.map((v) => v.id)).toEqual([]);
 });
