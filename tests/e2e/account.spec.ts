@@ -49,8 +49,13 @@ test.describe("signing in", () => {
     await expect(page.getByText("Staff accounts sign in with Google")).toBeVisible();
   });
 
-  test("the header links to the account, which asks guests to sign in", async ({ page }) => {
+  test("the header links to the account, which asks guests to sign in", async ({
+    page,
+    isMobile,
+  }) => {
     await page.goto("/fr");
+    // On phones the account link is in the menu.
+    if (isMobile) await page.getByRole("button", { name: "Menu" }).click();
     await page.getByRole("link", { name: "Mon compte" }).click();
     await expect(page).toHaveURL(/\/fr\/sign-in/);
     await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();

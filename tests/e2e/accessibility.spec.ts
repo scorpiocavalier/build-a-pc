@@ -10,10 +10,11 @@ import { addToCart, createProduct, uniqueEmail } from "./shop-helpers";
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
-async function expectNoViolations(page: Page, path: string) {
+async function expectNoViolations(page: Page, path: string, before?: () => Promise<void>) {
   await page.goto(path);
   // Wait for streamed sections to replace their loading placeholders.
   await expect(page.locator(".animate-pulse")).toHaveCount(0);
+  await before?.();
   const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   const summary = violations.map((v) => ({
     rule: v.id,
@@ -44,6 +45,26 @@ for (const path of PUBLIC_PAGES) {
     await expectNoViolations(page, path);
   });
 }
+
+test("no accessibility violations in the open mobile menu", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "the menu is only shown on phones");
+  for (const path of ["/en", "/fr/build"]) {
+    await expectNoViolations(page, path, async () => {
+      await page.getByRole("button", { name: "Menu" }).click();
+      // Let the sheet finish sliding in before checking contrast.
+      const menu = page.getByRole("dialog", { name: "Menu" });
+      await expect(menu).toBeVisible();
+      await page.evaluate(() =>
+        Promise.all(
+          document
+            .getAnimations()
+            .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+            .map((a) => a.finished),
+        ),
+      );
+    });
+  }
+});
 
 test("no accessibility violations in the cart and checkout", async ({ page }) => {
   await addToCart(page, "amd-ryzen-5-9600x");

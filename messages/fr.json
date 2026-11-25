@@ -17,7 +17,8 @@
     "switchLocaleLabel": "View the site in English",
     "searchLabel": "Rechercher des produits",
     "searchPlaceholder": "Rechercher des composantes",
-    "menu": "Menu"
+    "menu": "Menu",
+    "closeMenu": "Fermer le menu"
   },
   "Home": {
     "eyebrow": "Toronto · Montréal",
