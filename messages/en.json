@@ -17,7 +17,8 @@
     "switchLocaleLabel": "Afficher le site en français",
     "searchLabel": "Search products",
     "searchPlaceholder": "Search parts",
-    "menu": "Menu"
+    "menu": "Menu",
+    "closeMenu": "Close menu"
   },
   "Home": {
     "eyebrow": "Toronto · Montreal",
