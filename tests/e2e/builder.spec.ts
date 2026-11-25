@@ -120,8 +120,11 @@ test("an assembled PC goes through checkout with a deposit, assembly and pickup"
   await customer.getByRole("radio", { name: /Cash/ }).check();
   await customer.getByRole("button", { name: "Place order" }).click();
   await expect(customer.getByRole("heading", { name: "Thank you, Alex!" })).toBeVisible();
-  await expect(customer.getByText("Windows 11 Pro included")).toBeVisible();
-  await expect(customer.getByText(/Assembly and testing|Windows 11 Home/)).toHaveCount(0);
+  const items = customer.locator("section", {
+    has: customer.getByRole("heading", { name: "Items" }),
+  });
+  await expect(items.getByText("Windows 11 Pro included")).toBeVisible();
+  await expect(items.getByText(/Assembly and testing|Windows 11 Home/)).toHaveCount(0);
 
   const order = await orderFor(sql, email);
   const { rows } = await sql.query(
@@ -201,10 +204,10 @@ test("an order placed with the old assembly fee still shows the fee and its Wind
   const { rows } = await sql.query(
     `INSERT INTO "Order" (id, "accessToken", locale, name, email, phone, fulfilment, "locationId",
        "requestedWindow", "paymentMethod", "subtotalCents", "deliveryCents", "assemblyCents",
-       "taxCents", "totalCents", "taxBreakdown")
+       "taxCents", "totalCents", "taxBreakdown", "updatedAt")
      SELECT gen_random_uuid()::text, md5(random()::text), 'en', 'Old Order', $1, '514 555 0199',
        'PICKUP', id, '{"date":"2026-01-05","slot":"afternoon"}', 'CASH', 65999, 0, 14999,
-       10530, 91528, '[{"name":"HST","rate":13000,"cents":10530}]'
+       10530, 91528, '[{"name":"HST","rate":13000,"cents":10530}]', now()
      FROM "Location" WHERE code = 'TOR'
      RETURNING id, "accessToken"`,
     [uniqueEmail("old-assembled")],
@@ -220,8 +223,8 @@ test("an order placed with the old assembly fee still shows the fee and its Wind
 
   await page.goto(`/en/orders/${old.id}?t=${old.accessToken}`);
   await expect(page.getByText("Assembly and testing")).toBeVisible();
-  await expect(page.getByText("$149.99")).toBeVisible();
-  await expect(page.getByText("$915.28")).toBeVisible();
+  await expect(page.getByText("$149.99", { exact: true })).toBeVisible();
+  await expect(page.getByText("$915.28", { exact: true })).toBeVisible();
   await expect(page.getByText("Windows 11 Pro (OEM licence)")).toBeVisible();
   // It paid for its licence, so it doesn't claim Windows was included free.
   await expect(page.getByText("Windows 11 Pro included")).toHaveCount(0);
