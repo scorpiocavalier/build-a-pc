@@ -52,12 +52,6 @@
         "body": "Récupérez-le à Toronto ou à Montréal, ou nous vous le livrons en personne."
       }
     },
-    "locationsTitle": "Points de cueillette",
-    "locations": {
-      "toronto": "Toronto (Ontario)",
-      "montreal": "Montréal (Québec)"
-    },
-    "locationsNote": "Les adresses exactes et les heures d’ouverture seront publiées avant le lancement.",
     "ctaBuild": "Configurez votre PC",
     "ctaPrebuilt": "PC préassemblés"
   },
