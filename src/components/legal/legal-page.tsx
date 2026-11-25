@@ -5,7 +5,7 @@ import { formatMoney } from "@/lib/money";
 import { getSettings } from "@/server/settings";
 
 // When the policy text last changed. Update it with the wording.
-export const LEGAL_UPDATED = "2026-10-31";
+export const LEGAL_UPDATED = "2026-11-25";
 
 export type LegalPageKey = "returns" | "warranty" | "privacy" | "terms";
 
