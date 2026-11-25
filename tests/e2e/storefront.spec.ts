@@ -30,11 +30,10 @@ test("switches between English and French", async ({ page }) => {
   await expect(page).toHaveURL(/\/en$/);
 });
 
-test("shows the build gallery and both pickup locations", async ({ page }) => {
+test("shows the build gallery without a pickup locations section", async ({ page }) => {
   await page.goto("/en");
   await expect(page.locator("#builds img")).toHaveCount(5);
-  await expect(page.locator("#locations")).toContainText("Toronto, Ontario");
-  await expect(page.locator("#locations")).toContainText("Montreal, Quebec");
+  await expect(page.locator("#locations")).toHaveCount(0);
 });
 
 test("shows a localized not-found page", async ({ page }) => {

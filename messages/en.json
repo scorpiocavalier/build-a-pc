@@ -52,12 +52,6 @@
         "body": "Collect it in Toronto or Montreal, or we deliver it to you in person."
       }
     },
-    "locationsTitle": "Pickup locations",
-    "locations": {
-      "toronto": "Toronto, Ontario",
-      "montreal": "Montreal, Quebec"
-    },
-    "locationsNote": "Exact addresses and hours will be posted before launch.",
     "ctaBuild": "Build your PC",
     "ctaPrebuilt": "Prebuilt PCs"
   },

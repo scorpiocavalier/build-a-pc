@@ -1,5 +1,4 @@
-import { LOCATION_CODES } from "@/lib/store-config";
-import { Hammer, MapPin, Truck, Wrench } from "lucide-react";
+import { Hammer, Truck, Wrench } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 
@@ -105,22 +104,6 @@ export default function HomePage() {
               </li>
             ))}
           </ol>
-        </div>
-      </section>
-
-      {/* Locations */}
-      <section id="locations" className="scroll-mt-20 border-t bg-surface/50">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-3xl font-semibold tracking-tight">{t("locationsTitle")}</h2>
-          <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-            {LOCATION_CODES.map((code) => (code === "TOR" ? "toronto" : "montreal")).map((city) => (
-              <li key={city} className="flex items-center gap-3 rounded-lg border bg-surface p-6">
-                <MapPin aria-hidden="true" className="size-5 text-accent" />
-                <span className="text-lg font-medium">{t(`locations.${city}`)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-sm text-muted">{t("locationsNote")}</p>
         </div>
       </section>
     </>

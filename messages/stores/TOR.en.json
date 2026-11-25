@@ -4,7 +4,6 @@
   },
   "Home": {
     "eyebrow": "Toronto",
-    "locationsTitle": "Pickup location",
     "steps": {
       "handoff": {
         "body": "Collect it in Toronto, or we deliver it to you in person."
