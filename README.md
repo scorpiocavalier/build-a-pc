@@ -82,9 +82,9 @@ npm run dev                   # http://localhost:3000
   `src/lib/builder/compat.ts` with unit tests; every rule needs an English and
   French message under `Builder.issues`.
 - "Have us build it" puts an assembled PC in the cart (blocked while there are
-  errors or missing parts). Checkout adds the assembly fee and Windows licence
-  and asks for a deposit; admins move the order through ASSEMBLING and can
-  print a build sheet.
+  errors or missing parts). Its price is the parts: assembly and Windows 11 Pro
+  are included at no charge. Checkout asks for a deposit; admins move the order
+  through ASSEMBLING and can print a build sheet.
 - **3D builder (preview):** `/build?view=3d` shows the build in 3D (React Three
   Fiber). Parts are drawn from their specs by `src/lib/builder/scene.ts`
   (stylized shapes for now, to be replaced by real models); click a part or

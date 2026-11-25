@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { Suspense } from "react";
 
+import { WindowsIncluded } from "@/components/cart/windows-included";
 import { CategoryIcon } from "@/components/catalog/category-icon";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
@@ -11,7 +12,6 @@ import { LOCATION_CODES } from "@/lib/catalog/product-input";
 import { localize } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
 import { getCheckoutCart, MAX_LINE_QUANTITY } from "@/server/cart";
-import { getSettings } from "@/server/settings";
 
 import { removeCartBuildAction, updateCartLineAction } from "./actions";
 
@@ -35,9 +35,8 @@ export default async function CartPage() {
 }
 
 async function CartContents() {
-  const [{ lines, builds }, settings, t, builder, catalog, locale] = await Promise.all([
+  const [{ lines, builds }, t, builder, catalog, locale] = await Promise.all([
     getCheckoutCart(),
-    getSettings(),
     getTranslations("Cart"),
     getTranslations("Builder"),
     getTranslations("Catalog"),
@@ -56,10 +55,7 @@ async function CartContents() {
   }
 
   const buildCents = (build: (typeof builds)[number]) =>
-    [...build.parts, ...(build.windows ? [build.windows] : [])].reduce(
-      (sum, l) => sum + l.unitPriceCents * l.quantity,
-      settings.assemblyFeeCents,
-    );
+    build.parts.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0);
   const subtotal =
     lines.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0) +
     builds.reduce((sum, b) => sum + buildCents(b), 0);
@@ -72,7 +68,7 @@ async function CartContents() {
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <h2 className="font-semibold">{t("assembledBuild")}</h2>
-                <p className="text-sm text-muted">{t("assembledIncludes")}</p>
+                <WindowsIncluded />
               </div>
               <p className="font-semibold tabular-nums">{formatMoney(buildCents(build), locale)}</p>
             </div>
@@ -89,20 +85,6 @@ async function CartContents() {
                   </span>
                 </li>
               ))}
-              {build.windows && (
-                <li className="flex justify-between gap-3">
-                  <span>{localize(build.windows.name, locale)}</span>
-                  <span className="tabular-nums">
-                    {formatMoney(build.windows.unitPriceCents, locale)}
-                  </span>
-                </li>
-              )}
-              <li className="flex justify-between gap-3">
-                <span>{t("assemblyFee")}</span>
-                <span className="tabular-nums">
-                  {formatMoney(settings.assemblyFeeCents, locale)}
-                </span>
-              </li>
             </ul>
             <form action={removeCartBuildAction}>
               <input type="hidden" name="buildId" value={build.id} />

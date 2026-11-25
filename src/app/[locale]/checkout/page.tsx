@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { WindowsIncluded } from "@/components/cart/windows-included";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { Link } from "@/i18n/navigation";
@@ -76,8 +77,6 @@ async function CheckoutContent({ searchParams }: Pick<Props, "searchParams">) {
   if (quoted && "error" in quoted && quoted.error === "noDelivery" && choice?.kind === "DELIVERY") {
     postalError = t("noDelivery", { postalCode: choice.postalCode });
   }
-  // The Windows licence for assembled builds is no longer for sale.
-  const windowsMissing = quoted && "error" in quoted && quoted.error === "windows";
   const ready = quoted && !("error" in quoted) ? quoted : null;
 
   return (
@@ -89,11 +88,6 @@ async function CheckoutContent({ searchParams }: Pick<Props, "searchParams">) {
           postalError={postalError}
           locationLabel={ready ? localize(ready.location.name, locale) : null}
         />
-        {windowsMissing && (
-          <p role="alert" className="rounded-lg border border-amber-400/40 bg-amber-400/10 p-4">
-            {t("errors.stock")}
-          </p>
-        )}
         {ready && choice && (
           <DetailsStep
             choice={choice}
@@ -232,10 +226,7 @@ async function FulfilmentStep({
 
 // Every product line in the cart, including the parts of assembled builds.
 function allLines(cart: CheckoutCart): CartLineView[] {
-  return [
-    ...cart.lines,
-    ...cart.builds.flatMap((b) => [...b.parts, ...(b.windows ? [b.windows] : [])]),
-  ];
+  return [...cart.lines, ...cart.builds.flatMap((b) => b.parts)];
 }
 
 async function DetailsStep({
@@ -350,8 +341,8 @@ async function OrderSummary({
           <p className="text-sm font-medium">{cartT("assembledBuild")}</p>
           <ul className="flex flex-col gap-1.5 text-xs text-muted">
             {build.parts.map((part) => lineItem(part, `${build.id}-${part.productId}`))}
-            {build.windows && lineItem(build.windows, `${build.id}-windows`)}
           </ul>
+          <WindowsIncluded className="text-xs" />
         </div>
       ))}
       {cart.lines.length > 0 && (
@@ -361,9 +352,6 @@ async function OrderSummary({
       )}
       <dl className="flex flex-col gap-1 border-t pt-3 text-sm">
         <Row label={t("subtotal")} value={money(subtotal)} />
-        {quoted && quoted.quote.assemblyCents > 0 && (
-          <Row label={t("assembly")} value={money(quoted.quote.assemblyCents)} />
-        )}
         {quoted && quoted.quote.deliveryCents > 0 && (
           <Row label={t("deliveryFee")} value={money(quoted.quote.deliveryCents)} />
         )}

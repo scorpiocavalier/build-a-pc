@@ -134,9 +134,8 @@
     "taxNote": "Taxes and delivery are calculated at checkout.",
     "quantityFor": "Quantity for {name}",
     "assembledBuild": "Assembled PC",
-    "assembledIncludes": "Includes assembly, Windows and testing.",
-    "removeBuild": "Remove build",
-    "assemblyFee": "Assembly and testing"
+    "assembledIncludes": "Windows 11 Pro included",
+    "removeBuild": "Remove build"
   },
   "Checkout": {
     "title": "Checkout",
@@ -338,8 +337,6 @@
     "notHere": "Not in stock in {location}",
     "summary": "Your build",
     "parts": "Parts",
-    "assembly": "Assembly, Windows install and testing",
-    "windows": "{name}",
     "estimatedTotal": "Estimated total",
     "taxNote": "Taxes and delivery are calculated at checkout.",
     "wattage": "Estimated power draw: {watts} W",

@@ -39,7 +39,8 @@ describe("assembled orders", () => {
   const assembled = {
     fulfilment: "PICKUP",
     paymentStatus: "PARTIALLY_PAID",
-    assemblyCents: 14999,
+    // No assembly fee on new orders: the build lines mark it as assembled.
+    lines: [{ buildGroup: "pc1" }, { buildGroup: null }],
     depositCents: 60000,
   } as const;
 
@@ -63,5 +64,8 @@ describe("assembled orders", () => {
       "CANCELLED",
     ]);
     expect(nextStatuses({ ...pickup, status: "CONFIRMED" })).toEqual(["READY", "CANCELLED"]);
+    expect(nextStatuses({ ...pickup, status: "CONFIRMED", lines: [{ buildGroup: null }] })).toEqual(
+      ["READY", "CANCELLED"],
+    );
   });
 });

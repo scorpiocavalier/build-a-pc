@@ -18,19 +18,34 @@ export type OrderForTransition = {
   status: OrderStatus;
   fulfilment: Fulfilment;
   paymentStatus: PaymentStatus;
-  // Non-zero when the order includes an assembled build.
-  assemblyCents?: number;
+  // Lines with a build group belong to an assembled PC.
+  lines?: readonly { buildGroup: string | null }[];
   depositCents?: number;
   paidCents?: number;
 };
 
 export type TransitionCheck = { ok: true } | { ok: false; reason: string };
 
+// Whether the order includes an assembled PC. Older orders also carry an
+// assembly fee, but new ones don't, so the build lines are what count.
+export function isAssembled(order: { lines?: readonly { buildGroup: string | null }[] }): boolean {
+  return (order.lines ?? []).some((line) => line.buildGroup !== null);
+}
+
+// Orders placed since assembly became free include Windows 11 Pro with each
+// assembled PC. Older ones were charged a fee and list the licence they got.
+export function includesWindowsPro(order: {
+  assemblyCents: number;
+  lines: readonly { buildGroup: string | null }[];
+}): boolean {
+  return isAssembled(order) && order.assemblyCents === 0;
+}
+
 export function canTransition(order: OrderForTransition, to: OrderStatus): TransitionCheck {
   if (!NEXT[order.status].includes(to)) {
     return { ok: false, reason: `Can't go from ${order.status} to ${to}` };
   }
-  const assembled = (order.assemblyCents ?? 0) > 0;
+  const assembled = isAssembled(order);
   if (to === "CONFIRMED" && (order.paidCents ?? 0) < (order.depositCents ?? 0)) {
     return { ok: false, reason: "Record the deposit before confirming this order" };
   }

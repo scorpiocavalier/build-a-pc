@@ -36,7 +36,10 @@ export async function getReport(range: ReportRange, location: LocationCode | nul
       SELECT COUNT(*)::bigint AS orders,
              COALESCE(SUM(o."totalCents"), 0)::bigint AS total,
              COALESCE(SUM(o."taxCents"), 0)::bigint AS tax,
-             COUNT(*) FILTER (WHERE o."assemblyCents" > 0)::bigint AS assembled
+             COUNT(*) FILTER (WHERE EXISTS (
+               SELECT 1 FROM "OrderLine" ol
+               WHERE ol."orderId" = o.id AND ol."buildGroup" IS NOT NULL
+             ))::bigint AS assembled
       FROM "Order" o
       JOIN "Location" l ON l.id = o."locationId"
       WHERE o.status <> 'CANCELLED'

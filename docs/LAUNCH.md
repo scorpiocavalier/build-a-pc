@@ -58,7 +58,7 @@ and a separate Neon branch, so previews never touch real orders.
 
 - [ ] `npm run db:deploy` against production (applies all migrations).
 - [ ] `npm run db:seed` **once** for locations, tax rates, categories and the
-      Windows products — then delete the placeholder products in the admin, or
+      Windows 11 Pro product — then delete the placeholder products in the admin, or
       import the real catalog over them.
 - [ ] **Backup restore test:** restore a Neon backup to a new branch, point a
       preview deployment at it, and place a test order. Note how long it took.
@@ -69,8 +69,7 @@ and a separate Neon branch, so previews never touch real orders.
       English and French names and descriptions, prices and stock per location.
 - [ ] Product photos (`/admin/products/<id>`).
 - [ ] Feature 2–4 prebuilt PCs (`/admin/builds`).
-- [ ] e-Transfer email, deposit %, assembly fee and Windows SKU
-      (`/admin/settings`).
+- [ ] e-Transfer email, deposit % and assembly time (`/admin/settings`).
 - [ ] Logo and brand colours (optional; tokens are in `src/app/globals.css`).
 
 ## 6. Monitoring

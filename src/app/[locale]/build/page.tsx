@@ -15,7 +15,7 @@ import { LOCATION_CODES } from "@/lib/catalog/product-input";
 import { formatMoney } from "@/lib/money";
 import { siteUrl } from "@/lib/site-url";
 import { cn } from "@/lib/utils";
-import { getAssemblyExtras, getMyBuild, type BuildView } from "@/server/builder";
+import { getAssemblyDays, getMyBuild, type BuildView } from "@/server/builder";
 import { builderData } from "@/server/builder-3d";
 import { getCustomer } from "@/server/customer";
 import { localeAlternates } from "@/server/seo";
@@ -51,10 +51,10 @@ export default async function BuilderPage({ searchParams }: Props) {
 }
 
 async function Builder({ searchParams }: Pick<Props, "searchParams">) {
-  const [params, build, extras, t, catalog, locale, customer, t3d] = await Promise.all([
+  const [params, build, assemblyDays, t, catalog, locale, customer, t3d] = await Promise.all([
     searchParams,
     getMyBuild(),
-    getAssemblyExtras(),
+    getAssemblyDays(),
     getTranslations("Builder"),
     getTranslations("Catalog"),
     getLocale(),
@@ -84,7 +84,6 @@ async function Builder({ searchParams }: Pick<Props, "searchParams">) {
   const hasParts = Object.keys(view.items).length > 0;
   const canAssemble =
     hasParts && view.missing.length === 0 && !view.issues.some((i) => i.severity === "error");
-  const assembledTotal = view.partsCents + extras.feeCents + (extras.windows?.priceCents ?? 0);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
@@ -171,14 +170,14 @@ async function Builder({ searchParams }: Pick<Props, "searchParams">) {
           </div>
         )}
       </div>
-      <BuildSummary build={view} extras={extras}>
+      <BuildSummary build={view}>
         <AddBuildButtons
           canAssemble={canAssemble}
           hasParts={hasParts}
-          assembleLabel={`${t("assemble")} · ${formatMoney(assembledTotal, locale)}`}
+          assembleLabel={`${t("assemble")} · ${formatMoney(view.partsCents, locale)}`}
         />
         <p className={cn("text-xs text-muted", !canAssemble && "hidden")}>
-          {t("assembleNote", { days: extras.days })}
+          {t("assembleNote", { days: assemblyDays })}
         </p>
       </BuildSummary>
     </div>

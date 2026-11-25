@@ -386,7 +386,8 @@ model Order {
   paymentStatus   PaymentStatus @default(UNPAID)
   subtotalCents   Int
   deliveryCents   Int
-  // Flat assembly fee × number of assembled builds (Windows is a line item).
+  // Flat assembly fee × number of assembled builds, on orders placed before
+  // assembly and Windows 11 Pro became free (#36). New orders store 0.
   assemblyCents   Int           @default(0)
   taxCents        Int
   totalCents      Int

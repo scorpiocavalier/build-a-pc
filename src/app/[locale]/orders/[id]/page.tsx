@@ -3,9 +3,11 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
+import { WindowsIncluded } from "@/components/cart/windows-included";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { formatOrderNumber } from "@/lib/checkout/order-number";
+import { includesWindowsPro } from "@/lib/checkout/order-status";
 import { formatRate } from "@/lib/checkout/pricing";
 import { formatDate } from "@/lib/checkout/windows";
 import { localize } from "@/lib/localized";
@@ -194,6 +196,7 @@ async function OrderContent({ params, searchParams }: Props) {
             </li>
           ))}
         </ul>
+        {includesWindowsPro(order) && <WindowsIncluded />}
         <dl className="flex flex-col gap-1 border-t pt-3 text-sm">
           <Row label={checkout("subtotal")} value={money(order.subtotalCents)} />
           {order.assemblyCents > 0 && (

@@ -9,7 +9,6 @@ import { SLOTS } from "@/lib/builder/slots";
 import { LOCATION_CODES, type LocationCode } from "@/lib/catalog/product-input";
 import type { LocalizedText } from "@/lib/localized";
 import { db } from "@/server/db";
-import { getSettings } from "@/server/settings";
 import { publicUrl } from "@/server/storage";
 
 // The cart lives in the database; the browser only holds a random token in an
@@ -33,11 +32,11 @@ export type CartLineView = {
   slot?: BuildSlot;
 };
 
-// An assembled PC in the cart: its parts plus the Windows licence we install.
+// An assembled PC in the cart. Its price is its parts only: assembly and the
+// Windows 11 Pro install are included at no extra charge.
 export type CartBuildView = {
   id: string;
   parts: CartLineView[];
-  windows: CartLineView | null;
 };
 
 const productInclude = {
@@ -112,7 +111,7 @@ export async function getCartLines(): Promise<CartLineView[]> {
 
 type CartBuildItem = { slot: BuildSlot; productId: string; quantity: number };
 
-export async function getCartBuilds(windowsSku: string): Promise<CartBuildView[]> {
+export async function getCartBuilds(): Promise<CartBuildView[]> {
   const token = await readToken();
   if (!token) return [];
   const builds = await db.cartBuild.findMany({
@@ -123,18 +122,17 @@ export async function getCartBuilds(windowsSku: string): Promise<CartBuildView[]
 
   const items = builds.flatMap((b) => b.items as CartBuildItem[]);
   const products = await db.product.findMany({
-    where: { OR: [{ id: { in: items.map((i) => i.productId) } }, { sku: windowsSku }] },
+    where: { id: { in: items.map((i) => i.productId) } },
     include: productInclude,
   });
   const byId = new Map(products.map((p) => [p.id, p]));
-  const windows = products.find((p) => p.sku === windowsSku && p.status === "ACTIVE");
 
   return builds.map((build) => {
     const parts = (build.items as CartBuildItem[])
       .filter((item) => byId.get(item.productId)?.status === "ACTIVE")
       .sort((a, b) => SLOTS.indexOf(a.slot) - SLOTS.indexOf(b.slot))
       .map((item) => toLineView(byId.get(item.productId)!, item.quantity, item.slot));
-    return { id: build.id, parts, windows: windows ? toLineView(windows, 1) : null };
+    return { id: build.id, parts };
   });
 }
 
@@ -206,6 +204,6 @@ export async function clearCart() {
 
 // Loose parts and assembled builds together, as checkout needs them.
 export async function getCheckoutCart() {
-  const [lines, settings] = await Promise.all([getCartLines(), getSettings()]);
-  return { lines, builds: await getCartBuilds(settings.windowsSku) };
+  const [lines, builds] = await Promise.all([getCartLines(), getCartBuilds()]);
+  return { lines, builds };
 }

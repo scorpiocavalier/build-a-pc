@@ -134,9 +134,8 @@
     "taxNote": "Les taxes et la livraison sont calculées à la caisse.",
     "quantityFor": "Quantité pour {name}",
     "assembledBuild": "PC assemblé",
-    "assembledIncludes": "Comprend l’assemblage, Windows et les tests.",
-    "removeBuild": "Retirer le montage",
-    "assemblyFee": "Assemblage et tests"
+    "assembledIncludes": "Windows 11 Pro inclus",
+    "removeBuild": "Retirer le montage"
   },
   "Checkout": {
     "title": "Caisse",
@@ -338,8 +337,6 @@
     "notHere": "Pas en stock à {location}",
     "summary": "Votre montage",
     "parts": "Composantes",
-    "assembly": "Assemblage, installation de Windows et tests",
-    "windows": "{name}",
     "estimatedTotal": "Total estimé",
     "taxNote": "Les taxes et la livraison sont calculées à la caisse.",
     "wattage": "Consommation estimée : {watts} W",

@@ -19,7 +19,6 @@ const orderSelect = {
   totalCents: true,
   paidCents: true,
   depositCents: true,
-  assemblyCents: true,
   holdUntil: true,
   scheduledFor: true,
   requestedWindow: true,
@@ -48,7 +47,12 @@ export async function getToday(location: LocationCode | null) {
         take: 50,
       }),
       db.order.findMany({
-        where: { ...at, assemblyCents: { gt: 0 }, status: { in: ["CONFIRMED", "ASSEMBLING"] } },
+        where: {
+          ...at,
+          // Orders with an assembled PC (its parts carry a build group).
+          lines: { some: { buildGroup: { not: null } } },
+          status: { in: ["CONFIRMED", "ASSEMBLING"] },
+        },
         orderBy: { placedAt: "asc" },
         select: orderSelect,
         take: 50,

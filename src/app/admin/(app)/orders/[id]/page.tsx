@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { formatOrderNumber } from "@/lib/checkout/order-number";
-import { nextStatuses } from "@/lib/checkout/order-status";
+import { isAssembled, nextStatuses } from "@/lib/checkout/order-status";
 import { formatDate } from "@/lib/checkout/windows";
 import { formatMoney } from "@/lib/money";
 import { dateToStoreParts } from "@/lib/store-time";
@@ -77,7 +77,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           </p>
         </div>
         <div className="flex flex-col items-end gap-1 text-sm">
-          {order.assemblyCents > 0 && (
+          {isAssembled(order) && (
             <Link
               href={`/admin/orders/${order.id}/build-sheet`}
               className="text-accent underline underline-offset-2"
