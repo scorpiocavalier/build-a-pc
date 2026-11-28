@@ -9,16 +9,7 @@ import { siteUrl } from "@/server/seo";
 // Every public page in both languages, with hreflang alternates. Products and
 // featured builds come from the database.
 
-const STATIC_PATHS = [
-  "",
-  "/build",
-  "/prebuilt",
-  "/locations",
-  "/returns",
-  "/warranty",
-  "/privacy",
-  "/terms",
-];
+const STATIC_PATHS = ["", "/build", "/prebuilt", "/returns", "/warranty", "/privacy", "/terms"];
 
 async function catalogPaths() {
   "use cache";

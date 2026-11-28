@@ -2,7 +2,6 @@ import { hasLocale } from "next-intl";
 import { getRequestConfig } from "next-intl/server";
 import { locale as rootLocale } from "next/root-params";
 
-import { loadMessages } from "./messages";
 import { routing } from "./routing";
 
 export default getRequestConfig(async ({ locale: explicitLocale }) => {
@@ -13,7 +12,7 @@ export default getRequestConfig(async ({ locale: explicitLocale }) => {
 
   return {
     locale,
-    messages: await loadMessages(locale),
+    messages: (await import(`../../messages/${locale}.json`)).default,
     timeZone: "America/Toronto",
   };
 });

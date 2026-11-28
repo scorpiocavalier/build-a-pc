@@ -4,17 +4,10 @@ import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
-import {
-  LOCATION_CODES,
-  PRODUCT_STATUSES,
-  SPEC_PREFIX,
-  type RawProductInput,
-} from "@/lib/catalog/product-input";
+import { PRODUCT_STATUSES, SPEC_PREFIX, type RawProductInput } from "@/lib/catalog/product-input";
 import type { CategoryDefinition, SpecField } from "@/lib/specs/types";
 
 import { saveProductAction, type ProductFormState } from "./actions";
-
-const LOCATION_NAMES = { TOR: "Toronto", MTL: "Montreal" } as const;
 
 export function ProductForm({
   productId,
@@ -146,16 +139,9 @@ export function ProductForm({
           >
             <Input {...fieldProps("warranty_months")} inputMode="numeric" />
           </Field>
-          {LOCATION_CODES.map((code) => (
-            <Field
-              key={code}
-              label={`Stock on hand: ${LOCATION_NAMES[code]}`}
-              htmlFor={`stock_${code}`}
-              error={errors[`stock_${code}`]}
-            >
-              <Input {...fieldProps(`stock_${code}`)} inputMode="numeric" />
-            </Field>
-          ))}
+          <Field label="Stock on hand" htmlFor="stock" error={errors.stock}>
+            <Input {...fieldProps("stock")} inputMode="numeric" />
+          </Field>
         </div>
         <p className="mt-2 text-xs text-muted">
           Changing stock records an adjustment in the inventory history.

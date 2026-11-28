@@ -61,9 +61,8 @@ export default async function BuildSheetPage({
       <header>
         <h1 className="text-2xl font-semibold">Build sheet · {formatOrderNumber(order.number)}</h1>
         <p className="text-sm text-muted print:text-black">
-          {order.name} · {order.phone} · {order.fulfilment === "PICKUP" ? "Pickup" : "Delivery"} ·{" "}
-          {order.location.name.en} · requested {formatDate(order.requestedWindow.date, "en")} (
-          {order.requestedWindow.slot})
+          {order.name} · {order.phone} · {order.fulfilment === "PICKUP" ? "Pickup" : "Delivery"} ·
+          requested {formatDate(order.requestedWindow.date, "en")} ({order.requestedWindow.slot})
         </p>
         {order.notes && (
           <p className="mt-2 text-sm whitespace-pre-line">Customer notes: {order.notes}</p>

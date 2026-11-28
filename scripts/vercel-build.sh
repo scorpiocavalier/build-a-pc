@@ -7,7 +7,7 @@ echo "Applying database migrations…"
 npx prisma migrate deploy
 
 # Set SEED_DEMO_DATA=1 for ONE deploy to load the placeholder catalog,
-# locations, tax rates and featured builds, then remove it: re-running the
+# store, tax rates and featured builds, then remove it: re-running the
 # seed resets the placeholder products to their original values.
 if [ "${SEED_DEMO_DATA:-}" = "1" ]; then
   echo "Loading demo data (SEED_DEMO_DATA=1)…"

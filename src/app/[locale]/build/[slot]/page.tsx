@@ -1,4 +1,3 @@
-import { locationOrDefault } from "@/lib/store-config";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -99,8 +98,7 @@ async function CandidateList({
   build: Awaited<ReturnType<typeof getMyBuild>>;
   locale: string;
 }) {
-  const [t, catalog] = await Promise.all([getTranslations("Builder"), getTranslations("Catalog")]);
-  const location = locationOrDefault(build?.location);
+  const t = await getTranslations("Builder");
   const definition = getCategoryDefinition(SLOT_CATEGORY[slot])!;
   const keyFields = definition.fields.filter((f) => f.filter).slice(0, 3);
   const current = build?.items[slot];
@@ -111,7 +109,7 @@ async function CandidateList({
       {candidates.map((product) => {
         const name = localize(product.name, locale);
         const blocked = product.errors.length > 0;
-        const here = product.available[location] > 0;
+        const inStock = product.available > 0;
         return (
           <li
             key={product.id}
@@ -143,10 +141,8 @@ async function CandidateList({
                   .map((f) => formatSpecValue(f, product.specs[f.key], locale))
                   .join(" · ")}
               </p>
-              <p className={cn("text-xs", here ? "text-muted" : "text-amber-300")}>
-                {here
-                  ? t("inStockHere", { location: catalog(`locations.${location}`) })
-                  : t("notHere", { location: catalog(`locations.${location}`) })}
+              <p className={cn("text-xs", inStock ? "text-muted" : "text-amber-300")}>
+                {inStock ? t("inStock") : t("notInStock")}
               </p>
               {blocked && (
                 <ul className="mt-1 text-xs text-red-300">

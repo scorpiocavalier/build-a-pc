@@ -7,23 +7,23 @@ describe("parseAddressForm", () => {
     expect(
       parseAddressForm({
         name: " Alex Tremblay ",
-        phone: "(514) 555-0199",
-        line1: "1 Rue Sainte-Catherine",
-        city: "Montréal",
-        province: "qc",
-        postalCode: "h2x1y4",
+        phone: "(416) 555-0199",
+        line1: "100 Queen St W",
+        city: "Toronto",
+        province: "on",
+        postalCode: "m5h2n2",
         isDefault: "on",
       }),
     ).toEqual({
       ok: true,
       input: {
         name: "Alex Tremblay",
-        phone: "514-555-0199",
-        line1: "1 Rue Sainte-Catherine",
+        phone: "416-555-0199",
+        line1: "100 Queen St W",
         line2: "",
-        city: "Montréal",
-        province: "QC",
-        postalCode: "H2X 1Y4",
+        city: "Toronto",
+        province: "ON",
+        postalCode: "M5H 2N2",
         isDefault: true,
       },
     });

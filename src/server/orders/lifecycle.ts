@@ -5,11 +5,10 @@ import { randomBytes } from "node:crypto";
 import { revalidateTag } from "next/cache";
 
 import type { OrderStatus, PaymentMethod, Prisma } from "@/generated/prisma/client";
-import type { LocationCode } from "@/lib/catalog/product-input";
 import type { CheckoutInput } from "@/lib/checkout/checkout-input";
 import { canTransition } from "@/lib/checkout/order-status";
 import { allowedPaymentMethods, depositFor, paymentStatusFor } from "@/lib/checkout/payment-rules";
-import { matchDeliveryLocation } from "@/lib/checkout/postal";
+import { deliversTo } from "@/lib/checkout/postal";
 import { computeQuote, type Quote } from "@/lib/checkout/pricing";
 import type { CartBuildView, CartLineView } from "@/server/cart";
 import { CATALOG_TAG } from "@/server/catalog/queries";
@@ -21,7 +20,7 @@ import {
   refundPaymentIntent,
 } from "@/server/payments/stripe";
 import { averageCost } from "@/server/inventory-cost";
-import { LOCATION_CODES } from "@/lib/store-config";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import { getSettings, stripeEnabled } from "@/server/settings";
 
 import { loadOrder, type OrderView } from "./view";
@@ -69,14 +68,11 @@ function event(tx: Tx, orderId: string, type: string, message?: string, actorId?
 
 // ─── Quoting ────────────────────────────────────────────────────────────────
 
-export type FulfilmentChoice =
-  { kind: "PICKUP"; locationCode: LocationCode } | { kind: "DELIVERY"; postalCode: string };
+export type FulfilmentChoice = { kind: "PICKUP" } | { kind: "DELIVERY"; postalCode: string };
 
-export async function listLocations() {
-  return db.location.findMany({
-    where: { active: true, code: { in: [...LOCATION_CODES] } },
-    orderBy: { code: "desc" },
-  });
+// The store's row: pickup address and hours, delivery area and fee, province.
+export async function getStore() {
+  return db.location.findUniqueOrThrow({ where: { code: DEFAULT_LOCATION } });
 }
 
 // Everything in the cart: loose parts plus assembled builds.
@@ -107,11 +103,11 @@ function totalsByProduct(lines: OrderLineDraft[]) {
 }
 
 export type CheckoutQuote = {
-  location: Awaited<ReturnType<typeof listLocations>>[number];
+  location: Awaited<ReturnType<typeof getStore>>;
   quote: Quote;
   methods: PaymentMethod[];
   depositCents: number;
-  // Products without enough free stock at this location.
+  // Products without enough free stock.
   shortages: string[];
 };
 
@@ -119,19 +115,16 @@ export async function quoteCheckout(
   cart: CheckoutCart,
   choice: FulfilmentChoice,
 ): Promise<CheckoutQuote | { error: "noDelivery" }> {
-  const locations = await listLocations();
-  const location =
-    choice.kind === "PICKUP"
-      ? locations.find((l) => l.code === choice.locationCode)
-      : matchDeliveryLocation(choice.postalCode, locations);
-  if (!location) return { error: "noDelivery" };
+  const location = await getStore();
+  if (choice.kind === "DELIVERY" && !deliversTo(choice.postalCode, location.deliveryPostalPrefixes))
+    return { error: "noDelivery" };
   const lines = orderLines(cart);
 
   const [rate, settings] = await Promise.all([
     db.taxRate.findUnique({ where: { province: location.province } }),
     getSettings(),
   ]);
-  // Deliveries are local, so the location's province is where goods change hands.
+  // Deliveries are local, so the store's province is where goods change hands.
   // A build's price is its parts: there's no assembly fee on new orders.
   const quote = computeQuote(
     lines,
@@ -144,7 +137,7 @@ export async function quoteCheckout(
   });
   const depositCents = depositFor(quote.totalCents, cart.builds.length > 0, settings);
   const shortages = [...totalsByProduct(lines)]
-    .filter(([, t]) => t.available[location.code] < t.quantity)
+    .filter(([, t]) => t.available < t.quantity)
     .map(([productId]) => productId);
   return { location, quote, methods, depositCents, shortages };
 }
@@ -170,7 +163,7 @@ export async function placeOrder(
   const quoted = await quoteCheckout(
     cart,
     input.fulfilment === "PICKUP"
-      ? { kind: "PICKUP", locationCode: input.locationCode! }
+      ? { kind: "PICKUP" }
       : { kind: "DELIVERY", postalCode: input.address!.postalCode },
   );
   if ("error" in quoted) return { ok: false, error: quoted.error };
@@ -240,7 +233,7 @@ export async function placeOrder(
         tx,
         order.id,
         "placed",
-        `${input.method} · ${location.code}${cart.builds.length ? ` · ${cart.builds.length} assembled` : ""}`,
+        `${input.method}${cart.builds.length ? ` · ${cart.builds.length} assembled` : ""}`,
       );
       return order.id;
     });

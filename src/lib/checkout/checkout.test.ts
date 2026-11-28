@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { formatOrderNumber, parseOrderNumber } from "./order-number";
 import { allowedPaymentMethods, depositFor, paymentStatusFor } from "./payment-rules";
-import { matchDeliveryLocation, normalizePostalCode } from "./postal";
+import { deliversTo, normalizePostalCode } from "./postal";
 import { computeQuote, type TaxRateInput } from "./pricing";
 import { availableDates, parseWindow } from "./windows";
 
@@ -81,14 +81,13 @@ describe("postal codes", () => {
     expect(normalizePostalCode("D1A 1A1")).toBeNull();
   });
 
-  it("matches the most specific delivery prefix", () => {
-    const tor = { code: "TOR", deliveryPostalPrefixes: ["M", "L4"] };
-    const mtl = { code: "MTL", deliveryPostalPrefixes: ["H"] };
-    const special = { code: "X", deliveryPostalPrefixes: ["M5V"] };
-    expect(matchDeliveryLocation("M4C 1A1", [tor, mtl])?.code).toBe("TOR");
-    expect(matchDeliveryLocation("M5V 3L9", [tor, special])?.code).toBe("X");
-    expect(matchDeliveryLocation("H2X 1Y4", [tor, mtl])?.code).toBe("MTL");
-    expect(matchDeliveryLocation("K1A 0B1", [tor, mtl])).toBeNull();
+  it("delivers where a prefix starts the postal code", () => {
+    const prefixes = ["M", "l4 "];
+    expect(deliversTo("M4C 1A1", prefixes)).toBe(true);
+    expect(deliversTo("L4B 1A1", prefixes)).toBe(true);
+    expect(deliversTo("K1A 0B1", prefixes)).toBe(false);
+    expect(deliversTo("M4C 1A1", [])).toBe(false);
+    expect(deliversTo("M4C 1A1", [""])).toBe(false);
   });
 });
 

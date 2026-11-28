@@ -3,13 +3,11 @@ import Link from "next/link";
 import { Field, Input, Select } from "@/components/ui/field";
 import type { LocalizedText } from "@/lib/localized";
 import { CostCell } from "@/components/admin/cost-cell";
-import { LocationField, LocationOptions } from "@/components/admin/location-options";
 import { FilterForm } from "@/components/admin/filter-form";
 import { SpecSelects } from "@/components/admin/spec-selects";
 import { specParams } from "@/lib/catalog/admin-spec-filter";
-import { parseCostFilter, parseLocation, parseStockLevel } from "@/lib/inventory/filter";
+import { parseCostFilter, parseStockLevel } from "@/lib/inventory/filter";
 import { formatMoney } from "@/lib/money";
-import { LOCATION_CODES, LOCATION_NAMES, SINGLE_STORE } from "@/lib/store-config";
 import { cn } from "@/lib/utils";
 import { inventoryFilterOptions, listInventory, listMovements } from "@/server/admin/inventory";
 import { requireAdmin } from "@/server/require-admin";
@@ -17,7 +15,7 @@ import { getSettings } from "@/server/settings";
 
 import { SettingsForm } from "../settings/settings-forms";
 
-import { adjustAction, transferAction } from "./actions";
+import { adjustAction } from "./actions";
 
 export const metadata = { title: "Inventory" };
 export const instant = false;
@@ -26,6 +24,7 @@ const REASON: Record<string, string> = {
   INITIAL: "initial",
   ADJUSTMENT: "adjustment",
   IMPORT: "CSV import",
+  // From when the site ran two stores.
   TRANSFER: "transfer",
   SALE: "sale",
   RETURN: "return",
@@ -46,7 +45,6 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
     category: one("category") || undefined,
     brand: one("brand") || undefined,
     status: status === "ACTIVE" || status === "DRAFT" ? (status as "ACTIVE" | "DRAFT") : undefined,
-    location: parseLocation(one("location")),
     // "low=1" is the older link format (e.g. from the Today page).
     stock: one("low") === "1" ? ("low" as const) : parseStockLevel(one("stock")),
     cost: parseCostFilter(one("cost")),
@@ -61,7 +59,6 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
     !!filters.category ||
     !!filters.brand ||
     !!filters.status ||
-    filters.location !== "all" ||
     filters.stock !== "all" ||
     filters.cost !== "all" ||
     Object.keys(filters.specs).length > 0;
@@ -80,8 +77,8 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
       <div>
         <h1 className="text-2xl font-semibold">Inventory</h1>
         <p className="mt-1 max-w-3xl text-muted">
-          Stock per location. &ldquo;Free&rdquo; is on hand minus what open orders have reserved.
-          Every change is kept in the history below.
+          &ldquo;Free&rdquo; is on hand minus what open orders have reserved. Every change is kept
+          in the history below.
         </p>
       </div>
 
@@ -92,39 +89,6 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
       </datalist>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Moving stock between stores only applies when one site runs both. */}
-        {!SINGLE_STORE && (
-          <section aria-label="Move stock" className="rounded-lg border bg-surface/60 p-5">
-            <h2 className="mb-1 font-semibold">Move stock between locations</h2>
-            <p className="mb-4 text-sm text-muted">
-              Record it when the units physically leave. Reserved units can&apos;t be moved.
-            </p>
-            <SettingsForm action={transferAction} label="Move stock" keepValues>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="SKU" htmlFor="transfer-sku">
-                  <Input id="transfer-sku" name="sku" list="skus" required />
-                </Field>
-                <Field label="Units" htmlFor="transfer-quantity">
-                  <Input id="transfer-quantity" name="quantity" inputMode="numeric" required />
-                </Field>
-                <Field label="From" htmlFor="transfer-from">
-                  <Select id="transfer-from" name="from" defaultValue="TOR">
-                    <LocationOptions />
-                  </Select>
-                </Field>
-                <Field label="To" htmlFor="transfer-to">
-                  <Select id="transfer-to" name="to" defaultValue="MTL">
-                    <LocationOptions />
-                  </Select>
-                </Field>
-                <Field label="Note (optional)" htmlFor="transfer-note" className="sm:col-span-2">
-                  <Input id="transfer-note" name="note" placeholder="e.g. for order ATG-10042" />
-                </Field>
-              </div>
-            </SettingsForm>
-          </section>
-        )}
-
         <section aria-label="Adjust stock" className="rounded-lg border bg-surface/60 p-5">
           <h2 className="mb-1 font-semibold">Adjust stock</h2>
           <p className="mb-4 text-sm text-muted">
@@ -138,7 +102,6 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
               <Field label="Change" htmlFor="adjust-delta" hint="e.g. 3 or -1">
                 <Input id="adjust-delta" name="delta" inputMode="numeric" required />
               </Field>
-              <LocationField id="adjust-location" />
               <Field label="Type" htmlFor="adjust-reason">
                 <Select id="adjust-reason" name="reason" defaultValue="ADJUSTMENT">
                   <option value="ADJUSTMENT">Count correction</option>
@@ -199,18 +162,6 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             <option value="ACTIVE">Active</option>
             <option value="DRAFT">Drafts</option>
           </Select>
-          {!SINGLE_STORE && (
-            <Select
-              id="filter-location"
-              name="location"
-              defaultValue={filters.location}
-              aria-label="Location"
-              className="w-36"
-            >
-              <option value="all">Both locations</option>
-              <LocationOptions />
-            </Select>
-          )}
           <Select name="stock" defaultValue={filters.stock} aria-label="Stock" className="w-44">
             <option value="all">Any stock</option>
             <option value="in">In stock</option>
@@ -242,17 +193,9 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
               <tr>
                 <th className="px-3 py-2 font-medium">Product</th>
                 <th className="px-3 py-2 text-right font-medium">Price</th>
-                {LOCATION_CODES.map((code) => [
-                  <th key={`${code}-free`} className="px-3 py-2 text-right font-medium">
-                    {LOCATION_NAMES[code]} free
-                  </th>,
-                  <th key={`${code}-detail`} className="px-3 py-2 text-right font-medium">
-                    on hand / reserved
-                  </th>,
-                  <th key={`${code}-cost`} className="px-3 py-2 text-right font-medium">
-                    {LOCATION_NAMES[code]} cost · margin
-                  </th>,
-                ])}
+                <th className="px-3 py-2 text-right font-medium">Free</th>
+                <th className="px-3 py-2 text-right font-medium">On hand / reserved</th>
+                <th className="px-3 py-2 text-right font-medium">Cost · margin</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -268,35 +211,25 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
                     </span>
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">{money(row.priceCents)}</td>
-                  {LOCATION_CODES.map((code) => {
-                    const s = row.stock[code];
-                    const free = s.onHand - s.reserved;
-                    return [
-                      <td
-                        key={`${code}-free`}
-                        className={cn(
-                          "px-3 py-2 text-right font-semibold tabular-nums",
-                          free <= settings.lowStockThreshold && "text-amber-300",
-                          free <= 0 && "text-red-300",
-                        )}
-                      >
-                        {free}
-                      </td>,
-                      <td
-                        key={`${code}-detail`}
-                        className="px-3 py-2 text-right text-muted tabular-nums"
-                      >
-                        {s.onHand} / {s.reserved}
-                      </td>,
-                      <CostCell
-                        key={`${code}-cost`}
-                        priceCents={row.priceCents}
-                        avgCostCents={s.avgCostCents}
-                        lastCostCents={s.lastCostCents}
-                        rules={settings}
-                      />,
-                    ];
-                  })}
+                  <td
+                    className={cn(
+                      "px-3 py-2 text-right font-semibold tabular-nums",
+                      row.stock.onHand - row.stock.reserved <= settings.lowStockThreshold &&
+                        "text-amber-300",
+                      row.stock.onHand - row.stock.reserved <= 0 && "text-red-300",
+                    )}
+                  >
+                    {row.stock.onHand - row.stock.reserved}
+                  </td>
+                  <td className="px-3 py-2 text-right text-muted tabular-nums">
+                    {row.stock.onHand} / {row.stock.reserved}
+                  </td>
+                  <CostCell
+                    priceCents={row.priceCents}
+                    avgCostCents={row.stock.avgCostCents}
+                    lastCostCents={row.stock.lastCostCents}
+                    rules={settings}
+                  />
                 </tr>
               ))}
             </tbody>
@@ -322,7 +255,6 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
                 {m.delta > 0 ? `+${m.delta}` : m.delta}
               </span>
               <span className="font-mono text-xs leading-5">{m.product.sku}</span>
-              <span>{m.location.code}</span>
               <span className="text-muted">
                 {REASON[m.reason]}
                 {m.unitCostCents !== null ? ` · ${money(m.unitCostCents)} each` : ""}

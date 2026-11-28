@@ -4,7 +4,9 @@ import { safeNextPath } from "./redirect";
 
 describe("safeNextPath", () => {
   it("keeps paths on this site, with their query", () => {
-    expect(safeNextPath("/fr/checkout?f=pickup&l=MTL", "fr")).toBe("/fr/checkout?f=pickup&l=MTL");
+    expect(safeNextPath("/fr/checkout?f=delivery&pc=M5V3L9", "fr")).toBe(
+      "/fr/checkout?f=delivery&pc=M5V3L9",
+    );
   });
 
   it("falls back to the account page for anything else", () => {

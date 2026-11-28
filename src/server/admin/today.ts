@@ -1,12 +1,13 @@
 import "server-only";
 
-import type { LocationCode, Prisma } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import { storeDayBounds } from "@/lib/store-time";
 import { db } from "@/server/db";
 import { requireAdmin } from "@/server/require-admin";
 import { getSettings } from "@/server/settings";
 
-// The admin "Today" view: what each location needs to do now.
+// The admin "Today" view: what the store needs to do now.
 
 const orderSelect = {
   id: true,
@@ -22,18 +23,17 @@ const orderSelect = {
   holdUntil: true,
   scheduledFor: true,
   requestedWindow: true,
-  location: { select: { code: true } },
 } satisfies Prisma.OrderSelect;
 
 export type TodayOrder = Prisma.OrderGetPayload<{ select: typeof orderSelect }>;
 
-export async function getToday(location: LocationCode | null) {
+export async function getToday() {
   // Checked first: it also marks this as request-time work, so reading the
   // clock below doesn't happen while prerendering.
   await requireAdmin();
   const now = new Date();
   const settings = await getSettings();
-  const at: Prisma.OrderWhereInput = location ? { location: { code: location } } : {};
+  const at: Prisma.OrderWhereInput = { location: { code: DEFAULT_LOCATION } };
   const { start, end } = storeDayBounds(now);
   const open = { notIn: ["COMPLETED", "CANCELLED"] } as Prisma.EnumOrderStatusFilter;
 
@@ -76,19 +76,18 @@ export async function getToday(location: LocationCode | null) {
         by: ["status"],
         where: {
           status: { in: ["REQUESTED", "APPROVED"] },
-          ...(location ? { order: { location: { code: location } } } : {}),
+          order: at,
         },
         _count: true,
       }),
       db.inventory.findMany({
         where: {
-          ...(location ? { location: { code: location } } : {}),
+          location: { code: DEFAULT_LOCATION },
           product: { status: "ACTIVE" },
         },
         select: {
           onHand: true,
           reserved: true,
-          location: { select: { code: true } },
           product: { select: { id: true, sku: true, name: true } },
         },
       }),

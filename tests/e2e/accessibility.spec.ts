@@ -34,7 +34,6 @@ const PUBLIC_PAGES = [
   "/en/prebuilt",
   "/en/build/s/astral-white",
   "/en/sign-in",
-  "/en/locations",
   "/fr/returns",
   "/en/privacy",
   "/en/cart",
@@ -70,7 +69,7 @@ test("no accessibility violations in the cart and checkout", async ({ page }) =>
   await addToCart(page, "amd-ryzen-5-9600x");
   await expectNoViolations(page, "/en/cart");
   await expectNoViolations(page, "/en/checkout");
-  await expectNoViolations(page, "/en/checkout?f=pickup&l=TOR");
+  await expectNoViolations(page, "/en/checkout?f=pickup");
 });
 
 test("no accessibility violations in the account", async ({ signInAs }) => {

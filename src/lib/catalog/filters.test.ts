@@ -12,7 +12,7 @@ const product = (
   priceCents: number,
   socket: string,
   cores: number,
-  available = { TOR: 1, MTL: 1 },
+  available = 1,
 ): FilterableProduct => ({
   brand,
   name: { en: name },
@@ -23,23 +23,23 @@ const product = (
 
 const products = [
   product("AMD", "Ryzen 7", 64999, "AM5", 8),
-  product("AMD", "Ryzen 5", 31999, "AM5", 6, { TOR: 0, MTL: 3 }),
-  product("Intel", "Core Ultra 7", 45999, "LGA1851", 20, { TOR: 2, MTL: 0 }),
+  product("AMD", "Ryzen 5", 31999, "AM5", 6, 0),
+  product("Intel", "Core Ultra 7", 45999, "LGA1851", 20, 2),
 ];
 
 describe("parseFilters", () => {
-  it("keeps only filterable keys, known locations and sorts", () => {
+  it("keeps only filterable keys, the stock filter and known sorts", () => {
     expect(
       parseFilters(cpu, {
         socket: ["AM5", "AM5", ""],
         brand: "AMD",
         threads: "16", // not a filter
-        available: ["TOR", "NYC"],
+        available: "1",
         sort: "cheapest",
       }),
     ).toEqual({
       values: { socket: ["AM5"], brand: ["AMD"] },
-      availableAt: ["TOR"],
+      inStockOnly: true,
       sort: "price-asc",
     });
   });
@@ -51,8 +51,8 @@ describe("applyFilters", () => {
     expect(applyFilters(products, filters).map((p) => p.name.en)).toEqual(["Core Ultra 7"]);
   });
 
-  it("filters by stock at a location", () => {
-    const filters = parseFilters(cpu, { available: "TOR" });
+  it("filters to products in stock", () => {
+    const filters = parseFilters(cpu, { available: "1" });
     expect(applyFilters(products, filters).map((p) => p.name.en)).toEqual([
       "Core Ultra 7",
       "Ryzen 7",

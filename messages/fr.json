@@ -1,13 +1,12 @@
 {
   "Metadata": {
     "title": "Astral Tech Gaming — PC de jeu sur mesure et composantes",
-    "description": "Des PC de jeu sur mesure assemblés à la main à Toronto et à Montréal, et toutes les composantes pour monter le vôtre."
+    "description": "Des PC de jeu sur mesure assemblés à la main à Toronto, et toutes les composantes pour monter le vôtre."
   },
   "Header": {
     "home": "Accueil Astral Tech Gaming",
     "nav": {
       "builds": "Nos montages",
-      "locations": "Points de cueillette",
       "cart": "Panier",
       "builder": "Configurateur",
       "prebuilt": "PC préassemblés",
@@ -22,11 +21,10 @@
     "emailUs": "Écrivez-nous à {email}"
   },
   "Home": {
-    "eyebrow": "Toronto · Montréal",
+    "eyebrow": "Toronto",
     "title": "Des PC de jeu sur mesure, assemblés à la main.",
     "lead": "Choisissez vos composantes ou laissez-nous vous conseiller. Nous assemblons, installons Windows, testons chaque montage et vous le remettons en personne.",
     "ctaBuilds": "Voir nos montages",
-    "ctaLocations": "Points de cueillette",
     "comingSoon": "Achetez des composantes, configurez votre PC ou choisissez l’un des nôtres.",
     "videoLabel": "Vidéo d’un montage Astral Tech Gaming blanc avec un éclairage bleu glacier",
     "buildsTitle": "Montages récents",
@@ -50,7 +48,7 @@
       },
       "handoff": {
         "title": "Cueillette ou livraison",
-        "body": "Récupérez-le à Toronto ou à Montréal, ou nous vous le livrons en personne."
+        "body": "Récupérez-le à Toronto, ou nous vous le livrons en personne."
       }
     },
     "ctaBuild": "Configurez votre PC",
@@ -59,7 +57,6 @@
   "Footer": {
     "rights": "© {year} Astral Tech Gaming. Tous droits réservés.",
     "warranty": "Garantie",
-    "locations": "Magasins",
     "returns": "Retours",
     "privacy": "Confidentialité",
     "terms": "Conditions de vente",
@@ -75,13 +72,9 @@
   "Catalog": {
     "breadcrumb": "Fil d’Ariane",
     "home": "Accueil",
-    "locations": {
-      "TOR": "Toronto",
-      "MTL": "Montréal"
-    },
-    "inStockAt": "En stock : {locations}",
+    "inStock": "En stock",
     "outOfStock": "Rupture de stock",
-    "stockAt": "{location} : {count, plural, =0 {rupture de stock} one {# en stock} other {# en stock}}",
+    "stockCount": "{count, plural, =0 {Rupture de stock} one {# en stock} other {# en stock}}",
     "wasPrice": "Avant {price}",
     "sku": "UGS",
     "mpn": "Numéro de modèle",
@@ -110,7 +103,7 @@
     "subtotal": "Sous-total",
     "checkout": "Passer à la caisse",
     "each": "{price} chacun",
-    "availableAt": "Disponible à {locations}",
+    "available": "En stock",
     "notAvailable": "En rupture de stock",
     "cartLabel": "Panier, {count, plural, =0 {vide} one {# article} other {# articles}}",
     "taxNote": "Les taxes et la livraison sont calculées à la caisse.",
@@ -123,17 +116,17 @@
     "title": "Caisse",
     "fulfilmentTitle": "Comment voulez-vous recevoir votre commande?",
     "pickup": "Cueillette",
-    "pickupAt": "Cueillette à {location}",
+    "pickupStore": "Cueillette à notre magasin",
     "delivery": "Livraison locale",
-    "deliveryHint": "Nous livrons en personne dans les régions de Toronto et de Montréal.",
+    "deliveryHint": "Nous livrons en personne dans la région de Toronto.",
     "postalCode": "Code postal",
     "checkDelivery": "Vérifier la livraison",
-    "deliveryFrom": "Livraison depuis notre point de service de {location} au {postalCode}",
+    "deliveryTo": "Livraison au {postalCode}",
     "noDelivery": "Nous ne livrons pas encore au {postalCode}. Choisissez la cueillette ou contactez-nous.",
     "invalidPostal": "Entrez un code postal valide, par exemple H2X 1Y4.",
     "change": "Modifier",
-    "notEnoughStock": "Stock insuffisant à {location} pour :",
-    "tryOther": "Essayez l’autre point de service ou modifiez votre panier.",
+    "notEnoughStock": "Stock insuffisant pour :",
+    "adjustCart": "Modifiez votre panier pour continuer.",
     "contact": "Coordonnées",
     "name": "Nom complet",
     "email": "Courriel",
@@ -233,7 +226,7 @@
     "etransferPending": "Nous vous enverrons sous peu par courriel l’adresse où envoyer le virement.",
     "payBy": "Veuillez payer d’ici le {deadline}, sinon la commande sera annulée et les articles remis en vente.",
     "cashInfo": "Payez {amount} comptant à la réception de votre commande.",
-    "fulfilmentPickup": "Cueillette à notre point de service de {location}",
+    "fulfilmentPickup": "Cueillette à notre magasin",
     "fulfilmentDelivery": "Livraison au {address}",
     "pickupAddress": "Adresse : {address} · Heures : {hours}",
     "requested": "Demandé : {date}, {slot}",
@@ -262,7 +255,7 @@
     "greeting": "Bonjour {name},",
     "receivedBody": "Merci de votre commande! En voici le résumé.",
     "paidBody": "Nous avons reçu votre paiement de {amount}. Nous vous aviserons quand votre commande sera prête.",
-    "readyPickup": "Votre commande est prête à être cueillie à notre point de service de {location}.",
+    "readyPickup": "Votre commande est prête à être cueillie à notre magasin.",
     "readyDelivery": "Votre commande est prête. Nous vous contacterons pour confirmer l’heure de livraison.",
     "cancelledBody": "Votre commande a été annulée et les articles réservés ont été remis en vente.",
     "cancelledReason": "Motif : {reason}",
@@ -280,7 +273,7 @@
       "requestedSubject": "Nous avons reçu votre demande de retour {rma}",
       "requestedBody": "Nous avons reçu votre demande de retour pour ces articles de la commande {number}. Nous l’examinerons et vous écrirons d’ici 2 jours ouvrables.",
       "approvedSubject": "Retour {rma} approuvé",
-      "approvedBody": "Votre demande de retour pour la commande {number} est approuvée. Apportez les articles ci-dessous, si possible dans leur emballage d’origine, au magasin où vous avez commandé. Nous confirmerons le remboursement après inspection.",
+      "approvedBody": "Votre demande de retour pour la commande {number} est approuvée. Apportez les articles ci-dessous, si possible dans leur emballage d’origine, à notre magasin. Nous confirmerons le remboursement après inspection.",
       "declinedSubject": "Mise à jour sur le retour {rma}",
       "declinedBody": "Nous ne pouvons pas accepter votre demande de retour pour la commande {number}.",
       "refundedSubject": "Retour {rma} : remboursement de {amount}",
@@ -288,7 +281,7 @@
       "feeCharged": "Des frais de restockage de {amount} ont été déduits."
     },
     "subjectScheduled": "Commande {number} : heure confirmée",
-    "scheduledPickup": "Votre cueillette à notre magasin de {location} est prévue le {when}.",
+    "scheduledPickup": "Votre cueillette à notre magasin est prévue le {when}.",
     "scheduledDelivery": "Votre livraison au {address} est prévue le {when}.",
     "subjectBalance": "Payer le solde de la commande {number}",
     "balanceBody": "Vous pouvez payer le solde de {amount} par carte avec le lien sécurisé ci-dessous. Il est valide 24 heures.",
@@ -314,9 +307,8 @@
     "change": "Modifier",
     "remove": "Retirer",
     "quantity": "Qté",
-    "stockFor": "Afficher le stock de",
-    "inStockHere": "En stock à {location}",
-    "notHere": "Pas en stock à {location}",
+    "inStock": "En stock",
+    "notInStock": "En rupture de stock",
     "summary": "Votre montage",
     "parts": "Composantes",
     "estimatedTotal": "Total estimé",
@@ -532,16 +524,6 @@
     "updated": "Dernière mise à jour : {date}",
     "related": "Voir aussi",
     "contactLine": "Des questions? Écrivez à {email}.",
-    "locations": {
-      "title": "Nos magasins",
-      "description": "Cueillette et livraison locale à Toronto et Montréal.",
-      "intro": "Commandez en ligne et récupérez votre commande à l’un de nos magasins, ou faites-vous livrer localement. Nous confirmons l’heure avec vous après la commande.",
-      "address": "Adresse",
-      "hours": "Heures",
-      "delivery": "Livraison locale",
-      "deliveryAreas": "Codes postaux commençant par {prefixes}, {fee}.",
-      "noDelivery": "Cueillette seulement pour le moment."
-    },
     "returns": {
       "title": "Retours et remboursements",
       "description": "Retours sous 30 jours, remboursements et frais de restockage.",
@@ -650,11 +632,11 @@
       "sections": {
         "prices": {
           "title": "Prix et taxes",
-          "body": "Les prix sont en dollars canadiens. Les taxes de vente applicables sont ajoutées au paiement selon le magasin qui traite votre commande. Si un prix est manifestement erroné, nous vous contacterons avant de poursuivre, et vous pourrez annuler."
+          "body": "Les prix sont en dollars canadiens. Les taxes de vente applicables sont ajoutées au paiement. Si un prix est manifestement erroné, nous vous contacterons avant de poursuivre, et vous pourrez annuler."
         },
         "orders": {
           "title": "Votre commande",
-          "body": "Passer une commande réserve les articles au magasin choisi. Nous confirmons la commande à la réception du paiement (ou du dépôt), et nous pouvons annuler une commande si un article s’avère indisponible, en remboursant tout montant payé."
+          "body": "Passer une commande réserve les articles pour vous. Nous confirmons la commande à la réception du paiement (ou du dépôt), et nous pouvons annuler une commande si un article s’avère indisponible, en remboursant tout montant payé."
         },
         "payment": {
           "title": "Paiement",
@@ -666,7 +648,7 @@
         },
         "fulfilment": {
           "title": "Cueillette et livraison",
-          "body": "La cueillette est offerte à nos magasins de Toronto et de Montréal. La livraison locale est offerte dans les secteurs indiqués sur notre page des magasins. Nous confirmons l’heure exacte avec vous; veuillez apporter une pièce d’identité avec photo à la cueillette."
+          "body": "La cueillette est offerte à notre magasin de Toronto. La livraison locale est offerte dans les environs : entrez votre code postal au paiement pour savoir si nous livrons chez vous. Nous confirmons l’heure exacte avec vous; veuillez apporter une pièce d’identité avec photo à la cueillette."
         },
         "returns": {
           "title": "Retours et garantie",

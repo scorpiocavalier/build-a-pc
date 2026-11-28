@@ -15,7 +15,6 @@ import { placeOrderAction, type CheckoutState } from "./actions";
 export type CheckoutFormProps = {
   locale: string;
   fulfilment: "PICKUP" | "DELIVERY";
-  locationCode: string;
   postalCode: string;
   dates: { value: string; label: string }[];
   methods: PaymentMethod[];
@@ -66,7 +65,6 @@ export function CheckoutForm(props: CheckoutFormProps) {
     >
       <input type="hidden" name="locale" value={props.locale} />
       <input type="hidden" name="fulfilment" value={props.fulfilment} />
-      <input type="hidden" name="location" value={props.locationCode} />
       <input type="hidden" name="postalCode" value={props.postalCode} />
 
       {(state.formError || Object.keys(errors).length > 0) && (

@@ -26,8 +26,16 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile", use: { ...devices["Pixel 7"] } },
+    { name: "desktop", use: { ...devices["Desktop Chrome"] }, testIgnore: /tax\.spec\.ts/ },
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testIgnore: /tax\.spec\.ts/ },
+    // Turning tax collection on changes every order total, and the one store
+    // is in Ontario, so this test runs alone once the others are done.
+    {
+      name: "tax",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: /tax\.spec\.ts/,
+      dependencies: ["desktop", "mobile"],
+    },
   ],
   // Tests run against a production build: `npm run build` first.
   webServer: {

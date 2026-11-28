@@ -9,7 +9,7 @@ async function currentYear() {
   return new Date().getFullYear();
 }
 
-const LINKS = ["locations", "returns", "warranty", "privacy", "terms"] as const;
+const LINKS = ["returns", "warranty", "privacy", "terms"] as const;
 
 export async function SiteFooter() {
   const [t, year, settings] = await Promise.all([

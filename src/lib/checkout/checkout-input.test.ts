@@ -5,12 +5,11 @@ import { normalizePhone, parseCheckoutForm } from "./checkout-input";
 const now = new Date("2026-10-31T15:00:00Z");
 const pickup = {
   fulfilment: "PICKUP",
-  location: "MTL",
   date: "2026-11-03",
   slot: "afternoon",
   name: "Alex Tremblay",
   email: " Alex@Example.com ",
-  phone: "(514) 555-0199",
+  phone: "(416) 555-0199",
   method: "ETRANSFER",
   terms: "on",
 };
@@ -22,12 +21,11 @@ describe("parseCheckoutForm", () => {
       ok: true,
       input: {
         fulfilment: "PICKUP",
-        locationCode: "MTL",
         address: null,
         window: { date: "2026-11-03", slot: "afternoon" },
         name: "Alex Tremblay",
         email: "alex@example.com",
-        phone: "514-555-0199",
+        phone: "416-555-0199",
         method: "ETRANSFER",
         notes: "",
       },
@@ -36,7 +34,7 @@ describe("parseCheckoutForm", () => {
 
   it("requires an address and a valid postal code for delivery", () => {
     const result = parseCheckoutForm(
-      { ...pickup, fulfilment: "DELIVERY", postalCode: "h2x1y4" },
+      { ...pickup, fulfilment: "DELIVERY", postalCode: "m5v3l9" },
       now,
     );
     expect(result).toEqual({ ok: false, errors: { line1: "required", city: "required" } });
@@ -45,25 +43,24 @@ describe("parseCheckoutForm", () => {
       {
         ...pickup,
         fulfilment: "DELIVERY",
-        postalCode: "h2x1y4",
-        line1: "1 Rue Sainte-Catherine",
-        city: "Montréal",
+        postalCode: "m5v3l9",
+        line1: "1 King St W",
+        city: "Toronto",
       },
       now,
     );
     expect(ok.ok && ok.input.address).toEqual({
-      line1: "1 Rue Sainte-Catherine",
+      line1: "1 King St W",
       line2: "",
-      city: "Montréal",
-      postalCode: "H2X 1Y4",
+      city: "Toronto",
+      postalCode: "M5V 3L9",
     });
   });
 
   it("collects every problem at once", () => {
     const result = parseCheckoutForm(
       {
-        fulfilment: "PICKUP",
-        location: "NYC",
+        fulfilment: "SHIP",
         date: "2026-11-01",
         slot: "noon",
         email: "nope",

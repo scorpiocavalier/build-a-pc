@@ -52,7 +52,7 @@ export default async function NewProductPage({ searchParams }: PageProps<"/admin
       <ProductForm
         productId={null}
         definition={definition}
-        initial={{ status: "DRAFT", stock_TOR: "0", stock_MTL: "0" }}
+        initial={{ status: "DRAFT", stock: "0" }}
         brands={await listBrandNames()}
       />
     </div>

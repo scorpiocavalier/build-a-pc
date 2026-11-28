@@ -5,7 +5,7 @@ import { parseOrderNumber } from "@/lib/checkout/order-number";
 import { db } from "@/server/db";
 import { loadOrder } from "@/server/orders/view";
 import { requireAdmin } from "@/server/require-admin";
-import { storeFilter } from "@/lib/store-config";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 
 const STATUSES: OrderStatus[] = [
   "PLACED",
@@ -17,16 +17,16 @@ const STATUSES: OrderStatus[] = [
   "CANCELLED",
 ];
 
-export type AdminOrderFilters = { status?: string; q?: string; location?: string };
+export type AdminOrderFilters = { status?: string; q?: string };
 
 export async function listAdminOrders(filters: AdminOrderFilters) {
   await requireAdmin();
-  const where: Prisma.OrderWhereInput = {};
+  // Only the store's orders (the database may still hold another store's
+  // history from when the site ran two).
+  const where: Prisma.OrderWhereInput = { location: { code: DEFAULT_LOCATION } };
   if (filters.status === "open") where.status = { notIn: ["COMPLETED", "CANCELLED"] };
   else if (STATUSES.includes(filters.status as OrderStatus))
     where.status = filters.status as OrderStatus;
-  const location = storeFilter(filters.location);
-  if (location) where.location = { code: location };
   const q = filters.q?.trim();
   if (q) {
     const number = parseOrderNumber(q);
@@ -41,7 +41,7 @@ export async function listAdminOrders(filters: AdminOrderFilters) {
     where,
     orderBy: { placedAt: "desc" },
     take: 200,
-    include: { location: { select: { code: true } }, _count: { select: { lines: true } } },
+    include: { _count: { select: { lines: true } } },
   });
 }
 

@@ -25,9 +25,9 @@ export const settingsSchema = z.object({
   // Returns: fee on items that aren't faulty, and how long after handover.
   restockingPercent: z.number().int().min(0).max(100),
   returnWindowDays: z.number().int().min(0).max(365),
-  // Products at or below this many units at a location show as low stock.
+  // Products at or below this many free units show as low stock.
   lowStockThreshold: z.number().int().min(0).max(1000),
-  // Inventory flags a product whose margin at a location is below this.
+  // Inventory flags a product whose margin is below this.
   targetMarginPercent: z.number().int().min(0).max(100),
   // …or whose last purchase cost is this far from the average, either way.
   costDriftPercent: z.number().int().min(1).max(100),

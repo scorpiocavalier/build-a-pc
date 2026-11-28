@@ -11,7 +11,13 @@ import type pg from "pg";
 
 export async function createProduct(
   sql: pg.Client,
-  options: { stockTOR?: number; stockMTL?: number; priceCents?: number } = {},
+  options: {
+    stock?: number;
+    priceCents?: number;
+    // Units in the closed second store's Location row (live databases still
+    // hold that history), which the site must never show or count.
+    oldStoreStock?: number;
+  } = {},
 ) {
   const id = randomUUID();
   const sku = `E2E-${id.slice(0, 8).toUpperCase()}`;
@@ -31,23 +37,31 @@ export async function createProduct(
       options.priceCents ?? 10000,
     ],
   );
-  for (const [code, onHand] of [
-    ["TOR", options.stockTOR ?? 20],
-    ["MTL", options.stockMTL ?? 20],
-  ] as const) {
+  await sql.query(
+    `INSERT INTO "Inventory" ("productId", "locationId", "onHand") SELECT $1, id, $2 FROM "Location" WHERE code = 'TOR'`,
+    [id, options.stock ?? 20],
+  );
+  if (options.oldStoreStock !== undefined) {
     await sql.query(
-      `INSERT INTO "Inventory" ("productId", "locationId", "onHand") SELECT $1, id, $2 FROM "Location" WHERE code = $3`,
-      [id, onHand, code],
+      `INSERT INTO "Location" (id, code, name, province, active, "updatedAt")
+       VALUES ($1, 'MTL', '{"en":"Old store","fr":"Ancien magasin"}', 'QC', false, now())
+       ON CONFLICT (code) DO NOTHING`,
+      [randomUUID()],
+    );
+    await sql.query(
+      `INSERT INTO "Inventory" ("productId", "locationId", "onHand") SELECT $1, id, $2 FROM "Location" WHERE code = 'MTL'`,
+      [id, options.oldStoreStock],
     );
   }
   return { id, sku, slug, name };
 }
 
-export async function stock(sql: pg.Client, productId: string, code: "TOR" | "MTL") {
+// The store's stock of a product.
+export async function stock(sql: pg.Client, productId: string) {
   const { rows } = await sql.query<{ onHand: number; reserved: number }>(
     `SELECT i."onHand", i.reserved FROM "Inventory" i JOIN "Location" l ON l.id = i."locationId"
-     WHERE i."productId" = $1 AND l.code = $2`,
-    [productId, code],
+     WHERE i."productId" = $1 AND l.code = 'TOR'`,
+    [productId],
   );
   return rows[0];
 }
@@ -74,7 +88,7 @@ export async function addToCart(page: Page, slug: string, locale = "en", quantit
 export async function fillContactAndWindow(page: Page, email: string) {
   await page.locator("#name").fill("Alex Tremblay");
   await page.locator("#email").fill(email);
-  await page.locator("#phone").fill("514 555 0199");
+  await page.locator("#phone").fill("416 555 0199");
   await page.locator("#date").selectOption({ index: 2 });
   await page.locator("#slot").selectOption("afternoon");
   await page.locator('input[name="terms"]').check();
@@ -129,17 +143,13 @@ export async function latestEmailTo(to: string, timeoutMs = 10_000) {
 }
 
 // A guest order for 2 × a new $100 product, picked up and paid by
-// e-Transfer. Returns the order row. Montreal by default, where no test
-// switches tax collection on, so totals are predictable.
-export async function placePickupOrder(
-  page: Page,
-  sql: pg.Client,
-  email: string,
-  location: "TOR" | "MTL" = "MTL",
-) {
+// e-Transfer. Returns the order row. Tax collection is off (the one test that
+// turns it on runs after the others, see playwright.config.ts), so totals
+// are predictable.
+export async function placePickupOrder(page: Page, sql: pg.Client, email: string) {
   const product = await createProduct(sql, { priceCents: 10000 });
   await addToCart(page, product.slug, "en", 2);
-  await page.goto(`/en/checkout?f=pickup&l=${location}`);
+  await page.goto("/en/checkout?f=pickup");
   await fillContactAndWindow(page, email);
   await page.getByRole("radio", { name: /e-Transfer/ }).check();
   await page.getByRole("button", { name: "Place order" }).click();

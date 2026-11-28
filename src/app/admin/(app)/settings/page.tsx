@@ -1,12 +1,11 @@
 import { Field, Input } from "@/components/ui/field";
 import type { LocalizedText } from "@/lib/localized";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import { db } from "@/server/db";
 import { requireAdmin } from "@/server/require-admin";
 import { getSettings, stripeEnabled } from "@/server/settings";
 
-import { LOCATION_CODES } from "@/lib/store-config";
-
-import { saveLocation, saveStoreSettings, saveTaxRate } from "./actions";
+import { saveStoreLocation, saveStoreSettings, saveTaxRate } from "./actions";
 import { SettingsForm } from "./settings-forms";
 
 export const metadata = { title: "Settings" };
@@ -18,14 +17,13 @@ const percent = (thousandths: number) => String(thousandths / 1000);
 
 export default async function SettingsPage() {
   await requireAdmin();
-  const [settings, locations, taxRates] = await Promise.all([
+  const [settings, store, taxRates] = await Promise.all([
     getSettings(),
-    db.location.findMany({
-      where: { code: { in: [...LOCATION_CODES] } },
-      orderBy: { code: "desc" },
-    }),
+    db.location.findUniqueOrThrow({ where: { code: DEFAULT_LOCATION } }),
     db.taxRate.findMany({ orderBy: { province: "asc" } }),
   ]);
+  const address = store.address as LocalizedText;
+  const hours = store.hours as LocalizedText;
 
   return (
     <div className="flex flex-col gap-8">
@@ -161,7 +159,7 @@ export default async function SettingsPage() {
               />
             </Field>
             <Field
-              label="Low stock at (units per location)"
+              label="Low stock at (units)"
               htmlFor="lowStockThreshold"
               hint="Shown on the dashboard and inventory page."
             >
@@ -200,67 +198,44 @@ export default async function SettingsPage() {
         </SettingsForm>
       </Section>
 
-      {locations.map((location) => {
-        const address = location.address as LocalizedText;
-        const hours = location.hours as LocalizedText;
-        return (
-          <Section key={location.code} title={`${(location.name as LocalizedText).en} location`}>
-            <SettingsForm action={saveLocation.bind(null, location.code)}>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Pickup address (English)" htmlFor={`${location.code}-address_en`}>
-                  <Input
-                    id={`${location.code}-address_en`}
-                    name="address_en"
-                    defaultValue={address.en}
-                  />
-                </Field>
-                <Field label="Pickup address (French)" htmlFor={`${location.code}-address_fr`}>
-                  <Input
-                    id={`${location.code}-address_fr`}
-                    name="address_fr"
-                    defaultValue={address.fr}
-                    lang="fr"
-                  />
-                </Field>
-                <Field label="Hours (English)" htmlFor={`${location.code}-hours_en`}>
-                  <Input id={`${location.code}-hours_en`} name="hours_en" defaultValue={hours.en} />
-                </Field>
-                <Field label="Hours (French)" htmlFor={`${location.code}-hours_fr`}>
-                  <Input
-                    id={`${location.code}-hours_fr`}
-                    name="hours_fr"
-                    defaultValue={hours.fr}
-                    lang="fr"
-                  />
-                </Field>
-                <Field
-                  label="Delivers to postal codes starting with"
-                  htmlFor={`${location.code}-prefixes`}
-                  hint="Comma-separated, e.g. M, L4, L5. Empty means no delivery."
-                >
-                  <Input
-                    id={`${location.code}-prefixes`}
-                    name="prefixes"
-                    defaultValue={location.deliveryPostalPrefixes.join(", ")}
-                  />
-                </Field>
-                <Field
-                  label="Delivery fee ($)"
-                  htmlFor={`${location.code}-fee`}
-                  hint="0 for free delivery."
-                >
-                  <Input
-                    id={`${location.code}-fee`}
-                    name="deliveryFee"
-                    defaultValue={dollars(location.deliveryFeeCents)}
-                    inputMode="decimal"
-                  />
-                </Field>
-              </div>
-            </SettingsForm>
-          </Section>
-        );
-      })}
+      {/* Used by checkout and order emails; not shown on the public site. */}
+      <Section title="Store">
+        <SettingsForm action={saveStoreLocation}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Pickup address (English)" htmlFor="store-address_en">
+              <Input id="store-address_en" name="address_en" defaultValue={address.en} />
+            </Field>
+            <Field label="Pickup address (French)" htmlFor="store-address_fr">
+              <Input id="store-address_fr" name="address_fr" defaultValue={address.fr} lang="fr" />
+            </Field>
+            <Field label="Hours (English)" htmlFor="store-hours_en">
+              <Input id="store-hours_en" name="hours_en" defaultValue={hours.en} />
+            </Field>
+            <Field label="Hours (French)" htmlFor="store-hours_fr">
+              <Input id="store-hours_fr" name="hours_fr" defaultValue={hours.fr} lang="fr" />
+            </Field>
+            <Field
+              label="Delivers to postal codes starting with"
+              htmlFor="store-prefixes"
+              hint="Comma-separated, e.g. M, L4, L5. Empty means no delivery."
+            >
+              <Input
+                id="store-prefixes"
+                name="prefixes"
+                defaultValue={store.deliveryPostalPrefixes.join(", ")}
+              />
+            </Field>
+            <Field label="Delivery fee ($)" htmlFor="store-fee" hint="0 for free delivery.">
+              <Input
+                id="store-fee"
+                name="deliveryFee"
+                defaultValue={dollars(store.deliveryFeeCents)}
+                inputMode="decimal"
+              />
+            </Field>
+          </div>
+        </SettingsForm>
+      </Section>
 
       <Section title="Sales tax">
         <p className="-mt-2 mb-4 text-sm text-muted">

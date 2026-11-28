@@ -3,9 +3,9 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 
 import type { Prisma } from "@/generated/prisma/client";
-import type { LocationCode } from "@/lib/catalog/product-input";
 import type { LocalizedText } from "@/lib/localized";
 import type { SpecValues } from "@/lib/specs/types";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import { db } from "@/server/db";
 import { publicUrl } from "@/server/storage";
 
@@ -13,8 +13,6 @@ import { publicUrl } from "@/server/storage";
 // writes call updateTag(CATALOG_TAG) so customers see changes right away.
 
 export const CATALOG_TAG = "catalog";
-
-export type Availability = Record<LocationCode, number>;
 
 export type ProductImageView = {
   url: string;
@@ -34,7 +32,8 @@ export type ProductSummary = {
   compareAtCents: number | null;
   specs: SpecValues;
   image: ProductImageView | null;
-  available: Availability;
+  // Free stock: on hand minus reserved.
+  available: number;
 };
 
 export type ProductDetail = ProductSummary & {
@@ -58,7 +57,10 @@ export const summarySelect = {
     orderBy: { position: "asc" },
     select: { key: true, alt: true, width: true, height: true },
   },
-  inventory: { select: { onHand: true, reserved: true, location: { select: { code: true } } } },
+  inventory: {
+    where: { location: { code: DEFAULT_LOCATION } },
+    select: { onHand: true, reserved: true },
+  },
 } satisfies Prisma.ProductSelect;
 
 type SummaryRow = Prisma.ProductGetPayload<{ select: typeof summarySelect }>;
@@ -73,10 +75,8 @@ function toImage(image: SummaryRow["images"][number]): ProductImageView {
 }
 
 export function toSummary(row: SummaryRow): ProductSummary {
-  const available: Availability = { TOR: 0, MTL: 0 };
-  for (const stock of row.inventory) {
-    available[stock.location.code] = Math.max(0, stock.onHand - stock.reserved);
-  }
+  const stock = row.inventory[0];
+  const available = stock ? Math.max(0, stock.onHand - stock.reserved) : 0;
   return {
     id: row.id,
     slug: row.slug,

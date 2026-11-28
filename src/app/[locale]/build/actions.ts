@@ -1,22 +1,13 @@
 "use server";
 
-import { isLocationCode } from "@/lib/store-config";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
-import type { LocationCode } from "@/generated/prisma/enums";
 import type { CandidateView } from "@/components/builder3d/types";
 import { slotFromParam } from "@/lib/builder/slots";
 import { candidateViews } from "@/server/builder-3d";
 import { addBuildToCart, addToCart } from "@/server/cart";
-import {
-  clearBuild,
-  clearSlot,
-  copyIntoMyBuild,
-  getMyBuild,
-  setBuildLocation,
-  setSlot,
-} from "@/server/builder";
+import { clearBuild, clearSlot, copyIntoMyBuild, getMyBuild, setSlot } from "@/server/builder";
 
 const localeOf = (formData: FormData) => (formData.get("locale") === "fr" ? "fr" : "en");
 
@@ -36,12 +27,6 @@ export async function removeAction(formData: FormData) {
 
 export async function clearAction() {
   await clearBuild();
-  refresh();
-}
-
-export async function locationAction(formData: FormData) {
-  const location = String(formData.get("location")) as LocationCode;
-  if (isLocationCode(location)) await setBuildLocation(location);
   refresh();
 }
 

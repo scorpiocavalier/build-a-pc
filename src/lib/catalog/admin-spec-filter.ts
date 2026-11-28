@@ -35,7 +35,7 @@ export function filterBySpecs<T extends Row>(
     priceCents: row.priceCents,
     specs: (row.specs ?? {}) as SpecValues,
     // Availability isn't filtered here; the lists have their own stock filters.
-    available: { TOR: 0, MTL: 0 },
+    available: 0,
   }));
   const facets = buildFacets(definition, products, active).filter((f) => f.key !== "brand");
   const kept = products.filter((p) =>

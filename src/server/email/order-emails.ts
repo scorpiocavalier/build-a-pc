@@ -32,7 +32,6 @@ export async function buildOrderEmail(
   const money = (cents: number) => formatMoney(cents, locale);
   const number = formatOrderNumber(order.number);
   const settings = await getSettings();
-  const location = localize(order.location.name, locale);
 
   const summary: Block = {
     kind: "table",
@@ -72,7 +71,7 @@ export async function buildOrderEmail(
     kind: "p",
     text:
       (order.fulfilment === "PICKUP"
-        ? `${t("Order.fulfilmentPickup", { location })}. ${t("Order.pickupAddress", {
+        ? `${t("Order.fulfilmentPickup")}. ${t("Order.pickupAddress", {
             address: localize(order.location.address, locale),
             hours: localize(order.location.hours, locale),
           })}`
@@ -175,10 +174,7 @@ export async function buildOrderEmail(
         greeting,
         {
           kind: "p",
-          text:
-            order.fulfilment === "PICKUP"
-              ? t("Email.readyPickup", { location })
-              : t("Email.readyDelivery"),
+          text: order.fulfilment === "PICKUP" ? t("Email.readyPickup") : t("Email.readyDelivery"),
         },
         fulfilment,
         link,
@@ -214,7 +210,7 @@ export async function buildOrderEmail(
           kind: "p",
           text:
             order.fulfilment === "PICKUP"
-              ? t("Email.scheduledPickup", { when, location })
+              ? t("Email.scheduledPickup", { when })
               : t("Email.scheduledDelivery", {
                   when,
                   address: formatAddress(order.deliveryAddress!),

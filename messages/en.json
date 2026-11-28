@@ -1,13 +1,12 @@
 {
   "Metadata": {
     "title": "Astral Tech Gaming — Custom gaming PCs & parts",
-    "description": "Custom gaming PCs built by hand in Toronto and Montreal, plus the parts to build your own."
+    "description": "Custom gaming PCs built by hand in Toronto, plus the parts to build your own."
   },
   "Header": {
     "home": "Astral Tech Gaming home",
     "nav": {
       "builds": "Our builds",
-      "locations": "Locations",
       "cart": "Cart",
       "builder": "PC builder",
       "prebuilt": "Prebuilt PCs",
@@ -22,11 +21,10 @@
     "emailUs": "Email us at {email}"
   },
   "Home": {
-    "eyebrow": "Toronto · Montreal",
+    "eyebrow": "Toronto",
     "title": "Custom gaming PCs, built by hand.",
     "lead": "Pick your parts or let us spec it for you. We assemble, install Windows, test every build and hand it to you in person.",
     "ctaBuilds": "See our builds",
-    "ctaLocations": "Pickup locations",
     "comingSoon": "Shop parts, design your own PC, or pick one of ours.",
     "videoLabel": "Video of a finished white Astral Tech Gaming build with ice-blue lighting",
     "buildsTitle": "Recent builds",
@@ -50,7 +48,7 @@
       },
       "handoff": {
         "title": "Pickup or delivery",
-        "body": "Collect it in Toronto or Montreal, or we deliver it to you in person."
+        "body": "Collect it in Toronto, or we deliver it to you in person."
       }
     },
     "ctaBuild": "Build your PC",
@@ -59,7 +57,6 @@
   "Footer": {
     "rights": "© {year} Astral Tech Gaming. All rights reserved.",
     "warranty": "Warranty",
-    "locations": "Locations",
     "returns": "Returns",
     "privacy": "Privacy",
     "terms": "Terms of sale",
@@ -75,13 +72,9 @@
   "Catalog": {
     "breadcrumb": "Breadcrumb",
     "home": "Home",
-    "locations": {
-      "TOR": "Toronto",
-      "MTL": "Montreal"
-    },
-    "inStockAt": "In stock: {locations}",
+    "inStock": "In stock",
     "outOfStock": "Out of stock",
-    "stockAt": "{location}: {count, plural, =0 {out of stock} one {# in stock} other {# in stock}}",
+    "stockCount": "{count, plural, =0 {Out of stock} one {# in stock} other {# in stock}}",
     "wasPrice": "Was {price}",
     "sku": "SKU",
     "mpn": "Model number",
@@ -110,7 +103,7 @@
     "subtotal": "Subtotal",
     "checkout": "Checkout",
     "each": "{price} each",
-    "availableAt": "Available in {locations}",
+    "available": "In stock",
     "notAvailable": "Out of stock right now",
     "cartLabel": "Cart, {count, plural, =0 {empty} one {# item} other {# items}}",
     "taxNote": "Taxes and delivery are calculated at checkout.",
@@ -123,17 +116,17 @@
     "title": "Checkout",
     "fulfilmentTitle": "How would you like to get your order?",
     "pickup": "Pickup",
-    "pickupAt": "Pickup in {location}",
+    "pickupStore": "Pickup at our store",
     "delivery": "Local delivery",
-    "deliveryHint": "We deliver in person around Toronto and Montreal.",
+    "deliveryHint": "We deliver in person around Toronto.",
     "postalCode": "Postal code",
     "checkDelivery": "Check delivery",
-    "deliveryFrom": "Delivery from our {location} location to {postalCode}",
+    "deliveryTo": "Delivery to {postalCode}",
     "noDelivery": "We don't deliver to {postalCode} yet. Choose pickup, or contact us.",
     "invalidPostal": "Enter a valid postal code, like M5V 3L9.",
     "change": "Change",
-    "notEnoughStock": "Not enough stock in {location} for:",
-    "tryOther": "Try the other location or adjust your cart.",
+    "notEnoughStock": "Not enough stock for:",
+    "adjustCart": "Adjust your cart to continue.",
     "contact": "Contact details",
     "name": "Full name",
     "email": "Email",
@@ -233,7 +226,7 @@
     "etransferPending": "We'll email you where to send the e-Transfer shortly.",
     "payBy": "Please pay by {deadline}, or the order will be cancelled and the items released.",
     "cashInfo": "Pay {amount} in cash when you get your order.",
-    "fulfilmentPickup": "Pickup at our {location} location",
+    "fulfilmentPickup": "Pickup at our store",
     "fulfilmentDelivery": "Delivery to {address}",
     "pickupAddress": "Address: {address} · Hours: {hours}",
     "requested": "Requested: {date}, {slot}",
@@ -262,7 +255,7 @@
     "greeting": "Hi {name},",
     "receivedBody": "Thanks for your order! Here's a summary.",
     "paidBody": "We've received your payment of {amount}. We'll let you know when your order is ready.",
-    "readyPickup": "Your order is ready for pickup at our {location} location.",
+    "readyPickup": "Your order is ready for pickup at our store.",
     "readyDelivery": "Your order is ready. We'll contact you to confirm the delivery time.",
     "cancelledBody": "Your order was cancelled and the reserved items were released.",
     "cancelledReason": "Reason: {reason}",
@@ -280,7 +273,7 @@
       "requestedSubject": "We received your return request {rma}",
       "requestedBody": "We received your request to return these items from order {number}. We'll review it and email you within 2 business days.",
       "approvedSubject": "Return {rma} approved",
-      "approvedBody": "Your return request for order {number} is approved. Bring the items below, in their original packaging if possible, to the store you ordered from. We'll confirm the refund after inspecting them.",
+      "approvedBody": "Your return request for order {number} is approved. Bring the items below, in their original packaging if possible, to our store. We'll confirm the refund after inspecting them.",
       "declinedSubject": "Update on return {rma}",
       "declinedBody": "We're unable to accept your return request for order {number}.",
       "refundedSubject": "Return {rma}: refund of {amount}",
@@ -288,7 +281,7 @@
       "feeCharged": "A restocking fee of {amount} was deducted."
     },
     "subjectScheduled": "Order {number}: time confirmed",
-    "scheduledPickup": "Your pickup at our {location} location is booked for {when}.",
+    "scheduledPickup": "Your pickup at our store is booked for {when}.",
     "scheduledDelivery": "Your delivery to {address} is booked for {when}.",
     "subjectBalance": "Pay the balance for order {number}",
     "balanceBody": "You can pay the remaining {amount} by card with the secure link below. It works for 24 hours.",
@@ -314,9 +307,8 @@
     "change": "Change",
     "remove": "Remove",
     "quantity": "Qty",
-    "stockFor": "Show stock for",
-    "inStockHere": "In stock in {location}",
-    "notHere": "Not in stock in {location}",
+    "inStock": "In stock",
+    "notInStock": "Out of stock",
     "summary": "Your build",
     "parts": "Parts",
     "estimatedTotal": "Estimated total",
@@ -532,16 +524,6 @@
     "updated": "Last updated {date}",
     "related": "Related",
     "contactLine": "Questions? Email {email}.",
-    "locations": {
-      "title": "Our locations",
-      "description": "Pickup and local delivery in Toronto and Montreal.",
-      "intro": "Order online and pick up at either store, or get local delivery. We confirm a time with you after you order.",
-      "address": "Address",
-      "hours": "Hours",
-      "delivery": "Local delivery",
-      "deliveryAreas": "Postal codes starting with {prefixes}, {fee}.",
-      "noDelivery": "Pickup only for now."
-    },
     "returns": {
       "title": "Returns and refunds",
       "description": "30-day returns, how refunds work and the restocking fee.",
@@ -650,11 +632,11 @@
       "sections": {
         "prices": {
           "title": "Prices and taxes",
-          "body": "Prices are in Canadian dollars. Applicable sales taxes are added at checkout based on the store that fulfils your order. If a price is clearly wrong, we'll contact you before going ahead, and you can cancel."
+          "body": "Prices are in Canadian dollars. Applicable sales taxes are added at checkout. If a price is clearly wrong, we'll contact you before going ahead, and you can cancel."
         },
         "orders": {
           "title": "Your order",
-          "body": "Placing an order reserves the items at your chosen store. We confirm the order once payment (or the deposit) is received, and we may cancel an order if an item turns out to be unavailable, refunding anything you paid."
+          "body": "Placing an order reserves the items for you. We confirm the order once payment (or the deposit) is received, and we may cancel an order if an item turns out to be unavailable, refunding anything you paid."
         },
         "payment": {
           "title": "Payment",
@@ -666,7 +648,7 @@
         },
         "fulfilment": {
           "title": "Pickup and delivery",
-          "body": "Pickup is available at our Toronto and Montreal stores. Local delivery is available in the areas listed on our locations page. We confirm the exact time with you; please bring photo ID when picking up."
+          "body": "Pickup is available at our Toronto store. Local delivery is available nearby: enter your postal code at checkout to see if we deliver to you. We confirm the exact time with you; please bring photo ID when picking up."
         },
         "returns": {
           "title": "Returns and warranty",

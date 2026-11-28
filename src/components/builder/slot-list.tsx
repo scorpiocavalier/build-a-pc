@@ -1,4 +1,3 @@
-import { locationOrDefault } from "@/lib/store-config";
 import { X } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import Image from "next/image";
@@ -23,13 +22,7 @@ export async function SlotList({
   build: BuildView | null;
   editable: boolean;
 }) {
-  const [t, catalog, locale] = await Promise.all([
-    getTranslations("Builder"),
-    getTranslations("Catalog"),
-    getLocale(),
-  ]);
-  const location = locationOrDefault(build?.location);
-  const locationName = catalog(`locations.${location}`);
+  const [t, locale] = await Promise.all([getTranslations("Builder"), getLocale()]);
   const errorSlots = new Set(
     (build?.issues ?? []).filter((i) => i.severity === "error").flatMap((i) => i.slots),
   );
@@ -76,12 +69,10 @@ export async function SlotList({
                   <p
                     className={cn(
                       "text-xs",
-                      item.available[location] >= item.quantity ? "text-muted" : "text-amber-300",
+                      item.available >= item.quantity ? "text-muted" : "text-amber-300",
                     )}
                   >
-                    {item.available[location] >= item.quantity
-                      ? t("inStockHere", { location: locationName })
-                      : t("notHere", { location: locationName })}
+                    {item.available >= item.quantity ? t("inStock") : t("notInStock")}
                   </p>
                 </>
               ) : (

@@ -19,28 +19,17 @@ const db = new PrismaClient({
   }),
 });
 
-// Addresses, hours, delivery areas and fees are placeholders; the owner sets
-// the real ones in /admin/settings. Seeding never overwrites them.
-const LOCATIONS = [
-  {
-    code: "TOR",
-    name: { en: "Toronto", fr: "Toronto" },
-    province: "ON",
-    address: { en: "Toronto, ON (address to come)", fr: "Toronto (Ontario) (adresse à venir)" },
-    hours: { en: "By appointment", fr: "Sur rendez-vous" },
-    deliveryPostalPrefixes: ["M"],
-    deliveryFeeCents: 2500,
-  },
-  {
-    code: "MTL",
-    name: { en: "Montreal", fr: "Montréal" },
-    province: "QC",
-    address: { en: "Montreal, QC (address to come)", fr: "Montréal (Québec) (adresse à venir)" },
-    hours: { en: "By appointment", fr: "Sur rendez-vous" },
-    deliveryPostalPrefixes: ["H"],
-    deliveryFeeCents: 2500,
-  },
-] as const;
+// The store. Its address, hours, delivery area and fee are placeholders; the
+// owner sets the real ones in /admin/settings. Seeding never overwrites them.
+const STORE = {
+  code: "TOR",
+  name: { en: "Toronto", fr: "Toronto" },
+  province: "ON",
+  address: { en: "Toronto, ON (address to come)", fr: "Toronto (Ontario) (adresse à venir)" },
+  hours: { en: "By appointment", fr: "Sur rendez-vous" },
+  deliveryPostalPrefixes: ["M"],
+  deliveryFeeCents: 2500,
+} as const;
 
 // Collection starts switched off until the owner confirms registration
 // (docs/PLAN.md §6). Rates are thousandths of a percent.
@@ -67,8 +56,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Pour les fonctions d’entreprise comme BitLocker et le Bureau à distance.",
       ),
       price: "219.99",
-      stock_TOR: "5",
-      stock_MTL: "5",
+      stock: "5",
       "spec.edition": "windows-11-pro",
     },
   ],
@@ -83,8 +71,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Processeur de jeu à 8 cœurs avec 3D V-Cache.",
       ),
       price: "649.99",
-      stock_TOR: "4",
-      stock_MTL: "2",
+      stock: "4",
       warranty_months: "36",
       "spec.socket": "AM5",
       "spec.cores": "8",
@@ -106,8 +93,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Processeur à 6 cœurs pour les montages de jeu milieu de gamme.",
       ),
       price: "319.99",
-      stock_TOR: "6",
-      stock_MTL: "5",
+      stock: "6",
       warranty_months: "36",
       "spec.socket": "AM5",
       "spec.cores": "6",
@@ -129,8 +115,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Processeur à 20 cœurs pour le jeu et la création.",
       ),
       price: "459.99",
-      stock_TOR: "3",
-      stock_MTL: "0",
+      stock: "3",
       warranty_months: "36",
       "spec.socket": "LGA1851",
       "spec.cores": "20",
@@ -151,8 +136,7 @@ const PRODUCTS: Record<string, Row[]> = {
       name_fr: "B850 Aorus Elite WiFi7 Ice",
       ...desc("White ATX board for AM5 with Wi-Fi 7.", "Carte ATX blanche pour AM5 avec Wi-Fi 7."),
       price: "349.99",
-      stock_TOR: "3",
-      stock_MTL: "2",
+      stock: "3",
       warranty_months: "36",
       "spec.socket": "AM5",
       "spec.chipset": "B850",
@@ -174,8 +158,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Carte Micro-ATX pour les montages AM5 compacts.",
       ),
       price: "219.99",
-      stock_TOR: "5",
-      stock_MTL: "4",
+      stock: "5",
       warranty_months: "36",
       "spec.socket": "AM5",
       "spec.chipset": "B650",
@@ -197,8 +180,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Carte Mini-ITX pour les petits montages Intel.",
       ),
       price: "529.99",
-      stock_TOR: "1",
-      stock_MTL: "1",
+      stock: "1",
       warranty_months: "36",
       "spec.socket": "LGA1851",
       "spec.chipset": "Z890",
@@ -219,8 +201,7 @@ const PRODUCTS: Record<string, Row[]> = {
       name_fr: "T-Force Delta RGB 32 Go (2 × 16 Go) DDR5-6000 blanc",
       ...desc("White RGB DDR5 kit tuned for AM5.", "Ensemble DDR5 RGB blanc optimisé pour AM5."),
       price: "149.99",
-      stock_TOR: "8",
-      stock_MTL: "6",
+      stock: "8",
       warranty_months: "120",
       "spec.type": "DDR5",
       "spec.modules": "2",
@@ -240,8 +221,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Ensemble DDR5 haute capacité pour le jeu et la création.",
       ),
       price: "289.99",
-      stock_TOR: "3",
-      stock_MTL: "2",
+      stock: "3",
       warranty_months: "120",
       "spec.type": "DDR5",
       "spec.modules": "2",
@@ -261,8 +241,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Ensemble DDR4 économique pour AM4 et les cartes Intel plus anciennes.",
       ),
       price: "59.99",
-      stock_TOR: "5",
-      stock_MTL: "0",
+      stock: "5",
       warranty_months: "120",
       "spec.type": "DDR4",
       "spec.modules": "2",
@@ -284,8 +263,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Disque PCIe 4.0 rapide pour les jeux et Windows.",
       ),
       price: "239.99",
-      stock_TOR: "6",
-      stock_MTL: "4",
+      stock: "6",
       warranty_months: "60",
       "spec.type": "nvme",
       "spec.interface": "m2",
@@ -303,8 +281,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Disque NVMe de jeu au rapport prix-capacité avantageux.",
       ),
       price: "129.99",
-      stock_TOR: "7",
-      stock_MTL: "5",
+      stock: "7",
       warranty_months: "60",
       "spec.type": "nvme",
       "spec.interface": "m2",
@@ -322,8 +299,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Stockage de masse pour les médias et les sauvegardes.",
       ),
       price: "109.99",
-      stock_TOR: "2",
-      stock_MTL: "2",
+      stock: "2",
       warranty_months: "24",
       "spec.type": "hdd",
       "spec.interface": "sata",
@@ -338,8 +314,7 @@ const PRODUCTS: Record<string, Row[]> = {
       name_fr: "GeForce RTX 5070 Ventus 2X 12G",
       ...desc("Compact RTX 5070 for 1440p gaming.", "RTX 5070 compacte pour le jeu en 1440p."),
       price: "799.99",
-      stock_TOR: "3",
-      stock_MTL: "2",
+      stock: "3",
       warranty_months: "36",
       "spec.chipset": "GeForce RTX 5070",
       "spec.memoryGb": "12",
@@ -359,8 +334,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "RTX 5080 blanche pour le jeu en 4K dans les montages blancs.",
       ),
       price: "1599.99",
-      stock_TOR: "1",
-      stock_MTL: "1",
+      stock: "1",
       warranty_months: "48",
       "spec.chipset": "GeForce RTX 5080",
       "spec.memoryGb": "16",
@@ -380,8 +354,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Carte Radeon blanche pour le 1440p à haute fréquence.",
       ),
       price: "959.99",
-      stock_TOR: "0",
-      stock_MTL: "2",
+      stock: "0",
       warranty_months: "24",
       "spec.chipset": "Radeon RX 9070 XT",
       "spec.memoryGb": "16",
@@ -403,8 +376,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Boîtier vitrine à double chambre avec verre sur trois côtés.",
       ),
       price: "199.99",
-      stock_TOR: "2",
-      stock_MTL: "2",
+      stock: "2",
       warranty_months: "12",
       "spec.motherboardSupport": "ATX|Micro-ATX|Mini-ITX",
       "spec.maxGpuLengthMm": "455",
@@ -423,8 +395,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Moyen boîtier panoramique blanc avec ventilateurs ARGB.",
       ),
       price: "149.99",
-      stock_TOR: "3",
-      stock_MTL: "1",
+      stock: "3",
       warranty_months: "36",
       "spec.motherboardSupport": "ATX|Micro-ATX|Mini-ITX",
       "spec.maxGpuLengthMm": "400",
@@ -440,8 +411,7 @@ const PRODUCTS: Record<string, Row[]> = {
       name_fr: "North noir charbon",
       ...desc("Mid-tower with a walnut front panel.", "Moyen boîtier avec façade en noyer."),
       price: "189.99",
-      stock_TOR: "1",
-      stock_MTL: "2",
+      stock: "1",
       warranty_months: "24",
       "spec.motherboardSupport": "ATX|Micro-ATX|Mini-ITX",
       "spec.maxGpuLengthMm": "355",
@@ -462,8 +432,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Bloc d’alimentation silencieux, entièrement modulaire, 80+ Gold.",
       ),
       price: "179.99",
-      stock_TOR: "5",
-      stock_MTL: "3",
+      stock: "5",
       warranty_months: "120",
       "spec.wattage": "850",
       "spec.formFactor": "ATX",
@@ -482,8 +451,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Bloc de 1000 W blanc pour les cartes graphiques haut de gamme.",
       ),
       price: "219.99",
-      stock_TOR: "2",
-      stock_MTL: "2",
+      stock: "2",
       warranty_months: "120",
       "spec.wattage": "1000",
       "spec.formFactor": "ATX",
@@ -502,8 +470,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Bloc d’alimentation compact pour les montages Mini-ITX.",
       ),
       price: "169.99",
-      stock_TOR: "1",
-      stock_MTL: "0",
+      stock: "1",
       warranty_months: "120",
       "spec.wattage": "750",
       "spec.formFactor": "SFX",
@@ -524,8 +491,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Refroidisseur liquide blanc de 360 mm avec écran sur la pompe.",
       ),
       price: "289.99",
-      stock_TOR: "2",
-      stock_MTL: "2",
+      stock: "2",
       warranty_months: "60",
       "spec.type": "aio",
       "spec.sockets": "AM5|AM4|LGA1851|LGA1700",
@@ -543,8 +509,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Refroidisseur liquide de 360 mm silencieux et abordable.",
       ),
       price: "139.99",
-      stock_TOR: "4",
-      stock_MTL: "3",
+      stock: "4",
       warranty_months: "72",
       "spec.type": "aio",
       "spec.sockets": "AM5|AM4|LGA1851|LGA1700",
@@ -562,8 +527,7 @@ const PRODUCTS: Record<string, Row[]> = {
         "Refroidisseur à air à double tour, excellent rapport qualité-prix.",
       ),
       price: "49.99",
-      stock_TOR: "6",
-      stock_MTL: "6",
+      stock: "6",
       warranty_months: "36",
       "spec.type": "air",
       "spec.sockets": "AM5|AM4|LGA1851|LGA1700",
@@ -583,7 +547,6 @@ const FEATURED_BUILDS = [
       en: "An all-white 1440p build with a Radeon RX 9070 XT and a 360 mm liquid cooler with a screen.",
       fr: "Un montage tout blanc pour le 1440p avec une Radeon RX 9070 XT et un refroidisseur liquide de 360 mm à écran.",
     },
-    location: "MTL" as const,
     parts: {
       CPU: "CPU-AMD-9600X",
       MOTHERBOARD: "MB-GIGA-B850-AE",
@@ -602,7 +565,6 @@ const FEATURED_BUILDS = [
       en: "A quiet black-and-walnut gaming PC with the Ryzen 7 9800X3D and an RTX 5070.",
       fr: "Un PC de jeu silencieux noir et noyer avec le Ryzen 7 9800X3D et une RTX 5070.",
     },
-    location: "TOR" as const,
     parts: {
       CPU: "CPU-AMD-9800X3D",
       MOTHERBOARD: "MB-MSI-B650M-A",
@@ -617,14 +579,12 @@ const FEATURED_BUILDS = [
 ];
 
 async function main() {
-  for (const location of LOCATIONS) {
-    const data = { ...location, deliveryPostalPrefixes: [...location.deliveryPostalPrefixes] };
-    const existing = await db.location.findUnique({ where: { code: location.code } });
-    if (!existing) await db.location.create({ data });
-    // Fill in placeholders only where the owner hasn't set anything yet.
-    else if (existing.deliveryPostalPrefixes.length === 0) {
-      await db.location.update({ where: { code: location.code }, data });
-    }
+  const store = { ...STORE, deliveryPostalPrefixes: [...STORE.deliveryPostalPrefixes] };
+  const existing = await db.location.findUnique({ where: { code: STORE.code } });
+  if (!existing) await db.location.create({ data: store });
+  // Fill in placeholders only where the owner hasn't set anything yet.
+  else if (existing.deliveryPostalPrefixes.length === 0) {
+    await db.location.update({ where: { code: STORE.code }, data: store });
   }
 
   for (const rate of TAX_RATES) {
@@ -660,7 +620,6 @@ async function main() {
       featured: true,
       title: featured.title,
       description: featured.description,
-      location: featured.location,
       position,
     };
     const build = await db.build.upsert({
@@ -683,7 +642,7 @@ async function main() {
   }
 
   console.log(
-    `Seeded ${LOCATIONS.length} locations, ${CATEGORIES.length} categories, ${created} new products, ${FEATURED_BUILDS.length} featured builds.`,
+    `Seeded the store, ${CATEGORIES.length} categories, ${created} new products, ${FEATURED_BUILDS.length} featured builds.`,
   );
 }
 

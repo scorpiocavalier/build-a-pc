@@ -2,13 +2,11 @@ import { expect, test } from "@playwright/test";
 
 // Runs against the seeded placeholder catalog (npm run db:seed).
 
-test("product page shows French specs, stock per location and structured data", async ({
-  page,
-}) => {
+test("product page shows French specs, stock and structured data", async ({ page }) => {
   await page.goto("/fr/p/gigabyte-geforce-rtx-5080-aero-oc-16g");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("GeForce RTX 5080 Aero OC 16G");
   await expect(page.getByText("1 599,99 $")).toBeVisible();
-  await expect(page.getByText("Montréal : 1 en stock")).toBeVisible();
+  await expect(page.getByText("1 en stock", { exact: true })).toBeVisible();
   // The parts shop is gone (#34), so the breadcrumb is just Accueil › product.
   const crumbs = page.getByRole("navigation", { name: "Fil d’Ariane" }).getByRole("listitem");
   await expect(crumbs).toHaveText(["Accueil", /GeForce RTX 5080 Aero OC 16G$/]);

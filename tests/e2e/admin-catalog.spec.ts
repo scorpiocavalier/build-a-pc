@@ -26,7 +26,7 @@ test("an admin creates a product and it appears on the store", async ({ adminPag
   await page.getByLabel("Status").selectOption("ACTIVE");
   await page.getByLabel("SKU").fill(sku);
   await page.getByLabel("Price (CAD)", { exact: true }).fill("99.50");
-  await page.getByLabel("Stock on hand: Montreal").fill("7");
+  await page.getByLabel("Stock on hand").fill("7");
 
   // Submitting without required specs shows errors and keeps what was typed.
   await page.getByRole("button", { name: "Create product" }).click();
@@ -43,8 +43,7 @@ test("an admin creates a product and it appears on the store", async ({ adminPag
   await page.goto(`/fr/search?q=${sku}`);
   await page.getByRole("link", { name: `Bloc d’essai ${sku}` }).click();
   await expect(page.getByText("99,50 $", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("Montréal : 7 en stock")).toBeVisible();
-  await expect(page.getByText("Toronto : rupture de stock")).toBeVisible();
+  await expect(page.getByText("7 en stock", { exact: true })).toBeVisible();
 });
 
 test("CSV import checks every row before importing anything", async ({
@@ -53,7 +52,7 @@ test("CSV import checks every row before importing anything", async ({
 }, testInfo) => {
   const good = uniqueSku("E2E-RAM");
   const header =
-    "sku,category,brand,name_en,name_fr,price,status,stock_TOR,spec.type,spec.modules,spec.capacityPerModuleGb,spec.speedMts";
+    "sku,category,brand,name_en,name_fr,price,status,stock,spec.type,spec.modules,spec.capacityPerModuleGb,spec.speedMts";
   const goodRow = `${good},memory,E2E Brand,Test RAM ${good},Mémoire d’essai ${good},89.99,ACTIVE,5,DDR5,2,16,6000`;
   const badRow = `${good}-BAD,memory,E2E Brand,Bad RAM,,cheap,ACTIVE,,DDR3,2,16,6000`;
 
@@ -111,7 +110,7 @@ test("products are filtered like the inventory, without a page reload", async ({
   sql,
 }) => {
   // createProduct puts test products in the CPU cooler category, with no photos.
-  const product = await createProduct(sql, { stockTOR: 0, stockMTL: 0 });
+  const product = await createProduct(sql, { stock: 0 });
   await page.goto("/admin/products");
   await page.evaluate(() => ((window as unknown as { kept: boolean }).kept = true));
   await expect(page.getByRole("button", { name: "Filter" })).toHaveCount(0);

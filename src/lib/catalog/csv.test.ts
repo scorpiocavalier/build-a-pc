@@ -14,7 +14,7 @@ const row = {
   name_fr: "Vengeance 32 Go — blanc",
   price: "129.99",
   status: "ACTIVE",
-  stock_TOR: "3",
+  stock: "3",
   "spec.type": "DDR5",
   "spec.modules": "2",
   "spec.capacityPerModuleGb": "16",

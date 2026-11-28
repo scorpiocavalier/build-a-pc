@@ -11,8 +11,7 @@ const valid: RawProductInput = {
   description_en: "8-core gaming processor.",
   price: "649.99",
   status: "active",
-  stock_TOR: "4",
-  stock_MTL: "",
+  stock: "4",
   "spec.socket": "AM5",
   "spec.cores": "8",
   "spec.threads": "16",
@@ -35,9 +34,21 @@ describe("parseProductInput", () => {
       status: "ACTIVE",
       name: { en: "AMD Ryzen 7 9800X3D", fr: "" },
       specs: { socket: "AM5", cores: 8, memoryTypes: ["DDR5"], includesCooler: false },
-      // A blank stock cell leaves that location unchanged.
-      stock: { TOR: 4 },
+      stock: 4,
     });
+  });
+
+  it("leaves stock unchanged when the cell is blank", () => {
+    const result = parseProductInput({ ...valid, stock: "" });
+    expect(result.ok && result.input.stock).toBeNull();
+  });
+
+  it("reads stock_TOR from older files and ignores stock_MTL", () => {
+    const old = { ...valid, stock: undefined };
+    const result = parseProductInput({ ...old, stock_TOR: "7", stock_MTL: "3" });
+    expect(result.ok && result.input.stock).toBe(7);
+    const onlyMtl = parseProductInput({ ...old, stock_MTL: "3" });
+    expect(onlyMtl.ok && onlyMtl.input.stock).toBeNull();
   });
 
   it("defaults to draft", () => {
@@ -53,7 +64,7 @@ describe("parseProductInput", () => {
       name_en: "",
       price: "cheap",
       compare_at_price: "10",
-      stock_MTL: "-1",
+      stock: "-1",
       "spec.socket": "",
     });
     expect(result).toEqual({
@@ -62,7 +73,7 @@ describe("parseProductInput", () => {
         sku: "SKU may only contain letters, numbers, dots, dashes and underscores",
         name_en: "English name is required",
         price: "Price must be an amount like 549.99",
-        stock_MTL: "MTL stock must be a whole number of 0 or more",
+        stock: "Stock must be a whole number of 0 or more",
         "spec.socket": "Socket is required",
       },
     });
@@ -83,12 +94,9 @@ describe("parseProductInput", () => {
 
 describe("productToRaw", () => {
   it("round-trips through parseProductInput", () => {
-    const first = parseProductInput({ ...valid, stock_MTL: "0", compare_at_price: "699" });
+    const first = parseProductInput({ ...valid, compare_at_price: "699" });
     if (!first.ok) throw new Error("expected valid");
-    const raw = productToRaw({
-      ...first.input,
-      stock: { TOR: first.input.stock.TOR ?? 0, MTL: first.input.stock.MTL ?? 0 },
-    });
+    const raw = productToRaw({ ...first.input, stock: first.input.stock ?? 0 });
     expect(parseProductInput(raw)).toEqual(first);
   });
 });

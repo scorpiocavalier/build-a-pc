@@ -1,6 +1,7 @@
 import "server-only";
 
 import { Prisma } from "@/generated/prisma/client";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 
 type Tx = Prisma.TransactionClient;
 
@@ -42,20 +43,20 @@ export async function receiveUnits(
     WHERE "productId" = ${productId} AND "locationId" = ${locationId}`;
 }
 
-// Landed cost of each product's latest purchase per location, keyed
-// "productId:TOR" / "productId:MTL".
+// Landed cost of each product's latest purchase at the store, keyed by
+// product id.
 export async function lastPurchaseCosts(
   client: Tx,
   productIds: string[],
 ): Promise<Map<string, number>> {
   if (productIds.length === 0) return new Map();
-  const rows = await client.$queryRaw<{ productId: string; code: string; cost: number }[]>`
-    SELECT DISTINCT ON (m."productId", m."locationId")
-           m."productId", l.code::text AS code, m."unitCostCents" AS cost
+  const rows = await client.$queryRaw<{ productId: string; cost: number }[]>`
+    SELECT DISTINCT ON (m."productId") m."productId", m."unitCostCents" AS cost
     FROM "InventoryMovement" m
     JOIN "Location" l ON l.id = m."locationId"
     WHERE m.reason = 'PURCHASE' AND m."unitCostCents" IS NOT NULL
+      AND l.code::text = ${DEFAULT_LOCATION}
       AND m."productId" IN (${Prisma.join(productIds)})
-    ORDER BY m."productId", m."locationId", m."createdAt" DESC`;
-  return new Map(rows.map((r) => [`${r.productId}:${r.code}`, r.cost]));
+    ORDER BY m."productId", m."createdAt" DESC`;
+  return new Map(rows.map((r) => [r.productId, r.cost]));
 }

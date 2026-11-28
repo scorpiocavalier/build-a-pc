@@ -1,4 +1,4 @@
-// Both stores are in Eastern time (Toronto and Montreal), so staff enter and
+// The store is in Eastern time (Toronto), so staff enter and
 // read times in America/Toronto whatever the server's own time zone is.
 
 export const STORE_TIME_ZONE = "America/Toronto";

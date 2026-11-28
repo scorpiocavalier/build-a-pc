@@ -141,7 +141,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
             </a>
           </p>
           <h2 className="mt-3 mb-1 font-semibold">
-            {order.fulfilment === "PICKUP" ? "Pickup" : "Delivery"} · {order.location.name.en}
+            {order.fulfilment === "PICKUP" ? "Pickup" : "Delivery"}
           </h2>
           {order.deliveryAddress && <p>{formatAddress(order.deliveryAddress)}</p>}
           <p>

@@ -3,10 +3,10 @@
 import { refresh, updateTag } from "next/cache";
 
 import { parseDollars } from "@/lib/money";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import { audit } from "@/server/audit";
 import { db } from "@/server/db";
 import { requireAdmin } from "@/server/require-admin";
-import { LOCATIONS_TAG } from "@/server/locations";
 import { getSettings, SETTINGS_TAG, settingsSchema } from "@/server/settings";
 
 export type SettingsState = { error?: string; saved?: boolean };
@@ -66,8 +66,9 @@ export async function saveStoreSettings(
   return { saved: true };
 }
 
-export async function saveLocation(
-  code: string,
+// The store's pickup address, hours and delivery area, used by checkout and
+// order emails (they aren't shown on the public site).
+export async function saveStoreLocation(
   _prev: SettingsState,
   formData: FormData,
 ): Promise<SettingsState> {
@@ -82,7 +83,7 @@ export async function saveLocation(
     return { error: "Postal prefixes look like M, M5 or M5V, separated by commas." };
   }
   await db.location.update({
-    where: { code: code as "TOR" | "MTL" },
+    where: { code: DEFAULT_LOCATION },
     data: {
       address: { en: str(formData, "address_en"), fr: str(formData, "address_fr") },
       hours: { en: str(formData, "hours_en"), fr: str(formData, "hours_fr") },
@@ -94,10 +95,9 @@ export async function saveLocation(
     actorId: user.id,
     action: "settings.location",
     entity: "settings",
-    entityId: code,
-    summary: `Updated ${code} location: delivery ${prefixes.join(", ") || "none"}, fee $${(fee / 100).toFixed(2)}`,
+    entityId: DEFAULT_LOCATION,
+    summary: `Updated store: delivery ${prefixes.join(", ") || "none"}, fee $${(fee / 100).toFixed(2)}`,
   });
-  updateTag(LOCATIONS_TAG);
   refresh();
   return { saved: true };
 }
