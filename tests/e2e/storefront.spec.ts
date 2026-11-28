@@ -66,7 +66,7 @@ test.describe("mobile menu", () => {
         "Locations",
         "Returns",
         "Warranty",
-        "Contact:",
+        "Email us at",
       ],
     },
     fr: {
@@ -80,7 +80,7 @@ test.describe("mobile menu", () => {
         "Magasins",
         "Retours",
         "Garantie",
-        "Contact :",
+        "Écrivez-nous à",
       ],
     },
   };
@@ -127,6 +127,20 @@ test.describe("mobile menu", () => {
     await expect(menu.getByRole("link", { name: "Prebuilt PCs" })).not.toHaveAttribute(
       "aria-current",
     );
+  });
+
+  test("shows the contact email on one line, without a label", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto("/en");
+    await page.getByRole("button", { name: "Menu", exact: true }).click();
+    const email = page.getByRole("dialog").getByRole("link", { name: "Email us at" });
+    await expect(email).toHaveAttribute("href", /^mailto:.+@/);
+    await expect(email).not.toContainText("Contact");
+    // One line of text: the link keeps its single-row height.
+    const box = await email.boundingBox();
+    expect(box!.height).toBeLessThanOrEqual(44);
+    const text = email.locator("span");
+    expect(await text.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   });
 
   test("searches from the menu", async ({ page }) => {

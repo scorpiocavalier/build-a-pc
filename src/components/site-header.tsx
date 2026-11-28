@@ -19,12 +19,15 @@ const navLink =
 // Footer pages that phones also reach from the menu.
 const SECONDARY_LINKS = ["locations", "returns", "warranty"] as const;
 
+// Just the icon and the address, so it fits on one line on phones. The label
+// tells screen readers what the address is for.
 async function ContactLink() {
-  const [t, settings] = await Promise.all([getTranslations("Footer"), getSettings()]);
+  const [t, settings] = await Promise.all([getTranslations("Header"), getSettings()]);
+  const email = settings.contactEmail;
   return (
-    <a href={`mailto:${settings.contactEmail}`} className={`${menuLink} break-all`}>
+    <a href={`mailto:${email}`} aria-label={t("emailUs", { email })} className={menuLink}>
       <Mail aria-hidden="true" className="size-5 shrink-0" />
-      {t("contact", { email: settings.contactEmail })}
+      <span className="min-w-0 truncate">{email}</span>
     </a>
   );
 }
