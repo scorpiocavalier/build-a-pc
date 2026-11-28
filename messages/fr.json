@@ -18,7 +18,8 @@
     "searchLabel": "Rechercher des produits",
     "searchPlaceholder": "Rechercher des composantes",
     "menu": "Menu",
-    "closeMenu": "Fermer le menu"
+    "closeMenu": "Fermer le menu",
+    "emailUs": "Écrivez-nous à {email}"
   },
   "Home": {
     "eyebrow": "Toronto · Montréal",

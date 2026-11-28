@@ -18,7 +18,8 @@
     "searchLabel": "Search products",
     "searchPlaceholder": "Search parts",
     "menu": "Menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "emailUs": "Email us at {email}"
   },
   "Home": {
     "eyebrow": "Toronto · Montreal",
