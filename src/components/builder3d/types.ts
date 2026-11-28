@@ -1,4 +1,4 @@
-import type { BuildSlot, LocationCode } from "@/generated/prisma/enums";
+import type { BuildSlot } from "@/generated/prisma/enums";
 import type { Issue } from "@/lib/builder/compat";
 import type { SpecValues } from "@/lib/specs/types";
 
@@ -15,7 +15,8 @@ export type PartView = {
   imageUrl: string | null;
   // Key specs, formatted for display ("AM5 · 8 cores").
   facts: string[];
-  available: Record<LocationCode, number>;
+  // Free stock.
+  available: number;
   // Raw specs, for sizing the 3D model.
   specs: SpecValues;
 };
@@ -27,12 +28,11 @@ export type CandidateView = {
   priceCents: number;
   imageUrl: string | null;
   facts: string[];
-  available: Record<LocationCode, number>;
+  available: number;
   errors: Issue[];
 };
 
 export type BuilderData = {
-  location: LocationCode;
   parts: Partial<Record<BuildSlot, PartView>>;
   issues: Issue[];
   missing: BuildSlot[];

@@ -8,21 +8,12 @@ export function normalizePostalCode(input: string): string | null {
   return `${s.slice(0, 3)} ${s.slice(3)}`;
 }
 
-// The first location whose delivery prefixes match, e.g. "M" for Toronto or
-// "H2" for part of Montreal. Longer prefixes win.
-export function matchDeliveryLocation<L extends { deliveryPostalPrefixes: string[] }>(
-  postalCode: string,
-  locations: L[],
-): L | null {
+// Whether the store delivers to a postal code: one of its delivery prefixes,
+// like "M" or "L4", starts the code.
+export function deliversTo(postalCode: string, prefixes: string[]): boolean {
   const compact = postalCode.replace(/\s/g, "").toUpperCase();
-  let best: { location: L; length: number } | null = null;
-  for (const location of locations) {
-    for (const prefix of location.deliveryPostalPrefixes) {
-      const p = prefix.replace(/\s/g, "").toUpperCase();
-      if (p && compact.startsWith(p) && (!best || p.length > best.length)) {
-        best = { location, length: p.length };
-      }
-    }
-  }
-  return best?.location ?? null;
+  return prefixes.some((prefix) => {
+    const p = prefix.replace(/\s/g, "").toUpperCase();
+    return p !== "" && compact.startsWith(p);
+  });
 }

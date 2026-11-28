@@ -2,6 +2,7 @@ import type { MovementReason, Prisma, PrismaClient } from "@/generated/prisma/cl
 import { getCategoryDefinition } from "@/lib/specs/definitions";
 import type { ProductInput } from "@/lib/catalog/product-input";
 import { slugify } from "@/lib/slug";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 
 // Shared by the admin form, CSV import and the seed script, so it takes the
 // database client as an argument instead of importing the server-only one.
@@ -75,23 +76,23 @@ export async function saveProduct(
       });
 
   const reason = options.stockReason ?? (existing ? "ADJUSTMENT" : "INITIAL");
-  for (const [code, onHand] of Object.entries(input.stock)) {
-    if (onHand === undefined) continue;
+  const onHand = input.stock;
+  if (onHand !== null) {
     const location = await client.location.findUniqueOrThrow({
-      where: { code: code as "TOR" | "MTL" },
+      where: { code: DEFAULT_LOCATION },
     });
     const key = { productId: product.id, locationId: location.id };
     const current = await client.inventory.findUnique({
       where: { productId_locationId: key },
     });
     const delta = onHand - (current?.onHand ?? 0);
-    if (current && delta === 0) continue;
-
-    await client.inventory.upsert({
-      where: { productId_locationId: key },
-      create: { ...key, onHand },
-      update: { onHand },
-    });
+    if (!current || delta !== 0) {
+      await client.inventory.upsert({
+        where: { productId_locationId: key },
+        create: { ...key, onHand },
+        update: { onHand },
+      });
+    }
     if (delta !== 0) {
       await client.inventoryMovement.create({
         data: { ...key, delta, reason, actorId: options.actorId ?? null },

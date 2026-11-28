@@ -5,7 +5,6 @@ import { formatOrderNumber } from "@/lib/checkout/order-number";
 import type { RequestedWindow } from "@/lib/checkout/windows";
 import type { LocalizedText } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
-import { LOCATION_CODES, LOCATION_NAMES, SINGLE_STORE, storeFilter } from "@/lib/store-config";
 import { cn } from "@/lib/utils";
 import { getAdminDashboard } from "@/server/admin/products";
 import { getToday, type TodayOrder } from "@/server/admin/today";
@@ -23,14 +22,8 @@ const dateTime = new Intl.DateTimeFormat("en-CA", {
 });
 const money = (cents: number) => formatMoney(cents, "en");
 
-export default async function TodayPage({ searchParams }: PageProps<"/admin">) {
-  const { location: raw } = await searchParams;
-  const location = storeFilter(raw);
-  const [user, today, stats] = await Promise.all([
-    requireAdmin(),
-    getToday(location),
-    getAdminDashboard(),
-  ]);
+export default async function TodayPage() {
+  const [user, today, stats] = await Promise.all([requireAdmin(), getToday(), getAdminDashboard()]);
 
   const counts = [
     { label: "Awaiting payment or confirmation", value: today.counts.placed, status: "PLACED" },
@@ -42,50 +35,26 @@ export default async function TodayPage({ searchParams }: PageProps<"/admin">) {
     { label: "Drafts", value: stats.drafts, href: "/admin/products?status=DRAFT" },
     { label: "Missing French", value: stats.missingFrench, href: "/admin/products?missing=fr" },
     {
-      label: "Out of stock everywhere",
+      label: "Out of stock",
       value: stats.outOfStock,
       href: "/admin/products?stock=out",
     },
   ];
-  const locationQuery = location ? `&location=${location}` : "";
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Today</h1>
-          <p className="text-muted">
-            Hi {user.name ?? user.email}. Here&apos;s what needs attention
-            {location && !SINGLE_STORE ? ` in ${LOCATION_NAMES[location]}` : ""}.
-          </p>
-        </div>
-        {!SINGLE_STORE && (
-          <nav aria-label="Location" className="flex gap-1 text-sm">
-            {[
-              { code: null, label: "Both" },
-              ...LOCATION_CODES.map((code) => ({ code, label: LOCATION_NAMES[code] })),
-            ].map((l) => (
-              <Link
-                key={l.label}
-                href={l.code ? `/admin?location=${l.code}` : "/admin"}
-                aria-current={location === l.code ? "page" : undefined}
-                className={cn(
-                  "rounded-lg px-3 py-1.5",
-                  location === l.code ? "bg-surface-raised" : "text-muted hover:text-foreground",
-                )}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-        )}
+      <div>
+        <h1 className="text-2xl font-semibold">Today</h1>
+        <p className="text-muted">
+          Hi {user.name ?? user.email}. Here&apos;s what needs attention.
+        </p>
       </div>
 
       <ul className="grid gap-3 sm:grid-cols-3">
         {counts.map((card) => (
           <li key={card.label}>
             <Link
-              href={`/admin/orders?status=${card.status}${locationQuery}`}
+              href={`/admin/orders?status=${card.status}`}
               className="flex flex-col gap-1 rounded-lg border bg-surface p-5 hover:border-accent/60"
             >
               <span className="text-3xl font-semibold">{card.value}</span>
@@ -160,16 +129,12 @@ export default async function TodayPage({ searchParams }: PageProps<"/admin">) {
           empty="Stock levels are fine."
         >
           {today.lowStock.slice(0, 12).map((row) => (
-            <li
-              key={`${row.product.id}-${row.location.code}`}
-              className="flex justify-between gap-3 py-2"
-            >
+            <li key={row.product.id} className="flex justify-between gap-3 py-2">
               <Link
                 href={`/admin/inventory?q=${encodeURIComponent(row.product.sku)}`}
                 className="hover:text-accent"
               >
-                {(row.product.name as LocalizedText).en}{" "}
-                <span className="text-xs text-muted">{row.location.code}</span>
+                {(row.product.name as LocalizedText).en}
               </Link>
               <span className={cn("tabular-nums", row.available <= 0 && "text-red-300")}>
                 {row.available}
@@ -228,7 +193,6 @@ function OrderRow({ order, children }: { order: TodayOrder; children: ReactNode 
         {formatOrderNumber(order.number)}
       </Link>
       <span>{order.name}</span>
-      <span className="text-xs text-muted">{order.location.code}</span>
       <span className="w-full text-muted">{children}</span>
     </li>
   );

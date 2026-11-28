@@ -1,31 +1,28 @@
 import "server-only";
 
-import { Prisma, type LocationCode } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { filterBySpecs } from "@/lib/catalog/admin-spec-filter";
-import { LOCATION_CODES } from "@/lib/store-config";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import {
   matchesCost,
   matchesStock,
   type CostFilter,
   type CostRules,
-  type LocationFilter,
   type StockLevel,
 } from "@/lib/inventory/filter";
 import { audit } from "@/server/audit";
 import { db } from "@/server/db";
-import { averageCost, lastPurchaseCosts, receiveUnits } from "@/server/inventory-cost";
+import { averageCost, lastPurchaseCosts } from "@/server/inventory-cost";
 import { requireAdmin } from "@/server/require-admin";
 
-// Stock per location, manual adjustments and transfers between the stores.
-// Available = on hand − reserved for open orders; nothing here can take a
-// location below what's reserved.
+// The store's stock and manual adjustments. Available = on hand − reserved
+// for open orders; nothing here can take stock below what's reserved.
 
 export type InventoryFilters = {
   q?: string;
   category?: string;
   brand?: string;
   status?: "ACTIVE" | "DRAFT";
-  location?: LocationFilter;
   stock?: StockLevel;
   cost?: CostFilter;
   // Spec filters (socket, memory type…), keyed by spec field. Only used
@@ -67,12 +64,8 @@ export async function listInventory(
       category: { select: { slug: true } },
       brand: { select: { name: true } },
       inventory: {
-        select: {
-          onHand: true,
-          reserved: true,
-          avgCostCents: true,
-          location: { select: { code: true } },
-        },
+        where: { location: { code: DEFAULT_LOCATION } },
+        select: { onHand: true, reserved: true, avgCostCents: true },
       },
     },
   });
@@ -81,30 +74,20 @@ export async function listInventory(
     products.map((p) => p.id),
   );
   const rows = products.map((p) => {
-    const empty = (code: LocationCode) => ({
-      onHand: 0,
-      reserved: 0,
-      avgCostCents: null as number | null,
-      lastCostCents: lastCost.get(`${p.id}:${code}`) ?? null,
-    });
-    const stock = { TOR: empty("TOR"), MTL: empty("MTL") };
-    for (const i of p.inventory) {
-      stock[i.location.code] = {
-        ...stock[i.location.code],
-        onHand: i.onHand,
-        reserved: i.reserved,
-        avgCostCents: i.avgCostCents,
-      };
-    }
-    const low = LOCATION_CODES.some(
-      (code) => stock[code].onHand - stock[code].reserved <= lowThreshold,
-    );
+    const i = p.inventory[0];
+    const stock = {
+      onHand: i?.onHand ?? 0,
+      reserved: i?.reserved ?? 0,
+      avgCostCents: i?.avgCostCents ?? null,
+      lastCostCents: lastCost.get(p.id) ?? null,
+    };
+    const low = stock.onHand - stock.reserved <= lowThreshold;
     return { ...p, stock, low };
   });
   const stocked = rows.filter(
     (r) =>
-      matchesStock(r, filters.stock ?? "all", filters.location ?? "all", lowThreshold) &&
-      matchesCost(r, filters.cost ?? "all", filters.location ?? "all", settings),
+      matchesStock(r, filters.stock ?? "all", lowThreshold) &&
+      matchesCost(r, filters.cost ?? "all", settings),
   );
 
   const { rows: matching, facets } = filterBySpecs(filters.category, stocked, filters.specs ?? {});
@@ -124,12 +107,14 @@ export async function inventoryFilterOptions() {
 export async function listMovements(sku?: string) {
   await requireAdmin();
   return db.inventoryMovement.findMany({
-    where: sku ? { product: { sku: { equals: sku, mode: "insensitive" } } } : {},
+    where: {
+      location: { code: DEFAULT_LOCATION },
+      ...(sku ? { product: { sku: { equals: sku, mode: "insensitive" } } } : {}),
+    },
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
       product: { select: { sku: true, name: true } },
-      location: { select: { code: true } },
       actor: { select: { email: true } },
     },
   });
@@ -144,82 +129,8 @@ async function productBySku(sku: string) {
   });
 }
 
-export async function transferStock(input: {
-  sku: string;
-  from: LocationCode;
-  to: LocationCode;
-  quantity: number;
-  note: string;
-  actorId: string;
-}): Promise<Result> {
-  if (input.from === input.to) return { ok: false, error: "Pick two different locations." };
-  if (!Number.isInteger(input.quantity) || input.quantity < 1 || input.quantity > 1000) {
-    return { ok: false, error: "Enter how many units to move (1 or more)." };
-  }
-  const product = await productBySku(input.sku);
-  if (!product) return { ok: false, error: `No product with SKU ${input.sku}.` };
-
-  return db.$transaction(async (tx) => {
-    const [from, to] = await Promise.all([
-      tx.location.findUniqueOrThrow({ where: { code: input.from } }),
-      tx.location.findUniqueOrThrow({ where: { code: input.to } }),
-    ]);
-    // Guarded: only succeeds if the units are free (not reserved for orders).
-    const moved = await tx.$executeRaw`
-      UPDATE "Inventory" SET "onHand" = "onHand" - ${input.quantity}
-      WHERE "productId" = ${product.id} AND "locationId" = ${from.id}
-        AND "onHand" - reserved >= ${input.quantity}`;
-    if (moved === 0) {
-      return { ok: false as const, error: `Not enough free stock in ${input.from} to move.` };
-    }
-    // The units carry the sending store's average cost with them.
-    const unitCostCents = await averageCost(tx, product.id, from.id);
-    await receiveUnits(tx, {
-      productId: product.id,
-      locationId: to.id,
-      quantity: input.quantity,
-      unitCostCents,
-    });
-    const note = input.note || null;
-    await tx.inventoryMovement.createMany({
-      data: [
-        {
-          productId: product.id,
-          locationId: from.id,
-          delta: -input.quantity,
-          reason: "TRANSFER",
-          unitCostCents,
-          note: `To ${input.to}${note ? `: ${note}` : ""}`,
-          actorId: input.actorId,
-        },
-        {
-          productId: product.id,
-          locationId: to.id,
-          delta: input.quantity,
-          reason: "TRANSFER",
-          unitCostCents,
-          note: `From ${input.from}${note ? `: ${note}` : ""}`,
-          actorId: input.actorId,
-        },
-      ],
-    });
-    await audit(
-      {
-        actorId: input.actorId,
-        action: "inventory.transfer",
-        entity: "inventory",
-        entityId: product.id,
-        summary: `Moved ${input.quantity} × ${product.sku} from ${input.from} to ${input.to}${note ? ` (${note})` : ""}`,
-      },
-      tx,
-    );
-    return { ok: true as const };
-  });
-}
-
 export async function adjustStock(input: {
   sku: string;
-  location: LocationCode;
   delta: number;
   reason: "ADJUSTMENT" | "WRITE_OFF";
   note: string;
@@ -236,7 +147,7 @@ export async function adjustStock(input: {
   if (!product) return { ok: false, error: `No product with SKU ${input.sku}.` };
 
   return db.$transaction(async (tx) => {
-    const location = await tx.location.findUniqueOrThrow({ where: { code: input.location } });
+    const location = await tx.location.findUniqueOrThrow({ where: { code: DEFAULT_LOCATION } });
     const key = { productId: product.id, locationId: location.id };
     await tx.inventory.upsert({ where: { productId_locationId: key }, create: key, update: {} });
     // Never below what open orders have reserved.
@@ -267,7 +178,7 @@ export async function adjustStock(input: {
         action: input.reason === "WRITE_OFF" ? "inventory.write_off" : "inventory.adjust",
         entity: "inventory",
         entityId: product.id,
-        summary: `${input.delta > 0 ? "+" : ""}${input.delta} × ${product.sku} in ${input.location}: ${input.note}`,
+        summary: `${input.delta > 0 ? "+" : ""}${input.delta} × ${product.sku}: ${input.note}`,
       },
       tx,
     );

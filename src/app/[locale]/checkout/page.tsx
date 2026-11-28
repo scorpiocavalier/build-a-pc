@@ -7,7 +7,6 @@ import { WindowsIncluded } from "@/components/cart/windows-included";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { Link } from "@/i18n/navigation";
-import { LOCATION_CODES, type LocationCode } from "@/lib/catalog/product-input";
 import { normalizePostalCode } from "@/lib/checkout/postal";
 import { formatRate } from "@/lib/checkout/pricing";
 import { availableDates, formatDate } from "@/lib/checkout/windows";
@@ -65,8 +64,8 @@ async function CheckoutContent({ searchParams }: Pick<Props, "searchParams">) {
   const kind = one(params.f);
   let choice: FulfilmentChoice | null = null;
   let postalError: string | null = null;
-  if (kind === "pickup" && (LOCATION_CODES as readonly string[]).includes(one(params.l))) {
-    choice = { kind: "PICKUP", locationCode: one(params.l) as LocationCode };
+  if (kind === "pickup") {
+    choice = { kind: "PICKUP" };
   } else if (kind === "delivery") {
     const postalCode = normalizePostalCode(one(params.pc));
     if (postalCode) choice = { kind: "DELIVERY", postalCode };
@@ -86,7 +85,7 @@ async function CheckoutContent({ searchParams }: Pick<Props, "searchParams">) {
           current={choice}
           postalInput={one(params.pc) || account?.addresses[0]?.postalCode || ""}
           postalError={postalError}
-          locationLabel={ready ? localize(ready.location.name, locale) : null}
+          confirmed={!!ready}
         />
         {ready && choice && (
           <DetailsStep
@@ -160,22 +159,23 @@ async function FulfilmentStep({
   current,
   postalInput,
   postalError,
-  locationLabel,
+  confirmed,
 }: {
   current: FulfilmentChoice | null;
   postalInput: string;
   postalError: string | null;
-  locationLabel: string | null;
+  // The choice is quoted: pickup, or a postal code the store delivers to.
+  confirmed: boolean;
 }) {
-  const [t, catalog] = await Promise.all([getTranslations("Checkout"), getTranslations("Catalog")]);
+  const t = await getTranslations("Checkout");
 
-  if (current && locationLabel) {
+  if (current && confirmed) {
     return (
       <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-surface p-4">
         <p className="font-medium">
           {current.kind === "PICKUP"
-            ? t("pickupAt", { location: locationLabel })
-            : t("deliveryFrom", { location: locationLabel, postalCode: current.postalCode })}
+            ? t("pickupStore")
+            : t("deliveryTo", { postalCode: current.postalCode })}
         </p>
         <Link href="/checkout" className="text-sm text-accent underline underline-offset-2">
           {t("change")}
@@ -189,11 +189,9 @@ async function FulfilmentStep({
       <h2 className="text-lg font-semibold">{t("fulfilmentTitle")}</h2>
       <form className="flex flex-col gap-3">
         <input type="hidden" name="f" value="pickup" />
-        {LOCATION_CODES.map((code) => (
-          <Button key={code} name="l" value={code} variant="outline" className="justify-start">
-            {t("pickupAt", { location: catalog(`locations.${code}`) })}
-          </Button>
-        ))}
+        <Button variant="outline" className="justify-start">
+          {t("pickupStore")}
+        </Button>
       </form>
       <form className="flex flex-col gap-2 rounded-lg border bg-surface p-4">
         <input type="hidden" name="f" value="delivery" />
@@ -243,7 +241,6 @@ async function DetailsStep({
   account: AccountDetails | null;
 }) {
   const [t, settings] = await Promise.all([getTranslations("Checkout"), getSettings()]);
-  const location = localize(quoted.location.name, locale);
 
   if (quoted.shortages.length) {
     return (
@@ -251,7 +248,7 @@ async function DetailsStep({
         role="alert"
         className="flex flex-col gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 p-4"
       >
-        <p className="font-medium">{t("notEnoughStock", { location })}</p>
+        <p className="font-medium">{t("notEnoughStock")}</p>
         <ul className="list-inside list-disc text-sm">
           {[...new Map(allLines(cart).map((l) => [l.productId, l])).values()]
             .filter((l) => quoted.shortages.includes(l.productId))
@@ -260,7 +257,7 @@ async function DetailsStep({
             ))}
         </ul>
         <p className="text-sm">
-          {t("tryOther")}{" "}
+          {t("adjustCart")}{" "}
           <Link href="/cart" className="text-accent underline underline-offset-2">
             {t("change")}
           </Link>
@@ -281,7 +278,6 @@ async function DetailsStep({
     <CheckoutForm
       locale={locale}
       fulfilment={choice.kind}
-      locationCode={quoted.location.code}
       postalCode={choice.kind === "DELIVERY" ? choice.postalCode : ""}
       dates={dates}
       methods={quoted.methods}

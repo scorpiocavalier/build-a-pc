@@ -1,7 +1,6 @@
 import "server-only";
 
 import { Prisma } from "@/generated/prisma/client";
-import { LOCATION_CODES, type LocationCode } from "@/lib/catalog/product-input";
 import { filterBySpecs } from "@/lib/catalog/admin-spec-filter";
 import {
   listedStatuses,
@@ -14,6 +13,7 @@ import type { SpecValues } from "@/lib/specs/types";
 import { audit } from "@/server/audit";
 import { db } from "@/server/db";
 import { lastPurchaseCosts } from "@/server/inventory-cost";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import { requireAdmin } from "@/server/require-admin";
 import { publicUrl } from "@/server/storage";
 
@@ -24,7 +24,11 @@ import { publicUrl } from "@/server/storage";
 const missingFrench: Prisma.ProductWhereInput = {
   OR: [{ name: { path: ["fr"], equals: "" } }, { description: { path: ["fr"], equals: "" } }],
 };
-const outOfStock: Prisma.ProductWhereInput = { inventory: { none: { onHand: { gt: 0 } } } };
+// Only the store's stock counts (the database may still hold another store's
+// rows from when the site ran two).
+const outOfStock: Prisma.ProductWhereInput = {
+  inventory: { none: { onHand: { gt: 0 }, location: { code: DEFAULT_LOCATION } } },
+};
 
 export async function getAdminDashboard() {
   await requireAdmin();
@@ -87,7 +91,8 @@ export async function listAdminProducts(filters: AdminProductFilters) {
       brand: { select: { name: true } },
       category: { select: { slug: true, name: true } },
       inventory: {
-        select: { onHand: true, avgCostCents: true, location: { select: { code: true } } },
+        where: { location: { code: DEFAULT_LOCATION } },
+        select: { onHand: true, avgCostCents: true },
       },
       _count: { select: { images: true } },
     },
@@ -108,22 +113,12 @@ export async function listAdminProducts(filters: AdminProductFilters) {
     priceCents: row.priceCents,
     imageCount: row._count.images,
     missingFrench: !(row.name as LocalizedText).fr || !(row.description as LocalizedText).fr,
-    stock: Object.fromEntries(
-      LOCATION_CODES.map((code) => [
-        code,
-        row.inventory.find((i) => i.location.code === code)?.onHand ?? 0,
-      ]),
-    ) as Record<LocationCode, number>,
-    // Average cost per location and the latest purchase's landed cost.
-    cost: Object.fromEntries(
-      LOCATION_CODES.map((code) => [
-        code,
-        {
-          avgCostCents: row.inventory.find((i) => i.location.code === code)?.avgCostCents ?? null,
-          lastCostCents: lastCost.get(`${row.id}:${code}`) ?? null,
-        },
-      ]),
-    ) as Record<LocationCode, { avgCostCents: number | null; lastCostCents: number | null }>,
+    stock: row.inventory[0]?.onHand ?? 0,
+    // Average cost and the latest purchase's landed cost.
+    cost: {
+      avgCostCents: row.inventory[0]?.avgCostCents ?? null,
+      lastCostCents: lastCost.get(row.id) ?? null,
+    },
   }));
   return { products, specFacets: facets };
 }
@@ -136,7 +131,7 @@ export async function getAdminProduct(id: string) {
       brand: true,
       category: true,
       images: { orderBy: { position: "asc" } },
-      inventory: { include: { location: true } },
+      inventory: { where: { location: { code: DEFAULT_LOCATION } } },
     },
   });
   if (!row) return null;
@@ -152,12 +147,7 @@ export async function getAdminProduct(id: string) {
       width: image.width,
       height: image.height,
     })),
-    stock: Object.fromEntries(
-      LOCATION_CODES.map((code) => [
-        code,
-        row.inventory.find((i) => i.location.code === code)?.onHand ?? 0,
-      ]),
-    ) as Record<LocationCode, number>,
+    stock: row.inventory[0]?.onHand ?? 0,
   };
 }
 
@@ -172,7 +162,7 @@ export async function listProductsForExport(categorySlug: string) {
   const rows = await db.product.findMany({
     where: { category: { slug: categorySlug } },
     orderBy: { sku: "asc" },
-    include: { brand: true, inventory: { include: { location: true } } },
+    include: { brand: true, inventory: { where: { location: { code: DEFAULT_LOCATION } } } },
   });
   return rows.map((row) => ({
     ...row,
@@ -181,12 +171,7 @@ export async function listProductsForExport(categorySlug: string) {
     name: row.name as LocalizedText,
     description: row.description as LocalizedText,
     specs: row.specs as SpecValues,
-    stock: Object.fromEntries(
-      LOCATION_CODES.map((code) => [
-        code,
-        row.inventory.find((i) => i.location.code === code)?.onHand ?? 0,
-      ]),
-    ) as Record<LocationCode, number>,
+    stock: row.inventory[0]?.onHand ?? 0,
   }));
 }
 

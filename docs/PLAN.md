@@ -10,6 +10,12 @@ security and legal compliance are first-class concerns.
 
 > Status: draft v3 — updated with the owner's second round of answers.
 > Remaining open questions are in [§11](#11-open-questions).
+>
+> **Since #52 the business has one store, in Toronto.** The second store
+> was dropped, along with store pickers, stock transfers and the public
+> locations page; the store's address and hours are only sent with pickup
+> orders. The sections below are updated where they describe how the site
+> works now; the phase table in §10 is kept as a record of what was built.
 
 ---
 
@@ -18,13 +24,13 @@ security and legal compliance are first-class concerns.
 | Topic | Decision |
 |---|---|
 | Brand / domain | **Astral Tech Gaming** — `astralgaming.ca` (**not yet registered**, see §12) |
-| Locations | **Toronto, ON** and **Montreal, QC** — both offer **pickup** and local **in-person delivery** |
+| Store | **Toronto, ON** — **pickup** and local **in-person delivery** |
 | Market | Canada, prices in **CAD**. Worldwide is a possible later step. |
 | Languages | **English and French from launch** (Quebec customers are expected soon) |
 | Inventory | Owned stock (no dropshipping) |
 | Core service | Sell individual parts **and** build PCs in-house |
 | Assembly | **Flat fee**, about **1 hour** of build time, **Windows included** |
-| Fulfilment | Pickup at either location, or in-person delivery near either city. Carrier shipping later. |
+| Fulfilment | Pickup at the store, or in-person delivery nearby. Carrier shipping later. |
 | Payment methods | **Card** (online), **Interac e-Transfer**, **cash**. Cash is capped at **$10,000** per order. Deposits are accepted for custom builds. |
 | Returns | **30 days**. Assembled PCs can be returned **only if found defective**. **30% restocking fee** on returns that aren't for a defect. |
 | Warranty | Handled by the manufacturer; we show the warranty terms on each product |
@@ -34,9 +40,8 @@ security and legal compliance are first-class concerns.
 | Running costs budget | **≤ $100 CAD / month** |
 
 ### What these answers mean for the build
-- **Two locations are built in from the start.** Each location has its own
-  address, pickup hours, delivery area and stock count. Orders are
-  fulfilled from one location.
+- **One store.** It has an address, pickup hours, a delivery area and its
+  stock count. The address isn't published on the site.
 - **Bilingual from day one.** URLs are `/en/...` and `/fr/...`. Product
   names and descriptions are stored in both languages. Emails, receipts and
   legal pages exist in both.
@@ -54,22 +59,21 @@ security and legal compliance are first-class concerns.
 ### v1 (launch)
 | Area | What ships |
 |---|---|
-| **Storefront (EN/FR)** | Category browsing, spec filters (socket, chipset, memory type, wattage, form factor…), search, product pages showing stock at each location, cart, checkout |
+| **Storefront (EN/FR)** | Category browsing, spec filters (socket, chipset, memory type, wattage, form factor…), search, product pages showing stock, cart, checkout |
 | **PC builder** | Step-by-step part picker, live compatibility checks, power estimate, shareable build links, add the whole build to the cart **as parts or assembled with Windows** |
 | **Prebuilt PCs** | Admin-curated builds sold as one product |
-| **Checkout** | Choose pickup or delivery and a location. Pay by card, e-Transfer or cash, or pay a deposit on custom builds. Province-aware tax (when switched on). |
+| **Checkout** | Choose pickup or delivery. Pay by card, e-Transfer or cash, or pay a deposit on custom builds. Province-aware tax (when switched on). |
 | **Accounts** | Sign in, order history & status, saved builds, wishlist, addresses, start a return, preferred language |
-| **Admin** | Products & specs (EN/FR), CSV import, stock per location, orders (assembly → pickup/delivery), recording offline payments, returns with restocking fees, schedules, settings, reports |
+| **Admin** | Products & specs (EN/FR), CSV import, stock, orders (assembly → pickup/delivery), recording offline payments, returns with restocking fees, schedules, settings, reports |
 
 ### Out of scope for v1 (candidates for later)
 Carrier shipping & international sales, multi-currency, reviews & ratings,
 price and stock alerts, discount codes, financing / buy-now-pay-later,
-distributor feed integrations, transfers of stock between the two locations
-through the website (in v1 these are a manual stock adjustment).
+distributor feed integrations.
 
 ### Success criteria
 - A customer can design a compatible PC and order it assembled in < 5 minutes.
-- Stock is never oversold at either location, including on cash and
+- Stock is never oversold, including on cash and
   e-Transfer orders.
 - Every page and email a customer sees is available in French.
 - Admins can run the whole order lifecycle without leaving the dashboard.
@@ -113,12 +117,12 @@ Validation with **Zod**, tests with **Vitest** + **Playwright**, CI on
 │    (shop)     /, /c/[category], /p/[slug], /prebuilt, /search, /cart│
 │    (builder)  /build, /build/[shareId]                              │
 │    (account)  /account, /account/orders, /account/builds            │
-│    (info)     /locations, /returns, /warranty, /privacy, /terms     │
+│    (info)     /returns, /warranty, /privacy, /terms                 │
 │  /admin/**    ← admin allow-list, checked in middleware             │
 │                 AND in every server action                          │
 │                                                                     │
 │  src/server/*  services: catalog · cart · orders · payments ·       │
-│                inventory · locations · fulfilment · tax · returns · │
+│                inventory · fulfilment · tax · returns ·             │
 │                email                                                │
 │  src/lib/compat  compatibility engine (pure TS, client + server)    │
 │  /api/webhooks/stripe   source of truth for card payments           │
@@ -164,7 +168,7 @@ docs/
 User(id, email, name, role[CUSTOMER|ADMIN], locale[en|fr], marketingConsentAt?, createdAt)
 Address(id, userId, name, line1, line2, city, province, postalCode, country, phone, isDefault)
 
-Location(id, code[TOR|MTL], name, address JSONB, province, phone,
+Location(id, code[TOR; MTL kept as history], name, address JSONB, province, phone,
          pickupHours JSONB, deliveryFeeCents, deliveryPostalPrefixes[], active)
 
 Category(id, slug, name {en,fr}, parentId, specSchemaKey)
@@ -259,12 +263,9 @@ tracked separately, worked out from the order's `Payment` rows.
 ### Checkout flow
 1. The cart is stored on the server (a cookie identifies guests; their cart
    merges into their account when they sign in).
-2. The customer chooses **Pickup** (Toronto or Montreal) or **Delivery**
-   (the postal code must be in one location's delivery area, which picks
-   the fulfilling location).
-3. Availability is checked against **that location's stock**. Items
-   available only at the other location are flagged, and admins can
-   arrange a manual transfer.
+2. The customer chooses **Pickup** at the store or **Delivery** (the postal
+   code must be in the store's delivery area).
+3. Availability is checked against the store's stock.
 4. The customer chooses preferred days and times for pickup or delivery.
    An admin confirms.
 5. Tax is calculated from the **TaxRate** row for the province where the
@@ -398,23 +399,23 @@ import rejects rows that are missing them.
 
 - **Access**: an allow-list of 2 Google accounts with 2-step verification
   enforced. One `ADMIN` role.
-- **Today view** (filter by location): new orders, payments and deposits
+- **Today view**: new orders, payments and deposits
   to confirm, builds to assemble, pickups and deliveries today, low stock.
 - **Products**: EN/FR fields side by side, forms generated from each
   category's spec schema, image upload, draft/publish, "missing French"
   filter, CSV import with a dry run first, prebuilt PCs.
-- **Inventory**: stock per location, adjustments (with a reason), manual
-  transfers between Toronto and Montreal, Windows licence count, low-stock list.
+- **Inventory**: stock, adjustments (with a reason), Windows licence count,
+  low-stock list.
 - **Orders**: status board, record e-Transfer, cash and deposit payments,
   send a balance payment link, schedule pickup or delivery, build sheet /
   packing slip, cancel, refund.
 - **Returns**: approve, receive, inspect (defective or change of mind),
   automatic restocking fee, refund, restock or write off.
-- **Settings**: locations & hours, delivery areas & fees, tax rates and
+- **Settings**: store address & hours, delivery area & fee, tax rates and
   collection switches, registration numbers, assembly fee, deposit, cash
   cap, restocking %, return window, build turnaround, e-Transfer email.
-- **Reports**: revenue by period, location and payment method; top
-  products; stock value per location; deposits still waiting on a balance.
+- **Reports**: revenue by period and payment method; top products; stock
+  value; deposits still waiting on a balance.
 - **Audit log** of every admin change.
 
 ---
@@ -434,8 +435,8 @@ import rejects rows that are missing them.
 - Category and product pages are pre-rendered and refreshed when an admin
   edits them.
 - `hreflang` links between `/en` and `/fr` pages; French slugs.
-- Product structured data, sitemap, LocalBusiness structured data for each
-  of the two locations.
+- Product and Organization structured data, sitemap. No LocalBusiness data,
+  since the store's address isn't published.
 
 **Accessibility**: WCAG 2.2 AA. The builder works with a keyboard, and
 compatibility problems aren't shown by colour alone.
@@ -478,7 +479,7 @@ Each phase ends with something you can try on a preview site.
 
 **Later:** carrier shipping across Canada, international sales &
 multi-currency, Stripe Tax, reviews, stock alerts, discount codes,
-financing, stock transfer workflow.
+financing.
 
 ---
 
@@ -493,8 +494,8 @@ financing, stock transfer workflow.
   - Policy pages are drafts written from the decisions in this plan, to be
     reviewed before launch. No analytics yet, so no consent banner is needed.
 - **Phase 5: done.** Differences from §8:
-  - Stock transfers are recorded in one step (when the units leave), not as a
-    send/receive pair. Write-offs and count corrections need a reason.
+  - Write-offs and count corrections need a reason. (Stock transfers between
+    the two stores were removed in #52.)
   - Return refunds include the items' share of tax; delivery and assembly fees
     are kept. The restocking fee is pre-filled from the reason and editable.
   - Stock value is at selling price (the catalog has no cost prices yet).
@@ -542,11 +543,9 @@ financing, stock transfer workflow.
 
 ## 11. Open questions
 
-1. **Delivery areas**: how far from each location do you deliver (e.g.
-   Toronto and the GTA, Montreal Island and Laval)? What's the delivery fee
-   for each, or is it free?
-2. **Stock**: is stock kept separately at Toronto and Montreal (our current
-   assumption), or is it one shared pool?
+1. **Delivery area**: how far from the store do you deliver (e.g. Toronto
+   and the GTA)? What's the delivery fee, or is it free?
+2. *(Answered: one store, one stock count.)*
 3. **Assembly fee & Windows**: how much is the flat fee? Is the Windows
    licence included in that fee or shown as its own line? Windows Home,
    Pro, or a choice for the customer?

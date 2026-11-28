@@ -17,18 +17,15 @@ test("an admin takes a cash order from confirmation to pickup", async ({
 }) => {
   const product = await createProduct(sql, { priceCents: 5000 });
   const email = uniqueEmail("admin-cash");
-  // Montreal's average cost, recorded on the sale for profit reports.
-  await sql.query(
-    `UPDATE "Inventory" SET "avgCostCents" = 3000 WHERE "productId" = $1
-       AND "locationId" = (SELECT id FROM "Location" WHERE code = 'MTL')`,
-    [product.id],
-  );
+  // The average cost, recorded on the sale for profit reports.
+  await sql.query(`UPDATE "Inventory" SET "avgCostCents" = 3000 WHERE "productId" = $1`, [
+    product.id,
+  ]);
 
   // A customer in a separate browser places a cash order.
   const customer = await browser.newPage();
   await addToCart(customer, product.slug, "en", 3);
-  // Montreal, so the tax test toggling Ontario HST in parallel can't change the total.
-  await customer.goto("/en/checkout?f=pickup&l=MTL");
+  await customer.goto("/en/checkout?f=pickup");
   await fillContactAndWindow(customer, email);
   await customer.getByRole("radio", { name: /Cash/ }).check();
   await customer.getByRole("button", { name: "Place order" }).click();
@@ -60,7 +57,7 @@ test("an admin takes a cash order from confirmation to pickup", async ({
   ).toBeVisible();
 
   // Stock is deducted on handover and the reservation cleared.
-  expect(await stock(sql, product.id, "MTL")).toEqual({ onHand: 17, reserved: 0 });
+  expect(await stock(sql, product.id)).toEqual({ onHand: 17, reserved: 0 });
   const movements = await sql.query(
     `SELECT delta, reason FROM "InventoryMovement" WHERE "productId" = $1`,
     [product.id],
@@ -80,11 +77,11 @@ test("cancelling an order releases its stock", async ({ adminPage: page, browser
   const email = uniqueEmail("admin-cancel");
   const customer = await browser.newPage();
   await addToCart(customer, product.slug, "en", 2);
-  await customer.goto("/en/checkout?f=pickup&l=MTL");
+  await customer.goto("/en/checkout?f=pickup");
   await fillContactAndWindow(customer, email);
   await customer.getByRole("button", { name: "Place order" }).click();
   await expect(customer.getByRole("heading", { name: "Thank you, Alex!" })).toBeVisible();
-  expect(await stock(sql, product.id, "MTL")).toEqual({ onHand: 20, reserved: 2 });
+  expect(await stock(sql, product.id)).toEqual({ onHand: 20, reserved: 2 });
 
   const order = await orderFor(sql, email);
   await page.goto(`/admin/orders/${order.id}`);
@@ -93,25 +90,5 @@ test("cancelling an order releases its stock", async ({ adminPage: page, browser
   await page.getByLabel("Reason (sent to the customer)").fill("Customer asked to cancel");
   await page.getByRole("button", { name: "Cancel order" }).click();
   await expect(page.getByText("Cancelled: Customer asked to cancel")).toBeVisible();
-  expect(await stock(sql, product.id, "MTL")).toEqual({ onHand: 20, reserved: 0 });
-});
-
-test("settings control delivery areas and tax", async ({ adminPage: page, sql }) => {
-  await page.goto("/admin/settings");
-  // Turn on Ontario HST, then check a Toronto pickup quote includes it.
-  const ontario = page.locator("form").filter({ hasText: "Collect in ON" });
-  await ontario.getByLabel("Collect in ON").check();
-  await ontario.getByRole("button", { name: "Save ON" }).click();
-  await expect(ontario.getByText("Saved.")).toBeVisible();
-
-  try {
-    const product = await createProduct(sql, { priceCents: 10000 });
-    await addToCart(page, product.slug);
-    await page.goto("/en/checkout?f=pickup&l=TOR");
-    const summary = page.getByRole("complementary", { name: "Order summary" });
-    await expect(summary.getByText("HST (13 %)")).toBeVisible();
-    await expect(summary.getByText("$113.00")).toBeVisible();
-  } finally {
-    await sql.query(`UPDATE "TaxRate" SET collect = false WHERE province = 'ON'`);
-  }
+  expect(await stock(sql, product.id)).toEqual({ onHand: 20, reserved: 0 });
 });

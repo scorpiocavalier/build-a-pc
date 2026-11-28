@@ -235,13 +235,11 @@ function Inspector({
 }) {
   const t = useTranslations("Builder3D");
   const builder = useTranslations("Builder");
-  const catalog = useTranslations("Catalog");
   const part = data.parts[slot as BuildSlot];
   const label = builder(`slots.${slot}`);
   const [candidates, setCandidates] = useState<CandidateView[] | null>(null);
   const [pending, startTransition] = useTransition();
   const money = (cents: number) => formatMoney(cents, locale);
-  const location = catalog(`locations.${data.location}`);
 
   const loadCandidates = () =>
     startTransition(async () => {
@@ -297,14 +295,8 @@ function Inspector({
           )}
           <div className="flex flex-col gap-1 text-sm">
             {part.facts.length > 0 && <p className="text-muted">{part.facts.join(" · ")}</p>}
-            <p
-              className={
-                part.available[data.location] >= part.quantity ? "text-muted" : "text-amber-300"
-              }
-            >
-              {part.available[data.location] >= part.quantity
-                ? builder("inStockHere", { location })
-                : builder("notHere", { location })}
+            <p className={part.available >= part.quantity ? "text-muted" : "text-amber-300"}>
+              {part.available >= part.quantity ? builder("inStock") : builder("notInStock")}
             </p>
             <Link href={`/p/${part.slug}`} className="text-accent underline underline-offset-2">
               {t("details")}
@@ -334,7 +326,6 @@ function Inspector({
           candidates={candidates}
           currentId={part?.productId}
           currentQuantity={part?.quantity ?? 1}
-          location={data.location}
           locale={locale}
           pending={pending}
           onChoose={choose}
@@ -382,7 +373,6 @@ function Candidates({
   candidates,
   currentId,
   currentQuantity,
-  location,
   locale,
   pending,
   onChoose,
@@ -392,7 +382,6 @@ function Candidates({
   candidates: CandidateView[];
   currentId: string | undefined;
   currentQuantity: number;
-  location: BuilderData["location"];
   locale: string;
   pending: boolean;
   onChoose: (productId: string, quantity: number) => void;
@@ -400,14 +389,13 @@ function Candidates({
 }) {
   const t = useTranslations("Builder3D");
   const builder = useTranslations("Builder");
-  const catalog = useTranslations("Catalog");
   const [quantity, setQuantity] = useState(currentQuantity);
   const compatible = candidates.filter((c) => c.errors.length === 0);
   const others = candidates.filter((c) => c.errors.length > 0);
   const maxQuantity = SLOT_MAX_QUANTITY[slot];
 
   const row = (c: CandidateView) => {
-    const here = c.available[location] > 0;
+    const inStock = c.available > 0;
     const current = c.productId === currentId;
     return (
       <li key={c.productId} className="flex flex-wrap items-center gap-3 py-3">
@@ -416,10 +404,8 @@ function Candidates({
             {c.brand} {c.name}
           </p>
           {c.facts.length > 0 && <p className="text-xs text-muted">{c.facts.join(" · ")}</p>}
-          <p className={cn("text-xs", here ? "text-muted" : "text-amber-300")}>
-            {here
-              ? builder("inStockHere", { location: catalog(`locations.${location}`) })
-              : builder("notHere", { location: catalog(`locations.${location}`) })}
+          <p className={cn("text-xs", inStock ? "text-muted" : "text-amber-300")}>
+            {inStock ? builder("inStock") : builder("notInStock")}
           </p>
           {c.errors.map((issue, i) => (
             <p key={i} className="text-xs text-red-300">

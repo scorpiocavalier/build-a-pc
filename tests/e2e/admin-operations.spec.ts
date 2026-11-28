@@ -11,7 +11,7 @@ import {
 
 test.skip(({ isMobile }) => isMobile, "admin data tests run once, on desktop");
 
-// Today's date in the stores' time zone, as "YYYY-MM-DD".
+// Today's date in the store's time zone, as "YYYY-MM-DD".
 const storeToday = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date());
 
@@ -26,7 +26,7 @@ test("staff book a pickup time, which the customer sees and the Today view lists
     order.id,
   ]);
 
-  await adminPage.goto("/admin?location=MTL");
+  await adminPage.goto("/admin");
   const unscheduled = adminPage.getByRole("region", { name: "Needs a pickup or delivery time" });
   await expect(
     unscheduled.getByRole("link", { name: `ATG-${10000 + order.number}` }),
@@ -43,60 +43,43 @@ test("staff book a pickup time, which the customer sees and the Today view lists
   expect(mail.subject).toBe(`Order ATG-${10000 + order.number}: time confirmed`);
   expect(mail.text).toContain("11:30 p.m.");
 
-  await adminPage.goto("/admin?location=MTL");
+  await adminPage.goto("/admin");
   const booked = adminPage.getByRole("region", { name: "Booked for today" });
   await expect(booked.getByRole("link", { name: `ATG-${10000 + order.number}` })).toBeVisible();
-  // Toronto's view doesn't include Montreal orders.
-  await adminPage.goto("/admin?location=TOR");
-  await expect(
-    adminPage
-      .getByRole("region", { name: "Booked for today" })
-      .getByRole("link", { name: `ATG-${10000 + order.number}` }),
-  ).toHaveCount(0);
 
   await page.goto(`/en/orders/${order.id}?t=${order.accessToken}`);
   await expect(page.getByText(/Booked for .* 11:30 p\.m\./)).toBeVisible();
 });
 
-test("stock moves between locations and adjustments are logged", async ({ adminPage, sql }) => {
-  const product = await createProduct(sql, { stockTOR: 20, stockMTL: 3 });
+test("stock adjustments are logged", async ({ adminPage, sql }) => {
+  // The closed second store's leftover rows are neither shown nor changed.
+  const product = await createProduct(sql, { stock: 8, oldStoreStock: 3 });
   const page = adminPage;
   await page.goto("/admin/inventory");
-
-  const move = page.getByRole("region", { name: "Move stock" });
-  await move.getByLabel("SKU").fill(product.sku);
-  await move.getByLabel("Units").fill("50");
-  await move.getByRole("button", { name: "Move stock" }).click();
-  await expect(move.getByText("Not enough free stock in TOR to move.")).toBeVisible();
-  await move.getByLabel("Units").fill("5");
-  await move.getByLabel("Note (optional)").fill("Weekly restock");
-  await move.getByRole("button", { name: "Move stock" }).click();
-  await expect(move.getByText("Saved.")).toBeVisible();
-  expect(await stock(sql, product.id, "TOR")).toEqual({ onHand: 15, reserved: 0 });
-  expect(await stock(sql, product.id, "MTL")).toEqual({ onHand: 8, reserved: 0 });
+  // One store: no transfers and no store picker.
+  await expect(page.getByRole("region", { name: "Move stock" })).toHaveCount(0);
 
   const adjust = page.getByRole("region", { name: "Adjust stock" });
+  await expect(adjust.getByLabel("Location")).toHaveCount(0);
   await adjust.getByLabel("SKU").fill(product.sku);
   await adjust.getByLabel("Change").fill("-2");
-  await adjust.getByLabel("Location").selectOption("MTL");
   await adjust.getByLabel("Type").selectOption("WRITE_OFF");
   await adjust.getByLabel("Reason").fill("Damaged box");
   await adjust.getByRole("button", { name: "Save adjustment" }).click();
   await expect(adjust.getByText("Saved.")).toBeVisible();
-  expect(await stock(sql, product.id, "MTL")).toEqual({ onHand: 6, reserved: 0 });
+  expect(await stock(sql, product.id)).toEqual({ onHand: 6, reserved: 0 });
 
   await page.goto(`/admin/inventory?q=${product.sku}`);
+  const row = page.getByRole("row", { name: new RegExp(product.sku) });
+  await expect(row.getByRole("cell").nth(2)).toHaveText("6");
+  await expect(row.getByRole("cell").nth(3)).toHaveText("6 / 0");
   await expect(
     page.getByRole("heading", { name: `Stock history for ${product.sku}` }),
   ).toBeVisible();
   await expect(page.getByText("write-off · Damaged box")).toBeVisible();
-  await expect(page.getByText("transfer · From TOR: Weekly restock")).toBeVisible();
 
   await page.goto(`/admin/audit?q=${product.sku}`);
-  await expect(
-    page.getByText(`Moved 5 × ${product.sku} from TOR to MTL (Weekly restock)`),
-  ).toBeVisible();
-  await expect(page.getByText(`-2 × ${product.sku} in MTL: Damaged box`)).toBeVisible();
+  await expect(page.getByText(`-2 × ${product.sku}: Damaged box`)).toBeVisible();
 });
 
 test("a received return is restocked and refunded with the restocking fee", async ({
@@ -128,7 +111,7 @@ test("a received return is restocked and refunded with the restocking fee", asyn
 
   await adminPage.goto("/admin/returns?show=approved");
   const request = adminPage.getByRole("region", { name: rma });
-  // $100 item, 30% fee, no tax collected in Quebec yet.
+  // $100 item, 30% fee, no tax collected yet.
   await expect(request.getByTestId("refund-total")).toHaveText("$70.00");
   await request.getByLabel("Restocking fee ($)").fill("20");
   await expect(request.getByTestId("refund-total")).toHaveText("$80.00");
@@ -136,7 +119,7 @@ test("a received return is restocked and refunded with the restocking fee", asyn
   await request.getByRole("button", { name: "Receive items and refund $80.00" }).click();
   await expect(request).toHaveCount(0);
 
-  expect(await stock(sql, product.id, "MTL")).toEqual({ onHand: 19, reserved: 0 });
+  expect(await stock(sql, product.id)).toEqual({ onHand: 19, reserved: 0 });
   const after = await sql.query(
     `SELECT "refundedCents", "paymentStatus" FROM "Order" WHERE id = $1`,
     [order.id],
@@ -174,7 +157,7 @@ test("cancelling records cash and e-Transfer refunds staff give back", async ({
     [order.id],
   );
   expect(after.rows[0]).toEqual({ status: "CANCELLED", paidCents: 0, paymentStatus: "REFUNDED" });
-  expect(await stock(sql, product.id, "MTL")).toEqual({ onHand: 20, reserved: 0 });
+  expect(await stock(sql, product.id)).toEqual({ onHand: 20, reserved: 0 });
 });
 
 test("an unused card payment link expires without cancelling the order", async ({
@@ -237,7 +220,8 @@ test("reports and the audit log load for a period", async ({ adminPage }) => {
 
 test("inventory filters apply as you type and pick", async ({ adminPage, sql }) => {
   // createProduct puts test products in the CPU cooler category.
-  const product = await createProduct(sql, { stockTOR: 0, stockMTL: 3 });
+  // Out of stock: the closed second store's leftover units don't count.
+  const product = await createProduct(sql, { stock: 0, oldStoreStock: 3 });
   const page = adminPage;
   await page.goto("/admin/inventory");
   // Set on the window: a full page reload would wipe it.
@@ -253,24 +237,18 @@ test("inventory filters apply as you type and pick", async ({ adminPage, sql }) 
 
   await page.getByLabel("Part", { exact: true }).selectOption("cooler");
   await expect(page).toHaveURL(/category=cooler/);
-  await page.locator("#filter-location").selectOption("TOR");
-  await expect(page).toHaveURL(/location=TOR/);
   await page.getByLabel("Stock", { exact: true }).selectOption("out");
   await expect(page).toHaveURL(/stock=out/);
   await expect(row).toBeVisible();
 
-  // In stock in Toronto: it has none there.
+  await expect(page.getByRole("status").filter({ hasText: /^1 product$/ })).toBeVisible();
+
   await page.getByLabel("Stock", { exact: true }).selectOption("in");
   await expect(row).toHaveCount(0);
 
-  // Montreal has 3.
-  await page.locator("#filter-location").selectOption("MTL");
-  await expect(row).toBeVisible();
-  await expect(page.getByRole("status").filter({ hasText: /^1 product$/ })).toBeVisible();
-
   await page.getByRole("link", { name: "Clear filters" }).click();
   await expect(page).toHaveURL(/\/admin\/inventory$/);
-  await expect(page.locator("#filter-location")).toHaveValue("all");
+  await expect(page.getByLabel("Stock", { exact: true })).toHaveValue("all");
   await expect(page.getByLabel("Part", { exact: true })).toHaveValue("");
   await expect(page.getByLabel("Search stock")).toHaveValue("");
   expect(await page.evaluate(() => (window as unknown as { kept?: boolean }).kept)).toBe(true);
@@ -294,41 +272,48 @@ test("inventory can be filtered by a part's specs", async ({ adminPage: page }) 
   ).toBeVisible();
 });
 
-test("purchases keep a weighted average cost per location", async ({ adminPage, sql }) => {
-  const product = await createProduct(sql, { stockTOR: 2, stockMTL: 0, priceCents: 1500 });
+test("purchases keep a weighted average cost", async ({ adminPage, sql }) => {
+  const product = await createProduct(sql, { stock: 2, priceCents: 1500 });
   const page = adminPage;
-  const avg = async (code: "TOR" | "MTL") => {
+  const avg = async () => {
     const { rows } = await sql.query<{ avgCostCents: number | null }>(
       `SELECT i."avgCostCents" FROM "Inventory" i JOIN "Location" l ON l.id = i."locationId"
-       WHERE i."productId" = $1 AND l.code = $2`,
-      [product.id, code],
+       WHERE i."productId" = $1 AND l.code = 'TOR'`,
+      [product.id],
     );
     return rows[0]?.avgCostCents ?? null;
   };
 
-  // The 2 units already in Toronto cost $10.
+  // The 2 units already in stock cost $10.
   await page.goto("/admin/purchases");
   const setCost = page.getByRole("region", { name: "Set average cost" });
+  await expect(setCost.getByLabel("Location")).toHaveCount(0);
   await setCost.getByLabel("SKU").fill(product.sku);
   await setCost.getByLabel("Cost per unit").fill("10.00");
   await setCost.getByRole("button", { name: "Set cost" }).click();
   await expect(setCost.getByText("Saved.")).toBeVisible();
-  expect(await avg("TOR")).toBe(1000);
+  expect(await avg()).toBe(1000);
 
-  // 10 more at $12 into Toronto: (2 × 10 + 10 × 12) / 12 = $11.67.
+  // 10 more at $12: (2 × 10 + 10 × 12) / 12 = $11.67.
   const receive = page.getByRole("region", { name: "Receive stock" });
+  await expect(receive.getByLabel("Received at")).toHaveCount(0);
   await receive.getByLabel("Supplier").fill("Test Distributor");
   await receive.getByLabel("SKU, line 1").fill(product.sku);
   await receive.getByLabel("Units, line 1").fill("10");
   await receive.getByLabel("Unit cost, line 1").fill("12.00");
   await receive.getByRole("button", { name: "Receive stock" }).click();
   await expect(receive.getByText(/Received as PO-\d+\./)).toBeVisible();
-  expect(await avg("TOR")).toBeCloseTo(1166.67, 2);
-  expect(await stock(sql, product.id, "TOR")).toEqual({ onHand: 12, reserved: 0 });
+  expect(await avg()).toBeCloseTo(1166.67, 2);
+  expect(await stock(sql, product.id)).toEqual({ onHand: 12, reserved: 0 });
   const firstPo = (await receive.getByRole("status").textContent())!;
 
-  // Montreal: 4 at $20 plus $8 shipping = $22 landed, its own average.
-  await receive.getByLabel("Received at").selectOption("MTL");
+  // A 22% margin and a last cost close to the average: no review needed.
+  await page.goto(`/admin/inventory?q=${product.sku}&cost=review`);
+  const row = page.getByRole("row", { name: new RegExp(product.sku) });
+  await expect(row).toHaveCount(0);
+
+  // 4 at $20 plus $8 shipping = $22 landed: (12 × 11.67 + 4 × 22) / 16 = $14.25.
+  await page.goto("/admin/purchases");
   await receive.getByLabel("Supplier").fill("Test Distributor");
   await receive.getByLabel("SKU, line 1").fill(product.sku);
   await receive.getByLabel("Units, line 1").fill("4");
@@ -338,34 +323,17 @@ test("purchases keep a weighted average cost per location", async ({ adminPage, 
   await receive.getByRole("button", { name: "Receive stock" }).click();
   await expect(receive.getByRole("status")).toHaveText(/Received as PO-\d+\./);
   await expect(receive.getByRole("status")).not.toHaveText(firstPo);
-  expect(await avg("MTL")).toBeCloseTo(2200, 2);
-  expect(await avg("TOR")).toBeCloseTo(1166.67, 2);
+  expect(await avg()).toBeCloseTo(1425, 2);
   await expect(page.getByText("Test Distributor").first()).toBeVisible();
 
-  // The inventory shows each store's cost and margin. Montreal's $22 cost on
-  // a $15 price is a negative margin, so it needs a price review.
+  // A 5% margin on a $15 price, and the last purchase far above the average:
+  // it needs a price review.
   await page.goto(`/admin/inventory?q=${product.sku}&cost=review`);
-  const row = page.getByRole("row", { name: new RegExp(product.sku) });
-  await expect(row).toContainText("$11.67 · 22%");
-  await expect(row).toContainText("$22.00 · -47%");
-  await page.locator("#filter-location").selectOption("TOR");
-  await expect(row).toHaveCount(0);
+  await expect(row).toContainText("$14.25 · 5%");
+  await expect(row).toContainText("last paid $22.00 (+54%)");
 
-  // The products list shows the same cost and margin per store.
+  // The products list shows the same cost and margin.
   await page.goto(`/admin/products?q=${product.sku}`);
   const productRow = page.getByRole("row", { name: new RegExp(product.sku) });
-  await expect(productRow).toContainText("$11.67 · 22%");
-  await expect(productRow).toContainText("$22.00 · -47%");
-
-  // Moved units carry the sending store's cost: (12 × 11.67 + 2 × 22) / 14.
-  await page.goto("/admin/inventory");
-  const move = page.getByRole("region", { name: "Move stock" });
-  await move.getByLabel("SKU").fill(product.sku);
-  await move.getByLabel("Units").fill("2");
-  await move.getByLabel("From").selectOption("MTL");
-  await move.getByLabel("To").selectOption("TOR");
-  await move.getByRole("button", { name: "Move stock" }).click();
-  await expect(move.getByText("Saved.")).toBeVisible();
-  expect(await avg("TOR")).toBeCloseTo(1314.29, 2);
-  expect(await avg("MTL")).toBeCloseTo(2200, 2);
+  await expect(productRow).toContainText("$14.25 · 5%");
 });

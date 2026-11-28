@@ -19,7 +19,10 @@ const BASE_HELP: [string, string][] = [
   ["price / compare_at_price", "Dollars, e.g. 549.99 (549,99 also works)."],
   ["status", "DRAFT (hidden), ACTIVE (on the store) or ARCHIVED. Blank means DRAFT."],
   ["warranty_months", "Optional whole number."],
-  ["stock_TOR / stock_MTL", "Units on hand. Blank leaves the current stock unchanged."],
+  [
+    "stock",
+    "Units on hand. Blank leaves the current stock unchanged. Older files with a stock_TOR column still work; other stock_ columns are ignored.",
+  ],
 ];
 
 function describe(field: SpecField): string {

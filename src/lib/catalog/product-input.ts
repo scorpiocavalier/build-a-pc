@@ -9,12 +9,10 @@ import type { LocalizedText } from "@/lib/localized";
 //
 //   sku, category, brand, name_en, name_fr, description_en, description_fr,
 //   price, compare_at_price, status, warranty_months, mpn, upc,
-//   stock_TOR, stock_MTL, spec.<key> ...
-
-// The stores this deployment runs (see src/lib/store-config.ts).
-import { LOCATION_CODES, type LocationCode } from "@/lib/store-config";
-
-export { LOCATION_CODES, type LocationCode };
+//   stock, spec.<key> ...
+//
+// Files exported when the site ran two stores have stock_TOR and stock_MTL
+// columns instead of stock: stock_TOR is read as stock, stock_MTL is ignored.
 
 export const PRODUCT_STATUSES = ["DRAFT", "ACTIVE", "ARCHIVED"] as const;
 export type ProductStatus = (typeof PRODUCT_STATUSES)[number];
@@ -33,7 +31,7 @@ export const BASE_COLUMNS = [
   "warranty_months",
   "mpn",
   "upc",
-  ...LOCATION_CODES.map((code) => `stock_${code}`),
+  "stock",
 ] as const;
 
 export const SPEC_PREFIX = "spec.";
@@ -53,8 +51,8 @@ export type ProductInput = {
   mpn: string | null;
   upc: string | null;
   specs: SpecValues;
-  // Only locations with a value are changed; others keep their stock.
-  stock: Partial<Record<LocationCode, number>>;
+  // Stock on hand; null (a blank cell) leaves the stock unchanged.
+  stock: number | null;
 };
 
 export type ProductInputResult =
@@ -115,11 +113,8 @@ export function parseProductInput(raw: RawProductInput): ProductInputResult {
   };
 
   const warrantyMonths = wholeNumber("warranty_months", "Warranty months");
-  const stock: ProductInput["stock"] = {};
-  for (const code of LOCATION_CODES) {
-    const n = wholeNumber(`stock_${code}`, `${code} stock`);
-    if (n !== null) stock[code] = n;
-  }
+  const stockKey = value("stock") || !value("stock_TOR") ? "stock" : "stock_TOR";
+  const stock = wholeNumber(stockKey, "Stock");
 
   let specs: SpecValues = {};
   if (definition) {
@@ -169,7 +164,7 @@ export function productToRaw(product: {
   mpn: string | null;
   upc: string | null;
   specs: SpecValues;
-  stock: Record<LocationCode, number>;
+  stock: number;
 }): RawProductInput {
   const raw: RawProductInput = {
     sku: product.sku,
@@ -186,8 +181,8 @@ export function productToRaw(product: {
     warranty_months: product.warrantyMonths?.toString() ?? "",
     mpn: product.mpn ?? "",
     upc: product.upc ?? "",
+    stock: String(product.stock),
   };
-  for (const code of LOCATION_CODES) raw[`stock_${code}`] = String(product.stock[code]);
   for (const [key, value] of Object.entries(product.specs)) {
     raw[SPEC_PREFIX + key] = Array.isArray(value)
       ? value

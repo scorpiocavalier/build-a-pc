@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
 import { formatOrderNumber } from "@/lib/checkout/order-number";
 import { formatMoney } from "@/lib/money";
-import { SINGLE_STORE } from "@/lib/store-config";
-import { LocationOptions } from "@/components/admin/location-options";
 import { cn } from "@/lib/utils";
 import { listAdminOrders } from "@/server/admin/orders";
 
@@ -29,7 +27,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
     const v = params[k];
     return (Array.isArray(v) ? v[0] : v) ?? "";
   };
-  const filters = { status: one("status") || "open", q: one("q"), location: one("location") };
+  const filters = { status: one("status") || "open", q: one("q") };
   const orders = await listAdminOrders(filters);
 
   return (
@@ -54,17 +52,6 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
           <option value="CANCELLED">Cancelled</option>
           <option value="all">All</option>
         </Select>
-        {!SINGLE_STORE && (
-          <Select
-            name="location"
-            defaultValue={filters.location}
-            aria-label="Location"
-            className="w-40"
-          >
-            <option value="">Both locations</option>
-            <LocationOptions />
-          </Select>
-        )}
         <Button variant="outline">Filter</Button>
       </form>
 
@@ -93,9 +80,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                   {o.name}
                   <span className="block text-xs text-muted">{o.email}</span>
                 </td>
-                <td className="px-3 py-2">
-                  {o.fulfilment === "PICKUP" ? "Pickup" : "Delivery"} · {o.location.code}
-                </td>
+                <td className="px-3 py-2">{o.fulfilment === "PICKUP" ? "Pickup" : "Delivery"}</td>
                 <td className={cn("px-3 py-2", PAYMENT_STYLE[o.paymentStatus])}>
                   {o.paymentMethod.toLowerCase()} ·{" "}
                   {o.paymentStatus.toLowerCase().replace("_", " ")}

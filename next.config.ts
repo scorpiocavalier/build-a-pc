@@ -41,12 +41,16 @@ const nextConfig: NextConfig = {
   // The parts shop (/shop and /c/<category>) was removed (#34): old links and
   // search results land on the prebuilt PCs instead. Unprefixed paths go to
   // /prebuilt, and the i18n proxy then picks the visitor's locale as usual.
+  // The store locations page was removed when the site went to one store
+  // (#52); its links land on the home page.
   async redirects() {
     return [
       { source: "/:locale(en|fr)/shop", destination: "/:locale/prebuilt", permanent: true },
       { source: "/:locale(en|fr)/c/:path+", destination: "/:locale/prebuilt", permanent: true },
       { source: "/shop", destination: "/prebuilt", permanent: true },
       { source: "/c/:path+", destination: "/prebuilt", permanent: true },
+      { source: "/:locale(en|fr)/locations", destination: "/:locale", permanent: true },
+      { source: "/locations", destination: "/", permanent: true },
     ];
   },
   images: {

@@ -1,5 +1,4 @@
 import type { CategoryDefinition, SpecField, SpecValues } from "@/lib/specs/types";
-import { LOCATION_CODES, type LocationCode } from "./product-input";
 
 // Spec filtering, done in memory over a category's product list (the admin
 // lists use it through admin-spec-filter.ts). Within one filter values are
@@ -10,7 +9,8 @@ export type FilterableProduct = {
   name: { en: string };
   priceCents: number;
   specs: SpecValues;
-  available: Record<LocationCode, number>;
+  // Free stock.
+  available: number;
 };
 
 export const SORTS = ["price-asc", "price-desc", "name"] as const;
@@ -19,8 +19,8 @@ export type Sort = (typeof SORTS)[number];
 export type ActiveFilters = {
   // Keyed by spec field key, plus "brand".
   values: Record<string, string[]>;
-  // Only show products available at these locations.
-  availableAt: LocationCode[];
+  // Only show products in stock (?available=1).
+  inStockOnly: boolean;
   sort: Sort;
 };
 
@@ -45,14 +45,12 @@ export function parseFilters(definition: CategoryDefinition, params: SearchParam
     const selected = [...new Set(list(params[key]).filter(Boolean))];
     if (selected.length) values[key] = selected;
   }
-  const availableAt = list(params.available).filter((code): code is LocationCode =>
-    (LOCATION_CODES as readonly string[]).includes(code),
-  );
+  const inStockOnly = list(params.available).some(Boolean);
   const sortParam = list(params.sort)[0];
   const sort = (SORTS as readonly string[]).includes(sortParam ?? "")
     ? (sortParam as Sort)
     : "price-asc";
-  return { values, availableAt, sort };
+  return { values, inStockOnly, sort };
 }
 
 // String forms of a product's value for a filter, e.g. "AM5", "true", "16".
@@ -64,12 +62,7 @@ function valuesFor(product: FilterableProduct, key: string): string[] {
 }
 
 function matches(product: FilterableProduct, filters: ActiveFilters, skipKey?: string): boolean {
-  if (
-    filters.availableAt.length &&
-    !filters.availableAt.some((code) => product.available[code] > 0)
-  ) {
-    return false;
-  }
+  if (filters.inStockOnly && product.available <= 0) return false;
   for (const [key, selected] of Object.entries(filters.values)) {
     if (key === skipKey) continue;
     const productValues = valuesFor(product, key);

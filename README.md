@@ -1,16 +1,12 @@
 # Astral Tech Gaming
 
 Online store for PC parts and custom-built gaming PCs — **astralgaming.ca**.
-Bilingual (English/French), with pickup and delivery in Toronto and Montreal.
+Bilingual (English/French), with pickup and local delivery from one store in
+Toronto.
 
 The full product and technical plan is in [`docs/PLAN.md`](docs/PLAN.md), and
 what's left before going live is in [`docs/LAUNCH.md`](docs/LAUNCH.md). To put
 a first version online on Vercel, follow [`docs/DEPLOY.md`](docs/DEPLOY.md).
-
-Toronto and Montreal are separate businesses: the same code is deployed twice,
-once per store, chosen by `NEXT_PUBLIC_STORE_LOCATION`. See
-[`docs/TWO-STORES.md`](docs/TWO-STORES.md), including the rule for code that
-lists stores.
 
 ## Stack
 
@@ -59,8 +55,8 @@ npm run dev                   # http://localhost:3000
 
 ## Orders and payments
 
-- Cart → checkout (pickup in Toronto/Montreal, or local delivery by postal
-  code) → order page at `/<locale>/orders/<id>?t=<token>` (guests keep the link).
+- Cart → checkout (pickup at the store, or local delivery checked against the
+  store's postal code prefixes) → order page at `/<locale>/orders/<id>?t=<token>` (guests keep the link).
 - Payment methods: card (Stripe Checkout; hidden until Stripe keys are set),
   Interac e-Transfer and cash (only under the cash limit). Admins record
   e-Transfer and cash payments on the order page.
@@ -124,9 +120,9 @@ npm run dev                   # http://localhost:3000
   back in stock or is written off, adjust the restocking fee, and refund by
   card (through Stripe) or record an e-Transfer/cash refund. Refunds include the
   items' share of tax; delivery and assembly fees aren't refunded.
-- **Inventory**: free/on-hand/reserved stock per location, transfers between
-  Toronto and Montreal, count corrections and write-offs, and the stock history.
-- **Reports**: money received and refunded by method and location, orders
+- **Inventory**: free/on-hand/reserved stock, count corrections and
+  write-offs, and the stock history.
+- **Reports**: money received and refunded by method, orders
   placed, tax charged, top products, stock value, deposits with a balance owing.
 - **Audit log**: every admin change, who made it and when.
 - **Settings** also hold the restocking %, return window and low-stock level.
@@ -139,11 +135,13 @@ npm run dev                   # http://localhost:3000
 - `/api/health` checks the app and database, for an uptime monitor.
 - Customers can download their data or delete their account from
   `/account`; orders are kept, unlinked, for tax records.
-- Policy pages (`/returns`, `/warranty`, `/privacy`, `/terms`, `/locations`)
+- Policy pages (`/returns`, `/warranty`, `/privacy`, `/terms`)
   take their text from `Legal.*` in the message files and fill in the return
   window, fee and contact details from settings.
 - `sitemap.xml` and `robots.txt` are generated; pages set canonical URLs and
-  hreflang links, and products and stores have structured data.
+  hreflang links, and the business and products have structured data. The
+  store's address isn't published on the site; customers get it with their
+  pickup order.
 - `tests/e2e/accessibility.spec.ts` runs axe (WCAG 2.2 AA) on the main pages.
 
 ## Catalog design

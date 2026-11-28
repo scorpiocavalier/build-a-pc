@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 
 import { cookies } from "next/headers";
 
-import type { BuildSlot, LocationCode, Prisma } from "@/generated/prisma/client";
+import type { BuildSlot, Prisma } from "@/generated/prisma/client";
 import {
   candidateErrors,
   checkBuild,
@@ -14,9 +14,9 @@ import {
   type ResolvedBuild,
 } from "@/lib/builder/compat";
 import { SLOT_CATEGORY, SLOT_MAX_QUANTITY, SLOTS } from "@/lib/builder/slots";
-import { LOCATION_CODES } from "@/lib/catalog/product-input";
 import type { LocalizedText } from "@/lib/localized";
 import type { SpecValues } from "@/lib/specs/types";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import { getCategoryProducts, type ProductSummary } from "@/server/catalog/queries";
 import { db } from "@/server/db";
 import { getSettings } from "@/server/settings";
@@ -34,7 +34,7 @@ const itemInclude = {
       brand: true,
       category: true,
       images: { orderBy: { position: "asc" }, take: 1 },
-      inventory: { include: { location: true } },
+      inventory: { where: { location: { code: DEFAULT_LOCATION } } },
     },
   },
 } satisfies Prisma.BuildItemInclude;
@@ -53,14 +53,14 @@ export type BuildItemView = {
   unitPriceCents: number;
   quantity: number;
   imageUrl: string | null;
-  available: Record<LocationCode, number>;
+  // Free stock: on hand minus reserved.
+  available: number;
   active: boolean;
 };
 
 export type BuildView = {
   id: string;
   shareId: string;
-  location: LocationCode;
   featured: boolean;
   position: number;
   // Saved to a customer's account under this name.
@@ -77,13 +77,8 @@ export type BuildView = {
 };
 
 function toItem(row: ItemRow): BuildItemView {
-  const available = Object.fromEntries(LOCATION_CODES.map((c) => [c, 0])) as Record<
-    LocationCode,
-    number
-  >;
-  for (const stock of row.product.inventory) {
-    available[stock.location.code] = Math.max(0, stock.onHand - stock.reserved);
-  }
+  const stock = row.product.inventory[0];
+  const available = stock ? Math.max(0, stock.onHand - stock.reserved) : 0;
   return {
     slot: row.slot,
     productId: row.productId,
@@ -124,7 +119,6 @@ function toView(row: BuildRow): BuildView {
   return {
     id: row.id,
     shareId: row.shareId,
-    location: row.location,
     featured: row.featured,
     position: row.position,
     name: row.name,
@@ -250,7 +244,6 @@ export async function saveMyBuild(userId: string, name: string): Promise<boolean
     data: {
       editToken,
       shareId: randomBytes(6).toString("base64url").toLowerCase(),
-      location: build.location,
       userId,
       name,
       items: {
@@ -294,11 +287,6 @@ export async function deleteSavedBuild(userId: string, id: string) {
   if ((await myToken()) === build.editToken) await forgetMyBuild();
 }
 
-export async function setBuildLocation(location: LocationCode) {
-  const buildId = await ensureMyBuildId();
-  await db.build.update({ where: { id: buildId }, data: { location } });
-}
-
 // "Customize this build": copies a shared build into the visitor's own.
 export async function copyIntoMyBuild(shareId: string) {
   const source = await db.build.findUnique({ where: { shareId }, include: { items: true } });
@@ -314,7 +302,6 @@ export async function copyIntoMyBuild(shareId: string) {
         quantity,
       })),
     }),
-    db.build.update({ where: { id: buildId }, data: { location: source.location } }),
   ]);
   return true;
 }

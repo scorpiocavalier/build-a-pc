@@ -1,18 +1,16 @@
 import "server-only";
 
-import type { LocationCode } from "@/generated/prisma/client";
-import { LOCATION_CODES } from "@/lib/store-config";
 import { landedUnitCosts, type CostSplit } from "@/lib/inventory/cost";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import { audit } from "@/server/audit";
 import { db } from "@/server/db";
 import { averageCost, receiveUnits } from "@/server/inventory-cost";
 import { requireAdmin } from "@/server/require-admin";
 
 // Stock bought from suppliers. Receiving a purchase adds the units to the
-// location and updates that location's moving weighted average cost.
+// store's stock and updates its moving weighted average cost.
 
 export type PurchaseInput = {
-  location: LocationCode;
   supplier: string;
   reference: string;
   purchasedAt: Date;
@@ -80,7 +78,7 @@ export async function receivePurchase(input: PurchaseInput): Promise<Result> {
   const landed = landedUnitCosts(input.lines, extra, input.split);
 
   return db.$transaction(async (tx) => {
-    const location = await tx.location.findUniqueOrThrow({ where: { code: input.location } });
+    const location = await tx.location.findUniqueOrThrow({ where: { code: DEFAULT_LOCATION } });
     const purchase = await tx.purchase.create({
       data: {
         locationId: location.id,
@@ -130,7 +128,7 @@ export async function receivePurchase(input: PurchaseInput): Promise<Result> {
         action: "purchase.receive",
         entity: "purchase",
         entityId: purchase.id,
-        summary: `PO-${purchase.number}: ${units} units from ${input.supplier} into ${input.location}`,
+        summary: `PO-${purchase.number}: ${units} units from ${input.supplier}`,
       },
       tx,
     );
@@ -138,11 +136,10 @@ export async function receivePurchase(input: PurchaseInput): Promise<Result> {
   });
 }
 
-// Sets a location's average cost by hand: for stock that was there before
+// Sets the average cost by hand: for stock that was there before
 // purchases were recorded, or to correct a mistake.
 export async function setAverageCost(input: {
   sku: string;
-  location: LocationCode;
   costCents: number;
   note: string;
   actorId: string;
@@ -156,7 +153,7 @@ export async function setAverageCost(input: {
   });
   if (!product) return { ok: false, error: `No product with SKU ${input.sku}.` };
   return db.$transaction(async (tx) => {
-    const location = await tx.location.findUniqueOrThrow({ where: { code: input.location } });
+    const location = await tx.location.findUniqueOrThrow({ where: { code: DEFAULT_LOCATION } });
     const before = await averageCost(tx, product.id, location.id);
     const key = { productId: product.id, locationId: location.id };
     await tx.inventory.upsert({
@@ -172,7 +169,7 @@ export async function setAverageCost(input: {
         action: "inventory.set_cost",
         entity: "inventory",
         entityId: product.id,
-        summary: `Average cost of ${product.sku} in ${input.location}: ${dollars(before)} → ${dollars(input.costCents)}${note}`,
+        summary: `Average cost of ${product.sku}: ${dollars(before)} → ${dollars(input.costCents)}${note}`,
       },
       tx,
     );
@@ -183,11 +180,10 @@ export async function setAverageCost(input: {
 export async function listPurchases(take = 30) {
   await requireAdmin();
   return db.purchase.findMany({
-    where: { location: { code: { in: [...LOCATION_CODES] } } },
+    where: { location: { code: DEFAULT_LOCATION } },
     orderBy: [{ purchasedAt: "desc" }, { number: "desc" }],
     take,
     include: {
-      location: { select: { code: true } },
       actor: { select: { email: true } },
       lines: {
         include: {

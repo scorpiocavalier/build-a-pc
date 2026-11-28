@@ -1,8 +1,6 @@
 import { z } from "zod";
 
 import type { Fulfilment, PaymentMethod } from "@/generated/prisma/enums";
-import type { LocationCode } from "@/lib/catalog/product-input";
-import { LOCATION_CODES } from "@/lib/catalog/product-input";
 
 import { normalizePostalCode } from "./postal";
 import { parseWindow, type RequestedWindow } from "./windows";
@@ -15,8 +13,6 @@ export type CheckoutErrorKey =
 
 export type CheckoutInput = {
   fulfilment: Fulfilment;
-  // Pickup: the chosen location. Delivery: resolved from the postal code later.
-  locationCode: LocationCode | null;
   address: { line1: string; line2: string; city: string; postalCode: string } | null;
   window: RequestedWindow;
   name: string;
@@ -47,12 +43,9 @@ export function parseCheckoutForm(
   const value = (key: string) => (raw[key] ?? "").trim();
 
   const fulfilment = value("fulfilment") as Fulfilment;
-  let locationCode: LocationCode | null = null;
   let address: CheckoutInput["address"] = null;
   if (fulfilment === "PICKUP") {
-    const code = value("location") as LocationCode;
-    if ((LOCATION_CODES as readonly string[]).includes(code)) locationCode = code;
-    else errors.fulfilment = "fulfilment";
+    // Picked up at the store; nothing else to check.
   } else if (fulfilment === "DELIVERY") {
     const postalCode = normalizePostalCode(value("postalCode"));
     if (!postalCode) errors.fulfilment = "fulfilment";
@@ -89,7 +82,6 @@ export function parseCheckoutForm(
     ok: true,
     input: {
       fulfilment,
-      locationCode,
       address,
       window: window!,
       name: name.slice(0, 120),

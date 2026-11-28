@@ -1,37 +1,40 @@
 import "server-only";
 
-import { Prisma, type LocationCode } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import type { ReportRange } from "@/lib/reports/range";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import { db } from "@/server/db";
 import { requireAdmin } from "@/server/require-admin";
 
 // Numbers for /admin/reports. Money in is counted when a payment arrives and
 // money out when a refund is made, so a period's net is what really moved.
+// Only the store's numbers count (the database may still hold another store's
+// history from when the site ran two).
 
-export async function getReport(range: ReportRange, location: LocationCode | null) {
+export async function getReport(range: ReportRange) {
   await requireAdmin();
   const { start, end } = range;
-  const loc = location ? Prisma.sql`AND l.code = ${location}::"LocationCode"` : Prisma.empty;
+  const loc = Prisma.sql`AND l.code = ${DEFAULT_LOCATION}::"LocationCode"`;
 
   const [received, refunded, sales, topProducts, stockValue, awaitingBalance, profit] =
     await Promise.all([
-      db.$queryRaw<{ method: string; code: string; cents: bigint; count: bigint }[]>`
-      SELECT p.method::text AS method, l.code::text AS code,
+      db.$queryRaw<{ method: string; cents: bigint; count: bigint }[]>`
+      SELECT p.method::text AS method,
              SUM(p."amountCents")::bigint AS cents, COUNT(*)::bigint AS count
       FROM "Payment" p
       JOIN "Order" o ON o.id = p."orderId"
       JOIN "Location" l ON l.id = o."locationId"
       WHERE p.status IN ('SUCCEEDED', 'REFUNDED')
         AND p."receivedAt" >= ${start} AND p."receivedAt" < ${end} ${loc}
-      GROUP BY p.method, l.code`,
-      db.$queryRaw<{ method: string; code: string; cents: bigint; fees: bigint }[]>`
-      SELECT r.method::text AS method, l.code::text AS code,
+      GROUP BY p.method`,
+      db.$queryRaw<{ method: string; cents: bigint; fees: bigint }[]>`
+      SELECT r.method::text AS method,
              SUM(r."amountCents")::bigint AS cents, SUM(r."restockingFeeCents")::bigint AS fees
       FROM "Refund" r
       JOIN "Order" o ON o.id = r."orderId"
       JOIN "Location" l ON l.id = o."locationId"
       WHERE r."createdAt" >= ${start} AND r."createdAt" < ${end} ${loc}
-      GROUP BY r.method, l.code`,
+      GROUP BY r.method`,
       db.$queryRaw<{ orders: bigint; total: bigint; tax: bigint; assembled: bigint }[]>`
       SELECT COUNT(*)::bigint AS orders,
              COALESCE(SUM(o."totalCents"), 0)::bigint AS total,
@@ -70,11 +73,8 @@ export async function getReport(range: ReportRange, location: LocationCode | nul
       ORDER BY cents DESC
       LIMIT 15`,
       // Today's stock, at selling prices and at average cost.
-      db.$queryRaw<
-        { code: string; units: bigint; cents: bigint; cost: number | null; uncosted: bigint }[]
-      >`
-      SELECT l.code::text AS code,
-             COALESCE(SUM(i."onHand"), 0)::bigint AS units,
+      db.$queryRaw<{ units: bigint; cents: bigint; cost: number | null; uncosted: bigint }[]>`
+      SELECT COALESCE(SUM(i."onHand"), 0)::bigint AS units,
              COALESCE(SUM(i."onHand" * p."priceCents"), 0)::bigint AS cents,
              SUM(i."onHand" * i."avgCostCents") AS cost,
              COALESCE(SUM(i."onHand") FILTER (WHERE i."avgCostCents" IS NULL), 0)::bigint
@@ -82,16 +82,14 @@ export async function getReport(range: ReportRange, location: LocationCode | nul
       FROM "Inventory" i
       JOIN "Product" p ON p.id = i."productId"
       JOIN "Location" l ON l.id = i."locationId"
-      WHERE p.status <> 'ARCHIVED' AND i."onHand" > 0 ${loc}
-      GROUP BY l.code
-      ORDER BY l.code`,
+      WHERE p.status <> 'ARCHIVED' AND i."onHand" > 0 ${loc}`,
       // Deposit paid, balance still owing.
       db.order.findMany({
         where: {
           status: { notIn: ["CANCELLED", "COMPLETED"] },
           depositCents: { gt: 0 },
           paidCents: { gt: 0 },
-          ...(location ? { location: { code: location } } : {}),
+          location: { code: DEFAULT_LOCATION },
         },
         orderBy: { placedAt: "asc" },
         select: {
@@ -102,7 +100,6 @@ export async function getReport(range: ReportRange, location: LocationCode | nul
           totalCents: true,
           paidCents: true,
           depositCents: true,
-          location: { select: { code: true } },
         },
       }),
       // Gross profit on goods handed over in the period, at the cost recorded
@@ -145,13 +142,12 @@ export async function getReport(range: ReportRange, location: LocationCode | nul
       // Null when none of the product's lines has a cost yet.
       profitCents: p.cost === null ? null : n(p.costedCents) - Number(p.cost),
     })),
-    stockValue: stockValue.map((r) => ({
-      ...r,
-      units: n(r.units),
-      cents: n(r.cents),
-      costCents: Number(r.cost ?? 0),
-      uncosted: n(r.uncosted),
-    })),
+    stockValue: {
+      units: n(stockValue[0]?.units),
+      cents: n(stockValue[0]?.cents),
+      costCents: Number(stockValue[0]?.cost ?? 0),
+      uncosted: n(stockValue[0]?.uncosted),
+    },
     profit: {
       salesCents: n(profit[0]?.sales),
       costCents: Number(profit[0]?.cost ?? 0),

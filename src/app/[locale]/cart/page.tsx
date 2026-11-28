@@ -8,7 +8,6 @@ import { WindowsIncluded } from "@/components/cart/windows-included";
 import { CategoryIcon } from "@/components/catalog/category-icon";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { LOCATION_CODES } from "@/lib/catalog/product-input";
 import { localize } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
 import { getCheckoutCart, MAX_LINE_QUANTITY } from "@/server/cart";
@@ -35,11 +34,10 @@ export default async function CartPage() {
 }
 
 async function CartContents() {
-  const [{ lines, builds }, t, builder, catalog, locale] = await Promise.all([
+  const [{ lines, builds }, t, builder, locale] = await Promise.all([
     getCheckoutCart(),
     getTranslations("Cart"),
     getTranslations("Builder"),
-    getTranslations("Catalog"),
     getLocale(),
   ]);
 
@@ -99,7 +97,7 @@ async function CartContents() {
           <ul className="flex flex-col divide-y rounded-lg border bg-surface">
             {lines.map((line) => {
               const name = localize(line.name, locale);
-              const where = LOCATION_CODES.filter((code) => line.available[code] >= line.quantity);
+              const inStock = line.available >= line.quantity;
               return (
                 <li key={line.productId} className="flex gap-4 p-4">
                   <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-raised">
@@ -123,12 +121,8 @@ async function CartContents() {
                     <p className="text-sm text-muted">
                       {t("each", { price: formatMoney(line.unitPriceCents, locale) })}
                     </p>
-                    <p className={where.length ? "text-sm" : "text-sm text-amber-300"}>
-                      {where.length
-                        ? t("availableAt", {
-                            locations: where.map((code) => catalog(`locations.${code}`)).join(", "),
-                          })
-                        : t("notAvailable")}
+                    <p className={inStock ? "text-sm" : "text-sm text-amber-300"}>
+                      {inStock ? t("available") : t("notAvailable")}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <form action={updateCartLineAction} className="flex items-center gap-2">

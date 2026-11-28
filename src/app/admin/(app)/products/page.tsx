@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
 import { specParams } from "@/lib/catalog/admin-spec-filter";
 import { formatMoney } from "@/lib/money";
-import { LOCATION_CODES, LOCATION_NAMES } from "@/lib/store-config";
 import { CATEGORIES } from "@/lib/specs/definitions";
 import { cn } from "@/lib/utils";
 import { listAdminProducts, listBrands } from "@/server/admin/products";
@@ -120,7 +119,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
           </Select>
           <Select name="stock" defaultValue={filters.stock} aria-label="Stock" className="w-52">
             <option value="">Any stock</option>
-            <option value="out">Out of stock at both stores</option>
+            <option value="out">Out of stock</option>
           </Select>
           <SpecSelects facets={specFacets} />
           {filtered && (
@@ -144,14 +143,8 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
               <th className="px-3 py-2 font-medium">SKU</th>
               <th className="px-3 py-2 font-medium">Category</th>
               <th className="px-3 py-2 text-right font-medium">Price</th>
-              {LOCATION_CODES.map((code) => [
-                <th key={code} className="px-3 py-2 text-right font-medium">
-                  {LOCATION_NAMES[code]}
-                </th>,
-                <th key={`${code}-cost`} className="px-3 py-2 text-right font-medium">
-                  {LOCATION_NAMES[code]} cost · margin
-                </th>,
-              ])}
+              <th className="px-3 py-2 text-right font-medium">Stock</th>
+              <th className="px-3 py-2 text-right font-medium">Cost · margin</th>
               <th className="px-3 py-2 font-medium">Status</th>
             </tr>
           </thead>
@@ -176,23 +169,10 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/ad
                 <td className="px-3 py-2 text-right tabular-nums">
                   {formatMoney(p.priceCents, "en")}
                 </td>
-                {LOCATION_CODES.map((code) => [
-                  <td
-                    key={code}
-                    className={cn(
-                      "px-3 py-2 text-right tabular-nums",
-                      !p.stock[code] && "text-muted",
-                    )}
-                  >
-                    {p.stock[code]}
-                  </td>,
-                  <CostCell
-                    key={`${code}-cost`}
-                    priceCents={p.priceCents}
-                    {...p.cost[code]}
-                    rules={settings}
-                  />,
-                ])}
+                <td className={cn("px-3 py-2 text-right tabular-nums", !p.stock && "text-muted")}>
+                  {p.stock}
+                </td>
+                <CostCell priceCents={p.priceCents} {...p.cost} rules={settings} />
                 <td className="px-3 py-2">
                   <span
                     className={cn(

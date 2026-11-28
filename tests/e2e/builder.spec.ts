@@ -4,7 +4,7 @@ import { expect, test } from "./fixtures";
 import { fillContactAndWindow, latestEmailTo, orderFor, uniqueEmail } from "./shop-helpers";
 
 // Uses the seeded catalog and its featured builds ("Astral Midnight" is all
-// in stock in Toronto).
+// in stock).
 
 async function pick(page: Page, slot: string, name: string) {
   await page.goto(`/en/build/${slot}`);
@@ -82,7 +82,7 @@ test("an assembled PC goes through checkout with a deposit, assembly and pickup"
   const email = uniqueEmail("assembled");
   const customer = await browser.newPage();
 
-  // Make sure Toronto has free stock for every part, whatever earlier runs
+  // Make sure the store has free stock for every part, whatever earlier runs
   // left reserved.
   await sql.query(
     `UPDATE "Inventory" i SET "onHand" = i.reserved + 10
@@ -111,7 +111,7 @@ test("an assembled PC goes through checkout with a deposit, assembly and pickup"
   await expect(build.getByText(parts, { exact: true })).toBeVisible();
   await expect(customer.getByText(/Assembly and testing|Windows 11 Home/)).toHaveCount(0);
 
-  await customer.goto("/en/checkout?f=pickup&l=TOR");
+  await customer.goto("/en/checkout?f=pickup");
   const summaryBox = customer.getByRole("complementary", { name: "Order summary" });
   await expect(summaryBox.getByText("Windows 11 Pro included")).toBeVisible();
   await expect(summaryBox.getByText(/Assembly|Windows 11 Home/)).toHaveCount(0);
@@ -174,7 +174,7 @@ test("an assembled PC goes through checkout with a deposit, assembly and pickup"
     adminPage.getByRole("heading", { level: 1 }).filter({ hasText: "completed" }),
   ).toBeVisible();
 
-  // Only the parts came out of Toronto's stock: there's no licence product.
+  // Only the parts came out of stock: there's no licence product.
   const sales = await sql.query(
     `SELECT count(*)::int AS n FROM "InventoryMovement" m JOIN "Product" p ON p.id = m."productId"
      WHERE m.reason = 'SALE' AND m.note = $1`,

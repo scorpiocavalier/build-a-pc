@@ -50,7 +50,6 @@ async function OrderContent({ params, searchParams }: Props) {
   const settings = await getSettings();
   const money = (cents: number) => formatMoney(cents, locale);
   const number = formatOrderNumber(order.number);
-  const location = localize(order.location.name, locale);
   const owing = order.totalCents - order.paidCents;
   // Assembled builds: the part of the deposit still to pay before assembly.
   const depositOwing = Math.max(0, order.depositCents - order.paidCents);
@@ -146,7 +145,7 @@ async function OrderContent({ params, searchParams }: Props) {
       <section className="flex flex-col gap-1 rounded-lg border bg-surface p-4">
         <p className="font-medium">
           {order.fulfilment === "PICKUP"
-            ? t("fulfilmentPickup", { location })
+            ? t("fulfilmentPickup")
             : t("fulfilmentDelivery", { address: formatAddress(order.deliveryAddress!) })}
         </p>
         {order.fulfilment === "PICKUP" && (

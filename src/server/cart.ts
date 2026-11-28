@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 
 import type { BuildSlot, Prisma } from "@/generated/prisma/client";
 import { SLOTS } from "@/lib/builder/slots";
-import { LOCATION_CODES, type LocationCode } from "@/lib/catalog/product-input";
+import { DEFAULT_LOCATION } from "@/lib/store-config";
 import type { LocalizedText } from "@/lib/localized";
 import { db } from "@/server/db";
 import { publicUrl } from "@/server/storage";
@@ -27,7 +27,8 @@ export type CartLineView = {
   unitPriceCents: number;
   quantity: number;
   imageUrl: string | null;
-  available: Record<LocationCode, number>;
+  // Free stock: on hand minus reserved.
+  available: number;
   // Set for parts of an assembled build.
   slot?: BuildSlot;
 };
@@ -43,19 +44,14 @@ const productInclude = {
   brand: true,
   category: true,
   images: { orderBy: { position: "asc" }, take: 1 },
-  inventory: { include: { location: true } },
+  inventory: { where: { location: { code: DEFAULT_LOCATION } } },
 } satisfies Prisma.ProductInclude;
 
 type ProductRow = Prisma.ProductGetPayload<{ include: typeof productInclude }>;
 
 function toLineView(product: ProductRow, quantity: number, slot?: BuildSlot): CartLineView {
-  const available = Object.fromEntries(LOCATION_CODES.map((c) => [c, 0])) as Record<
-    LocationCode,
-    number
-  >;
-  for (const stock of product.inventory) {
-    available[stock.location.code] = Math.max(0, stock.onHand - stock.reserved);
-  }
+  const stock = product.inventory[0];
+  const available = stock ? Math.max(0, stock.onHand - stock.reserved) : 0;
   return {
     productId: product.id,
     slug: product.slug,

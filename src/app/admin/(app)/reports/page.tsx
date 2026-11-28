@@ -2,12 +2,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Field, Input, Select } from "@/components/ui/field";
+import { Field, Input } from "@/components/ui/field";
 import { formatOrderNumber } from "@/lib/checkout/order-number";
 import type { LocalizedText } from "@/lib/localized";
 import { formatMoney } from "@/lib/money";
-import { LOCATION_NAMES, SINGLE_STORE, storeFilter } from "@/lib/store-config";
-import { LocationOptions } from "@/components/admin/location-options";
 import { parseRange, presets } from "@/lib/reports/range";
 import { getReport } from "@/server/admin/reports";
 import { requireAdmin } from "@/server/require-admin";
@@ -23,11 +21,9 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
   const params = await searchParams;
   const now = new Date();
   const range = parseRange(params.from, params.to, now);
-  const location = storeFilter(params.location);
-  const report = await getReport(range, location);
+  const report = await getReport(range);
   const quick = presets(now);
-  const link = (r: { from: string; to: string }) =>
-    `/admin/reports?from=${r.from}&to=${r.to}${location ? `&location=${location}` : ""}`;
+  const link = (r: { from: string; to: string }) => `/admin/reports?from=${r.from}&to=${r.to}`;
 
   return (
     <div className="flex flex-col gap-8">
@@ -35,7 +31,6 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
         <h1 className="text-2xl font-semibold">Reports</h1>
         <p className="mt-1 text-muted">
           {range.from === range.to ? range.from : `${range.from} to ${range.to}`}
-          {SINGLE_STORE ? "" : location ? ` · ${LOCATION_NAMES[location]}` : " · both locations"}
         </p>
       </div>
 
@@ -47,14 +42,6 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
           <Field label="To" htmlFor="to">
             <Input id="to" name="to" type="date" defaultValue={range.to} className="w-40" />
           </Field>
-          {!SINGLE_STORE && (
-            <Field label="Location" htmlFor="location">
-              <Select id="location" name="location" defaultValue={location ?? ""} className="w-40">
-                <option value="">Both</option>
-                <LocationOptions />
-              </Select>
-            </Field>
-          )}
           <Button variant="outline">Show</Button>
         </form>
         <nav aria-label="Quick periods" className="flex gap-1 text-sm">
@@ -91,24 +78,14 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title="Received by payment method">
           <Table
-            head={["Method", "Location", "Payments", "Amount"]}
-            rows={report.received.map((r) => [
-              METHOD[r.method],
-              r.code,
-              String(r.count),
-              money(r.cents),
-            ])}
+            head={["Method", "Payments", "Amount"]}
+            rows={report.received.map((r) => [METHOD[r.method], String(r.count), money(r.cents)])}
             empty="No payments in this period."
           />
           {report.refunded.length > 0 && (
             <Table
-              head={["Refunded by", "Location", "Fees kept", "Amount"]}
-              rows={report.refunded.map((r) => [
-                METHOD[r.method],
-                r.code,
-                money(r.fees),
-                money(r.cents),
-              ])}
+              head={["Refunded by", "Fees kept", "Amount"]}
+              rows={report.refunded.map((r) => [METHOD[r.method], money(r.fees), money(r.cents)])}
               empty=""
             />
           )}
@@ -178,13 +155,14 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
 
         <Panel title="Stock on hand now">
           <Table
-            head={["Location", "Units", "At selling price", "At cost"]}
-            rows={report.stockValue.map((r) => [
-              r.code,
-              String(r.units),
-              money(r.cents),
-              `${money(Math.round(r.costCents))}${r.uncosted ? ` (${r.uncosted} units with no cost)` : ""}`,
-            ])}
+            head={["Units", "At selling price", "At cost"]}
+            rows={[report.stockValue]
+              .filter((r) => r.units > 0)
+              .map((r) => [
+                String(r.units),
+                money(r.cents),
+                `${money(Math.round(r.costCents))}${r.uncosted ? ` (${r.uncosted} units with no cost)` : ""}`,
+              ])}
             empty="No stock."
           />
         </Panel>
@@ -194,8 +172,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
             head={["Order", "Customer", "Paid", "Owing"]}
             rows={report.awaitingBalance.map((o) => [
               <Link key="o" href={`/admin/orders/${o.id}`} className="hover:text-accent">
-                {formatOrderNumber(o.number)}{" "}
-                <span className="text-xs text-muted">{o.location.code}</span>
+                {formatOrderNumber(o.number)}
               </Link>,
               o.name,
               money(o.paidCents),

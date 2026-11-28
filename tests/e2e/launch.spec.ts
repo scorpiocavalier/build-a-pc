@@ -48,12 +48,18 @@ test("the policy pages are linked from the footer, in both languages", async ({ 
   await page.getByRole("contentinfo").getByRole("link", { name: "Retours" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Retours et remboursements");
   await expect(page.getByText(/frais de restockage de 30 %/).first()).toBeVisible();
+  // There's no store page: the address and hours aren't published.
+  await expect(page.getByRole("contentinfo").getByRole("link", { name: "Magasins" })).toHaveCount(
+    0,
+  );
+});
 
-  await page.goto("/en/locations");
-  await expect(page.getByRole("heading", { name: /Toronto/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Montreal/ })).toBeVisible();
+test("the home page describes the business without a store address", async ({ page }) => {
+  await page.goto("/en");
   const structured = await page.locator('script[type="application/ld+json"]').first().textContent();
-  expect(JSON.parse(structured!)[0]["@type"]).toBe("ComputerStore");
+  const data = JSON.parse(structured!);
+  expect(data).toMatchObject({ "@type": "Organization", name: "Astral Tech Gaming" });
+  expect(structured).not.toContain("PostalAddress");
 });
 
 test("sign-in links are rate limited per email address", async ({ page }) => {

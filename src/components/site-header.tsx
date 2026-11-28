@@ -17,7 +17,7 @@ const navLink =
   "rounded-lg px-1 py-2 text-sm text-muted hover:bg-surface-raised hover:text-foreground min-[360px]:px-2 sm:px-3";
 
 // Footer pages that phones also reach from the menu.
-const SECONDARY_LINKS = ["locations", "returns", "warranty"] as const;
+const SECONDARY_LINKS = ["returns", "warranty"] as const;
 
 // Just the icon and the address, so it fits on one line on phones. The label
 // tells screen readers what the address is for.

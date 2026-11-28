@@ -36,11 +36,14 @@ all environments:
 | `CRON_SECRET` | Another long random string |
 | `SEED_DEMO_DATA` | `1`. **Temporary**: loads the placeholder catalog on the next deploy |
 
+If the project still has `NEXT_PUBLIC_STORE_LOCATION` from when the site ran
+two stores, delete it: the site runs one store and no longer reads it.
+
 ## 4. Deploy again
 
 1. Open **Deployments**, click **⋯** on the failed deployment → **Redeploy**.
 2. In the build log you should see `Applying database migrations…`, then
-   `Loading demo data…` and `Seeded 2 locations, 9 categories…`.
+   `Loading demo data…` and `Seeded the store, 9 categories…`.
 3. When it's done, click **Visit**. Check `https://<your-project>.vercel.app/api/health`
    shows `{"ok":true}`.
 4. **Delete the `SEED_DEMO_DATA` variable now.** Otherwise every deploy resets

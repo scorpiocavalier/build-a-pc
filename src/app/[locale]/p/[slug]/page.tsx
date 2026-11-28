@@ -9,7 +9,6 @@ import { CategoryIcon } from "@/components/catalog/category-icon";
 import { Price } from "@/components/catalog/price";
 import { WishlistButton, WishlistButtonFallback } from "@/components/account/wishlist-button";
 import { AddToCart } from "@/components/cart/add-to-cart";
-import { LOCATION_CODES } from "@/lib/catalog/product-input";
 import { localize } from "@/lib/localized";
 import { getCategoryDefinition } from "@/lib/specs/definitions";
 import { formatSpecValue } from "@/lib/specs/format";
@@ -65,7 +64,7 @@ async function ProductContent({ params }: Pick<Props, "params">) {
       label: localize(field.label, locale),
       value: formatSpecValue(field, product.specs[field.key], locale),
     }));
-  const inStock = LOCATION_CODES.some((code) => product.available[code] > 0);
+  const inStock = product.available > 0;
 
   return (
     <>
@@ -137,30 +136,17 @@ async function ProductContent({ params }: Pick<Props, "params">) {
             <h2 id="availability" className="text-sm font-semibold">
               {t("availabilityTitle")}
             </h2>
-            <ul className="mt-2 flex flex-col gap-1">
-              {LOCATION_CODES.map((code) => (
-                <li key={code} className="flex items-center gap-2 text-sm">
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      "size-2 rounded-full",
-                      product.available[code] > 0 ? "bg-emerald-400" : "bg-muted/50",
-                    )}
-                  />
-                  {t("stockAt", {
-                    location: t(`locations.${code}`),
-                    count: product.available[code],
-                  })}
-                </li>
-              ))}
-            </ul>
+            <p className="mt-2 flex items-center gap-2 text-sm">
+              <span
+                aria-hidden="true"
+                className={cn("size-2 rounded-full", inStock ? "bg-emerald-400" : "bg-muted/50")}
+              />
+              {t("stockCount", { count: product.available })}
+            </p>
           </section>
 
           {inStock ? (
-            <AddToCart
-              productId={product.id}
-              maxQuantity={Math.max(...LOCATION_CODES.map((code) => product.available[code]))}
-            />
+            <AddToCart productId={product.id} maxQuantity={product.available} />
           ) : (
             <p className="text-muted">{t("outOfStock")}</p>
           )}

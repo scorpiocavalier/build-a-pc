@@ -1,9 +1,8 @@
 # Launch checklist — astralgaming.ca
 
-Everything the code needs is built (Phases 0–6). Toronto and Montreal run as
-two separate sites from this code: see [`TWO-STORES.md`](TWO-STORES.md), and
-do the steps below for each store. What's left is accounts,
-keys, content and a few decisions only the owner can make. Work top to bottom;
+Everything the code needs is built (Phases 0–6). The site runs one store, in
+Toronto. What's left is accounts, keys, content and a few decisions only the
+owner can make. Work top to bottom;
 each step says who does it and how to check it.
 
 ## 1. Decisions to confirm (owner)
@@ -17,9 +16,10 @@ or the text in `messages/en.json` / `messages/fr.json` (`Legal.*`) if needed.
       misdescribed, opened or not (`/admin/settings`).
 - [ ] **Assembly workmanship.** The warranty page promises to fix problems
       caused by our assembly at no charge (no time limit is stated).
-- [ ] **Delivery areas and fees.** Placeholder: Toronto `M`, Montreal `H`,
-      $25 each (`/admin/settings` → locations).
-- [ ] **Store addresses and hours** for both locations (`/admin/settings`).
+- [ ] **Delivery area and fee.** Placeholder: postal codes starting with `M`,
+      $25 (`/admin/settings` → Store).
+- [ ] **Store address and hours** (`/admin/settings` → Store). They're sent
+      with pickup orders (order page and emails), not shown on the site.
 - [ ] **Person responsible for privacy** (Quebec Law 25) and contact email
       (`/admin/settings`).
 - [ ] Have the policy pages (`/returns`, `/warranty`, `/privacy`, `/terms`,
@@ -32,7 +32,7 @@ or the text in `messages/en.json` / `messages/fr.json` (`Legal.*`) if needed.
 - [ ] Decide GST/HST and QST registration (small-supplier threshold: $30,000
       over four quarters).
 - [ ] Once registered: enter the numbers in `/admin/settings` (they appear on
-      emails) and switch **Collect** on for Ontario and Quebec.
+      emails) and switch **Collect** on for Ontario.
 - [ ] Confirm the $10,000 cash cap (Bill C-2) with the accountant.
 
 ## 3. Accounts and keys (owner, with help)
@@ -54,10 +54,13 @@ or the text in `messages/en.json` / `messages/fr.json` (`Legal.*`) if needed.
 Set the same variables on Vercel's **Preview** environment with test keys
 and a separate Neon branch, so previews never touch real orders.
 
+`NEXT_PUBLIC_STORE_LOCATION` (from when the site ran two stores) is no longer
+read: if it's set on Vercel, delete it.
+
 ## 4. Database
 
 - [ ] `npm run db:deploy` against production (applies all migrations).
-- [ ] `npm run db:seed` **once** for locations, tax rates, categories and the
+- [ ] `npm run db:seed` **once** for the store, tax rates, categories and the
       Windows 11 Pro product — then delete the placeholder products in the admin, or
       import the real catalog over them.
 - [ ] **Backup restore test:** restore a Neon backup to a new branch, point a
@@ -66,7 +69,7 @@ and a separate Neon branch, so previews never touch real orders.
 ## 5. Content (owner)
 
 - [ ] Import the real catalog with the CSV templates (`/admin/import`),
-      English and French names and descriptions, prices and stock per location.
+      English and French names and descriptions, prices and stock.
 - [ ] Product photos (`/admin/products/<id>`).
 - [ ] Feature 2–4 prebuilt PCs (`/admin/builds`).
 - [ ] e-Transfer email, deposit % and assembly time (`/admin/settings`).

@@ -1,4 +1,3 @@
-import { DEFAULT_LOCATION } from "@/lib/store-config";
 import { Share2 } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -11,7 +10,6 @@ import { SlotList } from "@/components/builder/slot-list";
 import { Builder3D } from "@/components/builder3d/builder-3d";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { LOCATION_CODES } from "@/lib/catalog/product-input";
 import { formatMoney } from "@/lib/money";
 import { siteUrl } from "@/lib/site-url";
 import { cn } from "@/lib/utils";
@@ -20,7 +18,7 @@ import { builderData } from "@/server/builder-3d";
 import { getCustomer } from "@/server/customer";
 import { localeAlternates } from "@/server/seo";
 
-import { clearAction, locationAction } from "./actions";
+import { clearAction } from "./actions";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Builder");
@@ -51,12 +49,11 @@ export default async function BuilderPage({ searchParams }: Props) {
 }
 
 async function Builder({ searchParams }: Pick<Props, "searchParams">) {
-  const [params, build, assemblyDays, t, catalog, locale, customer, t3d] = await Promise.all([
+  const [params, build, assemblyDays, t, locale, customer, t3d] = await Promise.all([
     searchParams,
     getMyBuild(),
     getAssemblyDays(),
     getTranslations("Builder"),
-    getTranslations("Catalog"),
     getLocale(),
     getCustomer(),
     getTranslations("Builder3D"),
@@ -66,7 +63,6 @@ async function Builder({ searchParams }: Pick<Props, "searchParams">) {
   const empty: BuildView = {
     id: "",
     shareId: "",
-    location: DEFAULT_LOCATION,
     featured: false,
     position: 0,
     name: null,
@@ -111,31 +107,14 @@ async function Builder({ searchParams }: Pick<Props, "searchParams">) {
             </Link>
           ))}
         </nav>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <form action={locationAction} className="flex items-center gap-2 text-sm">
-            <span className="text-muted">{t("stockFor")}</span>
-            {LOCATION_CODES.map((code) => (
-              <Button
-                key={code}
-                name="location"
-                value={code}
-                size="sm"
-                variant={view.location === code ? "primary" : "outline"}
-                aria-pressed={view.location === code}
-              >
-                {catalog(`locations.${code}`)}
-              </Button>
-            ))}
+        {hasParts && (
+          <form action={clearAction} className="flex justify-end">
+            <Button size="sm" variant="ghost">
+              {/* A saved build stays in the account; this starts a new one. */}
+              {view.userId ? t("newBuild") : t("clear")}
+            </Button>
           </form>
-          {hasParts && (
-            <form action={clearAction}>
-              <Button size="sm" variant="ghost">
-                {/* A saved build stays in the account; this starts a new one. */}
-                {view.userId ? t("newBuild") : t("clear")}
-              </Button>
-            </form>
-          )}
-        </div>
+        )}
         {is3d ? (
           <Builder3D data={builderData(build, locale)} listHref="/build" />
         ) : (

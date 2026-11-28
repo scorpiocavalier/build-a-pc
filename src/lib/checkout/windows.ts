@@ -1,5 +1,5 @@
 // Pickup/delivery windows the customer can request. An admin confirms the
-// exact time afterwards. Dates are calendar days in Toronto/Montreal time.
+// exact time afterwards. Dates are calendar days in Toronto time.
 
 export const SLOTS = ["morning", "afternoon", "evening"] as const;
 export type Slot = (typeof SLOTS)[number];

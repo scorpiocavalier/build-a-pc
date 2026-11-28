@@ -111,18 +111,18 @@ test("saved addresses fill in the delivery form", async ({ signInAs, sql, isMobi
     {
       "Full name": "Alex Tremblay",
       Phone: "bad",
-      "Street address": "1 Rue Sainte-Catherine",
-      City: "Montréal",
-      "Postal code": "H2X 1Y4",
+      "Street address": "1 Yonge St",
+      City: "Toronto",
+      "Postal code": "M5E 1W7",
     },
-    "QC",
+    "ON",
   );
   await page.getByRole("button", { name: "Add address" }).click();
   await expect(page.getByText("Enter a 10-digit phone number")).toBeVisible();
-  await page.getByLabel("Phone", { exact: true }).fill("514 555 0199");
+  await page.getByLabel("Phone", { exact: true }).fill("416 555 0199");
   await page.getByLabel("Use as my default address").check();
   await page.getByRole("button", { name: "Add address" }).click();
-  await expect(page.getByText("1 Rue Sainte-Catherine, Montréal, QC H2X 1Y4")).toBeVisible();
+  await expect(page.getByText("1 Yonge St, Toronto, ON M5E 1W7")).toBeVisible();
   // Only one default.
   await expect(page.getByText("Default", { exact: true })).toHaveCount(1);
 
@@ -130,11 +130,11 @@ test("saved addresses fill in the delivery form", async ({ signInAs, sql, isMobi
   const product = await createProduct(sql);
   await addToCart(page, product.slug);
   await page.goto("/en/checkout");
-  await expect(page.getByLabel("Postal code")).toHaveValue("H2X 1Y4");
+  await expect(page.getByLabel("Postal code")).toHaveValue("M5E 1W7");
   await page.getByRole("button", { name: "Check delivery" }).click();
-  await expect(page.locator("#line1")).toHaveValue("1 Rue Sainte-Catherine");
-  await expect(page.locator("#city")).toHaveValue("Montréal");
-  await expect(page.locator("#phone")).toHaveValue("514-555-0199");
+  await expect(page.locator("#line1")).toHaveValue("1 Yonge St");
+  await expect(page.locator("#city")).toHaveValue("Toronto");
+  await expect(page.locator("#phone")).toHaveValue("416-555-0199");
 });
 
 test("the wishlist keeps products for later", async ({ page, signInAs, sql }) => {
